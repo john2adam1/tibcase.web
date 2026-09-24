@@ -26,6 +26,7 @@ export default function AppNavbar({
   currentView,
   setCurrentView,
   user,
+  userLimit,
   activeCase,
   onOpenProfile,
   onLogout,
@@ -192,6 +193,32 @@ export default function AppNavbar({
               >
                 <Zap size={14} color="#16A34A" />
                 <span>Lvl {user?.level ?? 1}</span>
+              </div>
+
+              <div style={{ width: 1, height: 14, background: '#CBD5E1' }} />
+
+              {/* Free Tier Limit / PRO badge */}
+              <div
+                onClick={() => handleSelectNav('store')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  color: (user?.has_subscription || userLimit?.has_subscription) 
+                    ? '#16A34A' 
+                    : ((userLimit?.remaining ?? 3) > 0 ? '#0284C7' : '#DC2626'),
+                  cursor: 'pointer',
+                }}
+                title={user?.has_subscription || userLimit?.has_subscription ? "Cheksiz PRO obuna faol" : `Kunlik bepul limit: ${userLimit?.remaining ?? 3}/${userLimit?.total ?? 3}`}
+              >
+                <Shield size={14} />
+                <span>
+                  {(user?.has_subscription || userLimit?.has_subscription) 
+                    ? 'PRO' 
+                    : `${userLimit?.remaining ?? 3}/${userLimit?.total ?? 3} Limit`}
+                </span>
               </div>
             </div>
 

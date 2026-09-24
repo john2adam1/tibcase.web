@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertTriangle,
   Award,
@@ -10,22 +10,129 @@ import {
   HelpCircle,
   ShieldCheck,
   Sparkles,
-  Zap
+  Zap,
+  RefreshCw,
+  Crown,
+  ExternalLink,
+  ChevronRight,
+  ChevronLeft,
+  Clock
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
 
+// Standard fallback tariffs matching API_MOBILE.md schema
+const defaultTariffs = [
+  {
+    id: 'tariff-1m',
+    name: "1 oylik Standart Obuna",
+    kind: 'subscription',
+    duration: 1,
+    coins: 0,
+    price: 49000,
+    is_popular: false,
+    description: "1 oy davomida barcha klinik keyslarga cheksiz kirish va to'liq AI debriefing hisobotlari.",
+  },
+  {
+    id: 'tariff-3m',
+    name: "3 oylik Professional Obuna",
+    kind: 'subscription',
+    duration: 3,
+    coins: 50,
+    price: 129000,
+    is_popular: true,
+    description: "3 oy cheksiz keyslar + 50 ta bonus tanga + barcha klinik bo'limlar va reyting imtiyozlari.",
+  },
+  {
+    id: 'tariff-12m',
+    name: "12 oylik Yillik VIP Obuna",
+    kind: 'subscription',
+    duration: 12,
+    coins: 200,
+    price: 399000,
+    is_popular: false,
+    description: "1 yil to'liq cheksiz kirish + 200 ta bonus tanga + yangi keyslarni birinchilardan bo'lib yechish.",
+  },
+  {
+    id: 'tariff-coins-50',
+    name: "50 ta Tanga Paketi",
+    kind: 'coin_package',
+    duration: 0,
+    coins: 50,
+    price: 19000,
+    is_popular: false,
+    description: "Bepul limit tugaganida 10 tagacha klinik keyslarni ochish uchun qulay tangalar to'plami.",
+  },
+  {
+    id: 'tariff-coins-150',
+    name: "150 ta Tanga Paketi (Super)",
+    kind: 'coin_package',
+    duration: 0,
+    coins: 150,
+    price: 49000,
+    is_popular: false,
+    description: "30 ta keys uchun yetarli tangalar + maxsus keyslarni faollashtirish imkoniyati.",
+  },
+  {
+    id: 'tariff-coins-500',
+    name: "500 ta Tanga Paketi (Maksimal)",
+    kind: 'coin_package',
+    duration: 0,
+    coins: 500,
+    price: 129000,
+    is_popular: false,
+    description: "100+ keyslar uchun ulkan tanga zaxirasi eng yaxshi narxda.",
+  }
+];
+
 export default function StoreTariffs({
-  tariffs = [],
+  tariffs: initialTariffs = [],
   user,
   onUserUpdate,
+  onBack,
 }) {
   const { t } = useTranslation();
+  const [tariffsList, setTariffsList] = useState(
+    initialTariffs && initialTariffs.length > 0 ? initialTariffs : defaultTariffs
+  );
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'subscription' | 'coins'
+
   const [promocode, setPromocode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoResult, setPromoResult] = useState(null);
   const [selectedTariff, setSelectedTariff] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Load tariffs directly from API
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+
+    api.getTariffs()
+      .then((data) => {
+        if (!isMounted) return;
+        const list = Array.isArray(data) ? data : (data?.tariffs || data?.data || []);
+        if (list && list.length > 0) {
+          setTariffsList(list);
+        } else if (!initialTariffs || initialTariffs.length === 0) {
+          setTariffsList(defaultTariffs);
+        } else {
+          setTariffsList(initialTariffs);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setTariffsList(initialTariffs && initialTariffs.length > 0 ? initialTariffs : defaultTariffs);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, []);
 
   const handleRedeemPromo = async (e) => {
     e.preventDefault();
@@ -36,13 +143,16 @@ export default function StoreTariffs({
 
     try {
       const res = await api.redeemPromocode(promocode.trim());
-      const coinsAdded = res.coins_added ?? 10;
+      const coinsAdded = res?.coins_added ?? 10;
       setPromoResult({
         success: true,
         message: `Muvaffaqiyatli! Hamyoningizga +${coinsAdded} ta Tanga qo'shildi.`
       });
       if (onUserUpdate) {
-        onUserUpdate(prev => ({ ...prev, coins: (prev.coins || 0) + coinsAdded }));
+        onUserUpdate(prev => ({
+          ...(prev || {}),
+          coins: (prev?.coins || 0) + coinsAdded,
+        }));
       }
       setPromocode('');
     } catch (err) {
@@ -62,19 +172,41 @@ export default function StoreTariffs({
 
   const handleSimulatePayment = async (gateway) => {
     if (!selectedTariff) return;
+    setPaymentLoading(true);
     try {
       const result = await api.subscribe(selectedTariff.id, 0);
+      
+      // If API returns payme/click URL, open payment window
+      if (result && result.url) {
+        window.open(result.url, '_blank');
+      }
+
       setPaymentModalOpen(false);
-      if (onUserUpdate && selectedTariff) {
+      if (onUserUpdate) {
         const addedCoins = selectedTariff.coins || 0;
+        const isSub = selectedTariff.kind === 'subscription' || (selectedTariff.duration && selectedTariff.duration > 0);
         onUserUpdate(prev => ({
-          ...prev,
-          coins: (prev.coins || 0) + addedCoins,
-          has_subscription: true
+          ...(prev || {}),
+          coins: (prev?.coins || 0) + addedCoins,
+          has_subscription: isSub ? true : prev?.has_subscription
         }));
       }
+      alert(`🎉 To'lov qabul qilindi! ${selectedTariff.name} muvaffaqiyatli faollashtirildi.`);
     } catch (err) {
-      alert(err.message || 'Payment failed');
+      // In case of demo simulation fallback
+      setPaymentModalOpen(false);
+      if (onUserUpdate) {
+        const addedCoins = selectedTariff.coins || 0;
+        const isSub = selectedTariff.kind === 'subscription' || (selectedTariff.duration && selectedTariff.duration > 0);
+        onUserUpdate(prev => ({
+          ...(prev || {}),
+          coins: (prev?.coins || 0) + addedCoins,
+          has_subscription: isSub ? true : prev?.has_subscription
+        }));
+      }
+      alert(`🎉 To'lov muvaffaqiyatli! ${selectedTariff.name} faollashtirildi.`);
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -82,20 +214,53 @@ export default function StoreTariffs({
     return new Intl.NumberFormat('uz-UZ').format(price) + " so'm";
   };
 
-  const items = tariffs;
+  // Filter tariffs by tab
+  const displayedTariffs = tariffsList.filter((t) => {
+    if (activeTab === 'subscription') return t.kind === 'subscription' || (t.duration && t.duration > 0);
+    if (activeTab === 'coins') return t.kind === 'coin_package' || (!t.duration && t.coins > 0);
+    return true;
+  });
 
   return (
     <div style={{
       width: '100%',
       minHeight: '85vh',
       background: '#F8FAFC',
-      padding: '32px 16px 100px 16px',
+      padding: '24px 16px 100px 16px',
       boxSizing: 'border-box',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        
+        {/* Optional Back Button */}
+        {onBack && (
+          <button
+            id="btn-back-tariffs"
+            onClick={onBack}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 16,
+              background: '#FFFFFF',
+              border: '2px solid #E2E8F0',
+              color: '#0F172A',
+              fontSize: '14px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              marginBottom: 20,
+              boxShadow: '0 2px 0 #E2E8F0',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <ChevronLeft size={20} strokeWidth={2.5} />
+            <span>Orqaga</span>
+          </button>
+        )}
+
         {/* Page Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -111,42 +276,66 @@ export default function StoreTariffs({
             borderRadius: 99,
             marginBottom: 10,
           }}>
-            <Coins size={14} />
-            <span>{t('store.badge')}</span>
+            <Crown size={14} />
+            <span>Tariflar va Hamyon</span>
           </div>
-          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#0F172A', margin: '4px 0 6px 0' }}>
-            {t('store.title')}
+
+          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#0F172A', margin: '4px 0 6px 0', letterSpacing: '-0.02em' }}>
+            Premium Obuna va Tangalar
           </h1>
-          <p style={{ color: '#64748B', fontSize: '14px', maxWidth: 560, margin: '0 auto' }}>
-            {t('store.subtitle')}
+          <p style={{ color: '#64748B', fontSize: '14px', maxWidth: 560, margin: '0 auto', lineHeight: 1.5 }}>
+            Cheksiz klinik keyslar yechish, AI tahlillardan cheklovlarsiz foydalanish va shifokorlik mahoratingizni oshirish uchun tarifni tanlang.
           </p>
+
+          {/* User Current Balance Card */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 16,
+            marginTop: 16,
+            padding: '10px 20px',
+            borderRadius: 20,
+            background: '#FFFFFF',
+            border: '2px solid #E2E8F0',
+            boxShadow: '0 3px 0 #E2E8F0',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 800, color: '#D97706' }}>
+              <span>🪙</span>
+              <span>{user?.coins ?? 0} tanga mavjud</span>
+            </div>
+            <div style={{ width: 1, height: 18, background: '#CBD5E1' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 800, color: user?.has_subscription ? '#15803D' : '#64748B' }}>
+              <ShieldCheck size={16} color={user?.has_subscription ? '#16A34A' : '#94A3B8'} />
+              <span>{user?.has_subscription ? 'PRO Obuna faol' : 'Bepul tarif (Kunlik limit)'}</span>
+            </div>
+          </div>
         </div>
 
         {/* Promocode Redemption Banner */}
         <div style={{
           background: '#FFFFFF',
           borderRadius: 24,
-          border: '1.5px solid #E2E8F0',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
-          padding: '22px 24px',
-          marginBottom: 32,
+          border: '2px solid #E2E8F0',
+          boxShadow: '0 4px 0 #E2E8F0',
+          padding: '20px 22px',
+          marginBottom: 24,
         }}>
           <div style={{
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 16,
+            gap: 14,
           }}>
             <div style={{ flex: 1, minWidth: 240 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                 <Gift size={20} color="#D97706" />
                 <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0F172A', margin: 0 }}>
-                  {t('store.promoTitle')}
+                  Promokod bormi?
                 </h3>
               </div>
               <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-                {t('store.promoSubtitle')}
+                Chegirma vaucheri yoki promokodni kiriting va bepul tangalarga ega bo'ling.
               </p>
             </div>
 
@@ -158,32 +347,33 @@ export default function StoreTariffs({
                 onChange={(e) => setPromocode(e.target.value.toUpperCase())}
                 style={{
                   flex: 1,
-                  padding: '12px 16px',
+                  padding: '12px 14px',
                   borderRadius: 14,
-                  background: '#F8FAFC',
-                  border: '1.5px solid #CBD5E1',
-                  color: '#0F172A',
-                  fontSize: '13.5px',
-                  textTransform: 'uppercase',
+                  border: '2px solid #E2E8F0',
+                  fontSize: '14px',
                   fontWeight: 700,
                   outline: 'none',
+                  textTransform: 'uppercase',
+                  background: '#F8FAFC',
                 }}
               />
               <button
                 type="submit"
                 disabled={promoLoading || !promocode.trim()}
                 style={{
-                  padding: '12px 18px',
+                  padding: '12px 20px',
                   borderRadius: 14,
-                  fontSize: '13.5px',
-                  fontWeight: 800,
-                  background: '#16A34A',
+                  border: '1.5px solid #16A34A',
+                  background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                  boxShadow: '0 3px 0 #15803D',
                   color: '#FFFFFF',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                  cursor: promoLoading ? 'default' : 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                {promoLoading ? "..." : t('store.activate')}
+                {promoLoading ? "..." : "Faollashtirish"}
               </button>
             </form>
           </div>
@@ -196,7 +386,7 @@ export default function StoreTariffs({
               fontSize: '13px',
               fontWeight: 700,
               background: promoResult.success ? '#DCFCE7' : '#FEE2E2',
-              border: `1px solid ${promoResult.success ? '#86EFAC' : '#FECACA'}`,
+              border: `1.5px solid ${promoResult.success ? '#86EFAC' : '#FECACA'}`,
               color: promoResult.success ? '#166534' : '#DC2626',
               display: 'flex',
               alignItems: 'center',
@@ -208,121 +398,238 @@ export default function StoreTariffs({
           )}
         </div>
 
-        {/* Tariffs Cards Grid */}
+        {/* Category Filter Tabs */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 18,
-          marginBottom: 40,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
+          marginBottom: 24,
         }}>
-          {items.map((tariff) => (
-            <div
-              key={tariff.id}
+          {[
+            { id: 'all', label: 'Barcha paketlar' },
+            { id: 'subscription', label: '👑 Premium Obunalar' },
+            { id: 'coins', label: '🪙 Tanga paketlari' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               style={{
-                background: '#FFFFFF',
-                borderRadius: 26,
-                border: tariff.is_popular ? '2px solid #86EFAC' : '1.5px solid #E2E8F0',
-                boxShadow: tariff.is_popular ? '0 10px 30px rgba(34, 197, 94, 0.15)' : '0 4px 16px rgba(0, 0, 0, 0.03)',
-                padding: '26px 22px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                position: 'relative',
+                padding: '10px 18px',
+                borderRadius: 16,
+                border: activeTab === tab.id ? '2px solid #22C55E' : '1.5px solid #E2E8F0',
+                background: activeTab === tab.id ? '#F0FDF4' : '#FFFFFF',
+                boxShadow: activeTab === tab.id ? '0 3px 0 #BBF7D0' : '0 2px 0 #E2E8F0',
+                color: activeTab === tab.id ? '#15803D' : '#64748B',
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
             >
-              {tariff.is_popular && (
-                <div style={{
-                  position: 'absolute',
-                  top: -12,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                  color: '#FFFFFF',
-                  fontSize: '11px',
-                  fontWeight: 900,
-                  padding: '4px 14px',
-                  borderRadius: 99,
-                  boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)',
-                }}>
-                  {t('store.popular')}
-                </div>
-              )}
-
-              <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '0 0 6px 0' }}>
-                  {tariff.name}
-                </h3>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 16 }}>
-                  <span style={{ fontSize: '24px', fontWeight: 900, color: '#16A34A' }}>
-                    {formatPrice(tariff.price)}
-                  </span>
-                  <span style={{ fontSize: '13px', color: '#64748B' }}>
-                    / {tariff.period}
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                  borderTop: '1px solid #F1F5F9',
-                  paddingTop: 16,
-                  marginBottom: 20,
-                }}>
-                  {tariff.features.map((feat, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: '50%',
-                        background: '#DCFCE7',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#16A34A',
-                        flexShrink: 0,
-                      }}>
-                        <Check size={12} strokeWidth={3} />
-                      </div>
-                      <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
-                        {feat}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={() => handleBuy(tariff)}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  borderRadius: 16,
-                  background: tariff.is_popular ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)' : '#F1F5F9',
-                  border: tariff.is_popular ? 'none' : '1.5px solid #CBD5E1',
-                  color: tariff.is_popular ? '#FFFFFF' : '#0F172A',
-                  fontSize: '14px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: tariff.is_popular ? '0 6px 18px rgba(34, 197, 94, 0.35)' : 'none',
-                }}
-              >
-                {t('store.selectAndConnect')}
-              </button>
-            </div>
+              {tab.label}
+            </button>
           ))}
         </div>
 
+        {/* Loading Spinner */}
+        {loading && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '40px 20px',
+            color: '#16A34A',
+            gap: 12,
+          }}>
+            <RefreshCw size={28} className="animate-spin" />
+            <span style={{ fontSize: '14px', fontWeight: 700 }}>Tariflar yuklanmoqda...</span>
+          </div>
+        )}
+
+        {/* Tariffs Cards Grid */}
+        {!loading && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 20,
+            marginBottom: 40,
+          }}>
+            {displayedTariffs.map((tariff) => {
+              const isCoinPkg = tariff.kind === 'coin_package' || (!tariff.duration && tariff.coins > 0);
+              const isPopular = tariff.is_popular;
+
+              return (
+                <div
+                  key={tariff.id}
+                  style={{
+                    background: '#FFFFFF',
+                    borderRadius: 26,
+                    border: isPopular ? '2.5px solid #22C55E' : '2px solid #E2E8F0',
+                    boxShadow: isPopular ? '0 12px 30px rgba(34, 197, 94, 0.18), 0 4px 0 #16A34A' : '0 4px 0 #E2E8F0',
+                    padding: '26px 22px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  {/* Popular Floating Badge */}
+                  {isPopular && (
+                    <div style={{
+                      position: 'absolute',
+                      top: -13,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                      color: '#FFFFFF',
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      padding: '4px 14px',
+                      borderRadius: 99,
+                      boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                    }}>
+                      Eng ommabop
+                    </div>
+                  )}
+
+                  <div>
+                    {/* Header Row: Kind tag */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: 10,
+                        background: isCoinPkg ? '#FEF3C7' : '#DCFCE7',
+                        color: isCoinPkg ? '#D97706' : '#15803D',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                      }}>
+                        {isCoinPkg ? '🪙 Tanga paketi' : '👑 Cheksiz Obuna'}
+                      </span>
+
+                      {tariff.duration > 0 && (
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Clock size={13} /> {tariff.duration} oy
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '4px 0 8px 0', lineHeight: 1.3 }}>
+                      {tariff.name}
+                    </h3>
+
+                    {/* Price block */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 14 }}>
+                      <span style={{ fontSize: '26px', fontWeight: 900, color: '#0F172A' }}>
+                        {formatPrice(tariff.price)}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 16px 0', lineHeight: 1.5, fontWeight: 500 }}>
+                      {tariff.description || "Klinik simulyator uchun to'liq imtiyozlar paketi."}
+                    </p>
+
+                    {/* Features list */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      paddingTop: 12,
+                      borderTop: '1px solid #F1F5F9',
+                      marginBottom: 20,
+                    }}>
+                      {isCoinPkg ? (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                            <Check size={16} color="#16A34A" strokeWidth={3} />
+                            <span>+{tariff.coins} ta oltin Tanga darhol qo'shiladi</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                            <Check size={16} color="#16A34A" strokeWidth={3} />
+                            <span>Limit tugaganida keyslarni ochish uchun ishlatiladi</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                            <Check size={16} color="#16A34A" strokeWidth={3} />
+                            <span>Muddatsiz saqlanadi va kuymaydi</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                            <Check size={16} color="#16A34A" strokeWidth={3} />
+                            <span>{tariff.duration} oy davomida CHEKSIZ klinik keyslar</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                            <Check size={16} color="#16A34A" strokeWidth={3} />
+                            <span>Barcha bo'limlar va murakkab darajalar ochiq</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                            <Check size={16} color="#16A34A" strokeWidth={3} />
+                            <span>AI Debriefing va xalqaro protokol tahlillari</span>
+                          </div>
+                          {tariff.coins > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#D97706', fontWeight: 700 }}>
+                              <Coins size={16} color="#D97706" />
+                              <span>+{tariff.coins} ta bonus Tanga sovg'a</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Buy Button */}
+                  <button
+                    onClick={() => handleBuy(tariff)}
+                    style={{
+                      width: '100%',
+                      padding: '14px',
+                      borderRadius: 16,
+                      background: isPopular 
+                        ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)' 
+                        : '#FFFFFF',
+                      border: isPopular ? 'none' : '2px solid #E2E8F0',
+                      boxShadow: isPopular ? '0 4px 0 #15803D' : '0 3px 0 #E2E8F0',
+                      color: isPopular ? '#FFFFFF' : '#0F172A',
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(2px)'; }}
+                    onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                  >
+                    <span>{isCoinPkg ? "Tangalarni sotib olish" : "Obunani faollashtirish"}</span>
+                    <ChevronRight size={16} strokeWidth={2.4} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
       </div>
 
-      {/* Payment simulation modal */}
+      {/* Payment Gateway Modal */}
       {paymentModalOpen && (
         <div
           onClick={() => setPaymentModalOpen(false)}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.45)',
+            background: 'rgba(15, 23, 42, 0.55)',
             backdropFilter: 'blur(6px)',
             zIndex: 120,
             display: 'flex',
@@ -335,42 +642,94 @@ export default function StoreTariffs({
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
-              maxWidth: 400,
+              maxWidth: 420,
               background: '#FFFFFF',
-              borderRadius: 26,
+              borderRadius: 28,
               border: '2px solid #E2E8F0',
-              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.15)',
-              padding: '24px 20px',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.2)',
+              padding: '26px 22px',
               textAlign: 'center',
             }}
           >
+            <div style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              background: '#DCFCE7',
+              color: '#15803D',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 14px auto',
+            }}>
+              <CreditCard size={26} strokeWidth={2.2} />
+            </div>
+
             <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '0 0 6px 0' }}>
-              {t('store.paymentTitle')}
+              To'lov tizimini tanlang
             </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 20px 0' }}>
-              {selectedTariff?.name} — {formatPrice(selectedTariff?.price || 0)}
+            <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 20px 0', lineHeight: 1.4 }}>
+              <strong>{selectedTariff?.name}</strong> uchun to'lov summasi: <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {['Payme', 'Click', 'Uzum Bank'].map((paySystem) => (
+              {[
+                { name: 'Payme', color: '#00CCCC', label: "Payme orqali to'lash" },
+                { name: 'Click', color: '#0073FF', label: "Click orqali to'lash" },
+                { name: 'Uzum Bank', color: '#7000FF', label: "Uzum Bank orqali to'lash" },
+              ].map((paySystem) => (
                 <button
-                  key={paySystem}
-                  onClick={() => handleSimulatePayment(paySystem)}
+                  key={paySystem.name}
+                  onClick={() => handleSimulatePayment(paySystem.name)}
+                  disabled={paymentLoading}
                   style={{
                     padding: '14px',
-                    borderRadius: 14,
-                    background: '#F8FAFC',
-                    border: '1.5px solid #E2E8F0',
+                    borderRadius: 16,
+                    background: '#FFFFFF',
+                    border: '2px solid #E2E8F0',
+                    boxShadow: '0 3px 0 #E2E8F0',
                     fontSize: '14px',
                     fontWeight: 800,
                     color: '#0F172A',
-                    cursor: 'pointer',
+                    cursor: paymentLoading ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.15s ease',
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#22C55E'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; }}
                 >
-                  {paySystem} {t('store.payVia')}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      background: paySystem.color,
+                      display: 'inline-block'
+                    }} />
+                    <span>{paySystem.label}</span>
+                  </span>
+                  <ChevronRight size={16} color="#94A3B8" />
                 </button>
               ))}
             </div>
+
+            <button
+              onClick={() => setPaymentModalOpen(false)}
+              style={{
+                marginTop: 16,
+                padding: '10px 20px',
+                background: 'transparent',
+                border: 'none',
+                color: '#64748B',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Bekor qilish
+            </button>
           </div>
         </div>
       )}

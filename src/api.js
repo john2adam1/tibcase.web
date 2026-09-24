@@ -178,12 +178,13 @@ export const api = {
   },
 
   /** Update user profile (multipart/form-data) */
-  updateUserProfile: async ({ name, phone_number, email, language, image }) => {
+  updateUserProfile: async ({ name, phone_number, email, language, specialization, image }) => {
     const formData = new FormData();
     if (name) formData.append('name', name);
     if (phone_number) formData.append('phone_number', phone_number);
     if (email) formData.append('email', email);
     if (language) formData.append('language', language);
+    if (specialization) formData.append('specialization', specialization);
     if (image) formData.append('image', image);
 
     return await request('/mobile/user/update/profile', {
@@ -411,7 +412,16 @@ export const api = {
     const query = duration ? `?duration=${duration}` : '';
     try {
       const res = await request(`/mobile/tariff${query}`);
-      return res.tariffs || res.data || [];
+      if (Array.isArray(res)) return res;
+      if (res && typeof res === 'object') {
+        if (Array.isArray(res.tariffs)) return res.tariffs;
+        if (Array.isArray(res.items)) return res.items;
+        if (Array.isArray(res.data)) return res.data;
+        for (const k of Object.keys(res)) {
+          if (Array.isArray(res[k])) return res[k];
+        }
+      }
+      return [];
     } catch {
       return [];
     }

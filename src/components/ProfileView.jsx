@@ -34,7 +34,16 @@ import {
   Info,
   LogOut,
   CalendarDays,
-  Bookmark
+  Bookmark,
+  Phone,
+  ExternalLink,
+  HelpCircle,
+  Upload,
+  Camera,
+  Laptop,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
 
@@ -78,12 +87,179 @@ export default function ProfileView({
   }, []);
 
   // Sub-modals for Settings
-  const [modalType, setModalType] = useState(null); // 'username' | 'coupon' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete'
+  const [modalType, setModalType] = useState(null); // 'profile_info' | 'devices' | 'about' | 'username' | 'coupon' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete'
   const [tempUsername, setTempUsername] = useState(user?.name || 'John');
   const [couponCode, setCouponCode] = useState('');
   const [feedbackText, setFeedbackText] = useState('');
   const [userRating, setUserRating] = useState(5);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // 1. Profile Info State & Handlers
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || '',
+    phone_number: user?.phone_number || '',
+    email: user?.email || '',
+    language: user?.language || 'uz',
+    specialization: user?.specialization || 'student',
+    imageFile: null,
+    imagePreview: user?.image_url || '',
+  });
+
+  const handleOpenProfileInfo = async () => {
+    setProfileForm({
+      name: user?.name || '',
+      phone_number: user?.phone_number || '',
+      email: user?.email || '',
+      language: user?.language || 'uz',
+      specialization: user?.specialization || 'student',
+      imageFile: null,
+      imagePreview: user?.image_url || '',
+    });
+    setModalType('profile_info');
+    try {
+      const fresh = await api.getUserProfile();
+      if (fresh) {
+        setProfileForm({
+          name: fresh.name || '',
+          phone_number: fresh.phone_number || '',
+          email: fresh.email || '',
+          language: fresh.language || 'uz',
+          specialization: fresh.specialization || 'student',
+          imageFile: null,
+          imagePreview: fresh.image_url || '',
+        });
+        if (onUserUpdate) onUserUpdate(fresh);
+      }
+    } catch {
+      // Keep existing data
+    }
+  };
+
+  const handleSaveProfileInfo = async (e) => {
+    if (e) e.preventDefault();
+    setSaveLoading(true);
+    try {
+      await api.updateUserProfile({
+        name: profileForm.name,
+        phone_number: profileForm.phone_number,
+        email: profileForm.email,
+        language: profileForm.language,
+        specialization: profileForm.specialization,
+        image: profileForm.imageFile,
+      });
+      showToast("✅ Profil ma'lumotlari muvaffaqiyatli saqlandi!");
+      const fresh = await api.getUserProfile().catch(() => null);
+      if (fresh && onUserUpdate) {
+        onUserUpdate(fresh);
+      } else if (onUserUpdate) {
+        onUserUpdate(prev => ({
+          ...(prev || {}),
+          ...profileForm,
+          image_url: profileForm.imagePreview || prev?.image_url,
+        }));
+      }
+      setModalType(null);
+    } catch (err) {
+      showToast("⚠️ " + (err.message || "Saqlashda xatolik yuz berdi"));
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // 2. Devices State & Handlers
+  const [deviceToken, setDeviceToken] = useState(() => {
+    return localStorage.getItem('fcm_token') || `fcm_web_${user?.id ? String(user.id).slice(0, 6) : 'user'}_${Math.random().toString(36).substring(2, 9)}`;
+  });
+  const [devicePlatform, setDevicePlatform] = useState('web');
+  const [deviceLoading, setDeviceLoading] = useState(false);
+
+  const getDeviceInfo = () => {
+    const ua = navigator.userAgent;
+    let browser = "Web Brauzer";
+    if (ua.includes("Firefox")) browser = "Firefox";
+    else if (ua.includes("SamsungBrowser")) browser = "Samsung Internet";
+    else if (ua.includes("Opera") || ua.includes("OPR")) browser = "Opera";
+    else if (ua.includes("Edge") || ua.includes("Edg")) browser = "Edge";
+    else if (ua.includes("Chrome")) browser = "Chrome";
+    else if (ua.includes("Safari")) browser = "Safari";
+
+    let os = "Desktop";
+    if (ua.includes("iPhone")) os = "iOS (iPhone)";
+    else if (ua.includes("iPad")) os = "iPadOS (iPad)";
+    else if (ua.includes("Android")) os = "Android";
+    else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "macOS";
+    else if (ua.includes("Windows")) os = "Windows";
+    else if (ua.includes("Linux")) os = "Linux";
+
+    return { browser, os };
+  };
+
+  const handleOpenDevices = () => {
+    const saved = localStorage.getItem('fcm_token');
+    if (saved) setDeviceToken(saved);
+    setModalType('devices');
+  };
+
+  const handleRegisterDevice = async () => {
+    if (!deviceToken.trim()) {
+      showToast("⚠️ Token kiriting");
+      return;
+    }
+    setDeviceLoading(true);
+    try {
+      await api.registerDevice(deviceToken.trim(), devicePlatform);
+      localStorage.setItem('fcm_token', deviceToken.trim());
+      showToast("✅ Qurilma (FCM token) ro'yxatdan o'tkazildi!");
+    } catch (err) {
+      showToast("⚠️ " + (err.message || "Qurilmani ro'yxatdan o'tkazishda xatolik"));
+    } finally {
+      setDeviceLoading(false);
+    }
+  };
+
+  const handleRemoveDevice = async () => {
+    if (!deviceToken.trim()) {
+      showToast("⚠️ Token mavjud emas");
+      return;
+    }
+    setDeviceLoading(true);
+    try {
+      await api.removeDevice(deviceToken.trim());
+      localStorage.removeItem('fcm_token');
+      showToast("🗑 Qurilma tizimdan o'chirildi!");
+    } catch (err) {
+      showToast("⚠️ " + (err.message || "O'chirishda xatolik"));
+    } finally {
+      setDeviceLoading(false);
+    }
+  };
+
+  // 3. About App State & Handlers
+  const [aboutLoading, setAboutLoading] = useState(false);
+  const [aboutList, setAboutList] = useState([]);
+  const [appRoute, setAppRoute] = useState(null);
+  const [contactList, setContactList] = useState([]);
+  const [faqList, setFaqList] = useState([]);
+  const [expandedFaq, setExpandedFaq] = useState(null);
+
+  const handleOpenAbout = () => {
+    setModalType('about');
+    setAboutLoading(true);
+    Promise.all([
+      api.getAbout().catch(() => []),
+      api.getAppRoutes().catch(() => null),
+      api.getContacts().catch(() => []),
+      api.getFaqs().catch(() => []),
+    ]).then(([abouts, routes, contacts, faqs]) => {
+      setAboutList(Array.isArray(abouts) ? abouts : (abouts?.abouts || []));
+      const routeData = routes && typeof routes === 'object' ? (routes.app_routes?.[0] || routes) : null;
+      setAppRoute(routeData);
+      setContactList(Array.isArray(contacts) ? contacts : (contacts?.contacts || []));
+      setFaqList(Array.isArray(faqs) ? faqs : (faqs?.faqs || []));
+    }).finally(() => {
+      setAboutLoading(false);
+    });
+  };
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -461,6 +637,13 @@ export default function ProfileView({
               />
               <Divider />
               <SettingsListItem
+                icon={<Sparkles size={20} color="#16A34A" strokeWidth={2} />}
+                label="AI Hisobotlar"
+                subtitle="Klinik keyslar va AI tahlillari"
+                onClick={() => onNavigate && onNavigate('ai_reports')}
+              />
+              <Divider />
+              <SettingsListItem
                 icon={<ActivityIcon size={20} color="#0F172A" strokeWidth={2} />}
                 label="Faollik"
                 onClick={() => onNavigate && onNavigate('activity')}
@@ -546,65 +729,6 @@ export default function ProfileView({
               </h1>
             </div>
 
-            {/* Purple Banner: "Get Premium / Unlimited case solving" */}
-            <div
-              id="btn-get-premium-banner"
-              onClick={() => onOpenStore ? onOpenStore() : showToast('Opening Store Tariffs...')}
-              style={{
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-                borderRadius: 24,
-                boxShadow: '0 6px 20px rgba(124, 58, 237, 0.28)',
-                padding: '18px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 16,
-                cursor: 'pointer',
-                transition: 'transform 0.15s ease',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                {/* Translucent Medal Badge */}
-                <div style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 16,
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  flexShrink: 0,
-                }}>
-                  <Award size={26} color="#FFFFFF" strokeWidth={2.2} />
-                </div>
-
-                <div>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: 800,
-                    color: '#FFFFFF',
-                    margin: '0 0 2px 0',
-                  }}>
-                    {t('settings.getPremium')}
-                  </h3>
-                  <p style={{
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: '#E9D5FF',
-                    margin: 0,
-                  }}>
-                    {t('settings.unlimitedCases')}
-                  </p>
-                </div>
-              </div>
-
-              <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.4} />
-            </div>
-
             {/* Settings Menu List */}
             <div style={{
               background: '#FFFFFF',
@@ -614,26 +738,27 @@ export default function ProfileView({
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
+              marginTop: 6,
             }}>
               <SettingsListItem
                 icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
                 label="Ma'lumot"
-                onClick={() => {
-                  setTempUsername(user?.name || '');
-                  setModalType('username');
-                }}
+                subtitle="Profil va shaxsiy ma'lumotlar"
+                onClick={handleOpenProfileInfo}
               />
               <Divider />
               <SettingsListItem
                 icon={<Smartphone size={20} color="#0F172A" strokeWidth={2} />}
                 label="Qurilmalar"
-                onClick={() => showToast('Qurilmalar')}
+                subtitle="Push-token va seanslar"
+                onClick={handleOpenDevices}
               />
               <Divider />
               <SettingsListItem
                 icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
                 label="Ilova haqida"
-                onClick={() => showToast('Ilova haqida')}
+                subtitle="Versiya, FAQ va kontaktlar"
+                onClick={handleOpenAbout}
               />
             </div>
 
@@ -780,6 +905,689 @@ export default function ProfileView({
       {/* ============================================================== */}
       {/* SUB-MODALS                                                     */}
       {/* ============================================================== */}
+
+      {/* 0A. Profile Info Modal */}
+      {modalType === 'profile_info' && (
+        <ModalOverlay onClose={() => setModalType(null)}>
+          <ModalCard title="Ma'lumotlarim va Profil" onClose={() => setModalType(null)} maxWidth={460}>
+            <form onSubmit={handleSaveProfileInfo} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              
+              {/* Avatar Photo Selector */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <div style={{ position: 'relative', width: 84, height: 84 }}>
+                  <img
+                    src={profileForm.imagePreview || user?.image_url || '/student_avatar.jpg'}
+                    alt="Profile"
+                    style={{
+                      width: 84,
+                      height: 84,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '3px solid #22C55E',
+                      boxShadow: '0 4px 12px rgba(34, 197, 94, 0.25)',
+                    }}
+                  />
+                  <label
+                    htmlFor="profile-avatar-input"
+                    title="Rasmni o'zgartirish"
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: '#16A34A',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      border: '2px solid #FFFFFF',
+                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                    }}
+                  >
+                    <Camera size={14} />
+                  </label>
+                  <input
+                    id="profile-avatar-input"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setProfileForm(prev => ({
+                          ...prev,
+                          imageFile: file,
+                          imagePreview: URL.createObjectURL(file),
+                        }));
+                      }
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>
+                  Profil rasmini yangilash
+                </span>
+              </div>
+
+              {/* Readonly Badges Strip */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 8,
+                padding: '10px 12px',
+                background: '#F8FAFC',
+                borderRadius: 16,
+                border: '1.5px solid #E2E8F0',
+                textAlign: 'center',
+              }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Daraja</div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>⭐ {user?.level || 1}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>XP</div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>⚡ {user?.xp || 0}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Tangalar</div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#F59E0B' }}>🪙 {user?.coins || 0}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Streak</div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#EA580C' }}>🔥 {user?.streak_count || 0}d</div>
+                </div>
+              </div>
+
+              {/* Ism Field */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                  Ism va familiya
+                </label>
+                <input
+                  type="text"
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ismingizni kiriting"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: '2px solid #E2E8F0',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Telefon Field */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                  Telefon raqam
+                </label>
+                <input
+                  type="tel"
+                  value={profileForm.phone_number}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, phone_number: e.target.value }))}
+                  placeholder="+998901234567"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: '2px solid #E2E8F0',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Email Field */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                  Elektron pochta (Email)
+                </label>
+                <input
+                  type="email"
+                  value={profileForm.email}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="namuna@domain.uz"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: '2px solid #E2E8F0',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Mutaxassislik Select */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                  Mutaxassislik
+                </label>
+                <select
+                  value={profileForm.specialization}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, specialization: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: '2px solid #E2E8F0',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    background: '#FFFFFF',
+                  }}
+                >
+                  <option value="student">👨‍🎓 Tibbiyot talabasi (Student)</option>
+                  <option value="resident">👨‍⚕️ Rezident / Ordinator (Resident)</option>
+                  <option value="doctor">🩺 Shifokor (Doctor)</option>
+                </select>
+              </div>
+
+              {/* Til Select */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                  Ilova tili
+                </label>
+                <select
+                  value={profileForm.language}
+                  onChange={(e) => {
+                    const nextLang = e.target.value;
+                    setProfileForm(prev => ({ ...prev, language: nextLang }));
+                    if (setLang) setLang(nextLang);
+                    if (onLangChange) onLangChange(nextLang);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: '2px solid #E2E8F0',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    background: '#FFFFFF',
+                  }}
+                >
+                  <option value="uz">🇺🇿 Oʻzbekcha</option>
+                  <option value="ru">🇷🇺 Русский</option>
+                  <option value="en">🇺🇸 English</option>
+                </select>
+              </div>
+
+              {/* User ID copy */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                background: '#F1F5F9',
+                borderRadius: 12,
+                fontSize: '12px',
+                color: '#64748B',
+              }}>
+                <span>ID: <code style={{ color: '#0F172A', fontWeight: 700 }}>{user?.id || '—'}</code></span>
+                <button
+                  type="button"
+                  onClick={handleCopyUserId}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#2563EB',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontWeight: 700,
+                    fontSize: '11px',
+                  }}
+                >
+                  <Copy size={13} /> {copiedId ? 'Nusxalandi!' : 'Nusxa olish'}
+                </button>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={saveLoading}
+                style={{
+                  width: '100%',
+                  marginTop: 6,
+                  padding: '14px',
+                  borderRadius: 16,
+                  background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                  border: '1.5px solid #16A34A',
+                  boxShadow: '0 4px 0 #15803D, 0 8px 16px rgba(34, 197, 94, 0.25)',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '15px',
+                  cursor: saveLoading ? 'default' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                {saveLoading ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} strokeWidth={3} />}
+                {saveLoading ? 'Saqlanmoqda...' : "O'zgarishlarni saqlash"}
+              </button>
+            </form>
+          </ModalCard>
+        </ModalOverlay>
+      )}
+
+      {/* 0B. Devices (FCM Push) Modal */}
+      {modalType === 'devices' && (
+        <ModalOverlay onClose={() => setModalType(null)}>
+          <ModalCard title="Qurilmalar va Push token" onClose={() => setModalType(null)} maxWidth={460}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              
+              <p style={{ fontSize: '13px', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+                Ko'p qurilmalarni boshqarish va bildirishnomalarni (FCM push-token) o'rnatish.
+              </p>
+
+              {/* Active Device Session Card */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '14px 16px',
+                background: '#F8FAFC',
+                borderRadius: 18,
+                border: '1.5px solid #E2E8F0',
+                boxShadow: '0 2px 0 #E2E8F0',
+              }}>
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  background: '#EFF6FF',
+                  color: '#2563EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Laptop size={22} strokeWidth={2.2} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {getDeviceInfo().browser} ({getDeviceInfo().os})
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }}></span>
+                    Hozir faol sessiya (Web)
+                  </div>
+                </div>
+              </div>
+
+              {/* FCM Push Token Input */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                  FCM Push Token
+                </label>
+                <input
+                  type="text"
+                  value={deviceToken}
+                  onChange={(e) => setDeviceToken(e.target.value)}
+                  placeholder="FCM token..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 14,
+                    border: '2px solid #E2E8F0',
+                    fontSize: '12px',
+                    fontFamily: 'monospace',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    background: '#FFFFFF',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Platform Selector */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                  Platforma
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {['web', 'android', 'ios'].map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setDevicePlatform(p)}
+                      style={{
+                        padding: '10px',
+                        borderRadius: 14,
+                        border: devicePlatform === p ? '2px solid #22C55E' : '1.5px solid #E2E8F0',
+                        background: devicePlatform === p ? '#F0FDF4' : '#FFFFFF',
+                        color: devicePlatform === p ? '#15803D' : '#64748B',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={handleRegisterDevice}
+                  disabled={deviceLoading}
+                  style={{
+                    padding: '12px',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                    border: '1.5px solid #16A34A',
+                    boxShadow: '0 3px 0 #15803D',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: deviceLoading ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Smartphone size={16} />
+                  {deviceLoading ? '...' : "Ro'yxatdan o'tkazish"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleRemoveDevice}
+                  disabled={deviceLoading}
+                  style={{
+                    padding: '12px',
+                    borderRadius: 14,
+                    background: '#FEE2E2',
+                    border: '1.5px solid #FCA5A5',
+                    boxShadow: '0 3px 0 #F87171',
+                    color: '#DC2626',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: deviceLoading ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Trash2 size={16} />
+                  O'chirish
+                </button>
+              </div>
+
+              {/* Info Callout */}
+              <div style={{
+                padding: '10px 14px',
+                borderRadius: 14,
+                background: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                fontSize: '12px',
+                color: '#166534',
+                lineHeight: 1.4,
+              }}>
+                💡 Push-token orqali yangi klinik keyslar, kunlik vazifalar va muhim eslatmalarni qurilmangizda qabul qilasiz.
+              </div>
+
+            </div>
+          </ModalCard>
+        </ModalOverlay>
+      )}
+
+      {/* 0C. About App Modal */}
+      {modalType === 'about' && (
+        <ModalOverlay onClose={() => setModalType(null)}>
+          <ModalCard title="Ilova haqida" onClose={() => setModalType(null)} maxWidth={480}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              
+              {/* Brand Header */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                padding: '16px 12px',
+                background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+                borderRadius: 20,
+                border: '1.5px solid #BBF7D0',
+              }}>
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  background: '#16A34A',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 6px 16px rgba(22, 163, 74, 0.3)',
+                  marginBottom: 10,
+                }}>
+                  <Sparkles size={28} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px 0' }}>
+                  TibCase Medical Simulator
+                </h3>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '3px 10px',
+                  borderRadius: 20,
+                  background: '#FFFFFF',
+                  border: '1px solid #86EFAC',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#15803D',
+                  marginBottom: 6,
+                }}>
+                  Versiya: {appRoute?.app_version?.android || '1.1.4'} (Build 2026)
+                </div>
+                <p style={{ fontSize: '13px', color: '#475569', margin: 0, maxWidth: 320 }}>
+                  Tibbiyot talabalari va amaliyotchi shifokorlar uchun interaktiv klinik vaziyatlar simulyatori.
+                </p>
+              </div>
+
+              {/* Loading State */}
+              {aboutLoading && (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: 20, color: '#16A34A' }}>
+                  <RefreshCw size={24} className="animate-spin" />
+                </div>
+              )}
+
+              {/* Biz haqimizda items from API */}
+              {!aboutLoading && aboutList.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    Biz haqimizda
+                  </h4>
+                  {aboutList.map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      style={{
+                        padding: '14px',
+                        background: '#F8FAFC',
+                        borderRadius: 16,
+                        border: '1.5px solid #E2E8F0',
+                      }}
+                    >
+                      <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                        {item.title}
+                      </h5>
+                      <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                        {item.description}
+                      </p>
+                      {item.link_url && (
+                        <a
+                          href={item.link_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            marginTop: 8,
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            color: '#2563EB',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          Batafsil <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Support & Call Center */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                  Aloqa va Qo'llab-quvvatlash
+                </h4>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <a
+                    href={`tel:${appRoute?.call_center || '+998712000000'}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '12px',
+                      borderRadius: 14,
+                      background: '#F0FDF4',
+                      border: '1.5px solid #BBF7D0',
+                      color: '#15803D',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <Phone size={16} />
+                    Call-center
+                  </a>
+
+                  <a
+                    href={appRoute?.support_url || 'https://t.me/tibcase_support'}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '12px',
+                      borderRadius: 14,
+                      background: '#EFF6FF',
+                      border: '1.5px solid #BFDBFE',
+                      color: '#2563EB',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <MessageCircle size={16} />
+                    Yordam
+                  </a>
+                </div>
+
+                {/* Additional contacts list if available */}
+                {contactList.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                    {contactList.map((c, cIdx) => (
+                      <div
+                        key={c.id || cIdx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          background: '#F8FAFC',
+                          borderRadius: 12,
+                          border: '1px solid #E2E8F0',
+                          fontSize: '13px',
+                        }}
+                      >
+                        <span style={{ fontWeight: 700, color: '#0F172A' }}>{c.name}</span>
+                        {c.phone_number && (
+                          <a href={`tel:${c.phone_number}`} style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
+                            {c.phone_number}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* FAQ Accordion */}
+              {faqList.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <HelpCircle size={16} color="#2563EB" /> Tez-tez beriladigan savollar
+                  </h4>
+                  {faqList.map((faq, fIdx) => (
+                    <div
+                      key={faq.id || fIdx}
+                      onClick={() => setExpandedFaq(expandedFaq === fIdx ? null : fIdx)}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 14,
+                        background: '#F8FAFC',
+                        border: '1.5px solid #E2E8F0',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                          {faq.question}
+                        </span>
+                        {expandedFaq === fIdx ? <ChevronUp size={16} color="#64748B" /> : <ChevronDown size={16} color="#64748B" />}
+                      </div>
+                      {expandedFaq === fIdx && (
+                        <p style={{ fontSize: '13px', color: '#475569', marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+                          {faq.answer}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            </div>
+          </ModalCard>
+        </ModalOverlay>
+      )}
 
       {/* 1. Change Username Modal */}
       {modalType === 'username' && (
@@ -1191,18 +1999,20 @@ function ModalOverlay({ children, onClose }) {
   );
 }
 
-function ModalCard({ title, children, onClose }) {
+function ModalCard({ title, children, onClose, maxWidth = 420 }) {
   return (
     <div
       onClick={(e) => e.stopPropagation()}
       style={{
         width: '100%',
-        maxWidth: 400,
+        maxWidth,
+        maxHeight: '88vh',
+        overflowY: 'auto',
         background: '#FFFFFF',
         borderRadius: 24,
         border: '2px solid #E2E8F0',
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
-        padding: 24,
+        padding: '22px 20px',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
