@@ -20,7 +20,7 @@ export default function BottomNavBar({
   ];
 
   return (
-    <nav style={{
+    <nav className="bottom-nav-mobile" style={{
       position: 'fixed',
       bottom: 0,
       left: 0,

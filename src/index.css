@@ -254,3 +254,22 @@ input, select, textarea {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* Mobile Bottom Nav (hidden on tablet and laptop >= 768px) */
+.bottom-nav-mobile {
+  display: flex !important;
+}
+@media (min-width: 768px) {
+  .bottom-nav-mobile {
+    display: none !important;
+  }
+}
+
+/* Drawer Slide In Animation */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.drawer-slide-in {
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import {
   Activity,
   Award,
-  BookOpen,
+  Building2,
   ChevronDown,
   Coins,
   Flame,
   Globe,
+  HeartPulse,
   LogOut,
   Menu,
   Shield,
@@ -15,7 +16,8 @@ import {
   Volume2,
   VolumeX,
   X,
-  Zap
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import { getSoundEnabled, setSoundEnabled } from '../audio';
 
@@ -28,12 +30,10 @@ export default function AppNavbar({
   onLogout,
   lang,
   onLangChange,
-  activeMode,
-  setActiveMode
 }) {
   const [soundOn, setSoundOn] = useState(getSoundEnabled());
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -41,36 +41,47 @@ export default function AppNavbar({
     setSoundEnabled(next);
   };
 
+  // The 5 menu items from the bottom navigation
   const navItems = [
-    { id: 'cases', label: 'Klinik Keyslar', icon: BookOpen },
-    { id: 'simulation', label: 'Simulyatsiya', icon: Stethoscope, badge: activeCase ? 'Faol' : null },
-    { id: 'store', label: 'Tariflar & Do\'kon', icon: Coins },
-    { id: 'leaderboard', label: 'Reyting', icon: Award },
+    { id: 'cases', label: 'Home', subtitle: 'Klinik keyslar katalogi', icon: Building2 },
+    { id: 'simulation', label: 'Simulation', subtitle: 'Interaktiv simulyatsiya', icon: HeartPulse, badge: activeCase ? 'Faol' : null },
+    { id: 'clinics', label: 'Clinics', subtitle: 'Bo\'limlar & Klinika', icon: Stethoscope },
+    { id: 'leaderboard', label: 'Ranking', subtitle: 'Peshqadamlar reytingi', icon: Award },
+    { id: 'profile', label: 'Profile', subtitle: 'Mening profilim & Sozlamalar', icon: User },
   ];
 
+  const handleSelectNav = (id) => {
+    if (id === 'profile' && onOpenProfile) {
+      onOpenProfile();
+    } else {
+      setCurrentView(id);
+    }
+    setDrawerOpen(false);
+  };
+
   return (
-    <header style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 50,
-      background: 'rgba(6, 11, 20, 0.92)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(56, 189, 248, 0.15)',
-      padding: '0 20px',
-    }}>
-      <div style={{
-        maxWidth: 1380,
-        margin: '0 auto',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: 72,
+    <>
+      <header style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        background: 'rgba(6, 11, 20, 0.94)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(56, 189, 248, 0.15)',
+        padding: '0 20px',
       }}>
-        {/* Brand Logo & Mode Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{
+          maxWidth: 1380,
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: 70,
+        }}>
+          {/* Brand Logo (Left) */}
           <div
-            onClick={() => setCurrentView('cases')}
+            onClick={() => handleSelectNav('cases')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -114,340 +125,511 @@ export default function AppNavbar({
             </div>
           </div>
 
-          {/* Mode Pill (Clinical vs Citizen) */}
-          <div className="desktop-nav" style={{
-            display: 'flex',
-            background: 'rgba(15, 23, 42, 0.7)',
-            padding: 3,
-            borderRadius: 99,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-          }}>
-            <button
-              onClick={() => setActiveMode('clinical')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                borderRadius: 99,
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                background: activeMode === 'clinical' ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
-                color: activeMode === 'clinical' ? '#38bdf8' : 'var(--text-muted)',
-              }}
-            >
-              <Stethoscope size={14} />
-              <span>Shifokorlar</span>
-            </button>
-            <button
-              onClick={() => setActiveMode('citizen')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 14px',
-                borderRadius: 99,
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                background: activeMode === 'citizen' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
-                color: activeMode === 'citizen' ? '#34d399' : 'var(--text-muted)',
-              }}
-            >
-              <Shield size={14} />
-              <span>Birinchi Yordam</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Workspace Main Navigation */}
-        <nav style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-        }} className="desktop-nav">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentView(item.id)}
+          {/* Right Section: Stats, Quick Tools, and Hamburger Menu Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* User Stats Pill */}
+            <div className="stats-bar" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              background: 'rgba(15, 23, 42, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '4px 12px',
+              borderRadius: 99,
+            }}>
+              <div
+                onClick={() => handleSelectNav('store')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 16px',
-                  borderRadius: 10,
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: isActive ? '#38bdf8' : 'var(--text-secondary)',
-                  background: isActive ? 'rgba(6, 182, 212, 0.12)' : 'transparent',
-                  border: isActive ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                  position: 'relative',
+                  gap: 5,
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#fbbf24',
+                  cursor: 'pointer',
                 }}
+                title="Tangalar balansi"
               >
-                <Icon size={18} color={isActive ? '#38bdf8' : 'var(--text-muted)'} />
-                <span>{item.label}</span>
-                {item.badge && (
-                  <span style={{
-                    background: 'var(--accent-rose)',
-                    color: '#fff',
-                    fontSize: '0.65rem',
-                    padding: '1px 6px',
-                    borderRadius: 99,
-                    fontWeight: 700,
-                  }}>
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+                <Coins size={15} color="#fbbf24" />
+                <span>{user?.coins ?? 15}</span>
+              </div>
 
-        {/* Right Section: Stats & User controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* User Stats Pill */}
-          <div className="stats-bar" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            background: 'rgba(15, 23, 42, 0.7)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '4px 12px',
-            borderRadius: 99,
-          }}>
-            <div
-              onClick={() => setCurrentView('store')}
+              <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)' }} />
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#f97316',
+                }}
+                title="Ketma-ketlik (Streak)"
+              >
+                <Flame size={15} color="#f97316" />
+                <span>{user?.streak_count ?? 5}</span>
+              </div>
+
+              <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)' }} />
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#34d399',
+                }}
+                title="Daraja"
+              >
+                <Zap size={14} color="#34d399" />
+                <span>Lvl {user?.level ?? 1}</span>
+              </div>
+            </div>
+
+            {/* Sound Toggle */}
+            <button
+              onClick={toggleSound}
+              title={soundOn ? "Monitor tovushini o'chirish" : "Monitor tovushini yoqish"}
               style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                color: '#fbbf24',
+                justifyContent: 'center',
+                background: soundOn ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                border: soundOn ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                color: soundOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
                 cursor: 'pointer',
               }}
-              title="Tangalar balansi"
             >
-              <Coins size={15} color="#fbbf24" />
-              <span>{user?.coins ?? 15}</span>
+              {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
+
+            {/* Language Selector */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setLangMenuOpen(!langMenuOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <Globe size={15} />
+                <span>{lang ? lang.toUpperCase() : 'UZ'}</span>
+                <ChevronDown size={14} />
+              </button>
+
+              {langMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  background: '#0d1527',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  borderRadius: 10,
+                  padding: 4,
+                  minWidth: 120,
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                  zIndex: 60,
+                }}>
+                  {[
+                    { code: 'uz', label: "O'zbekcha" },
+                    { code: 'ru', label: "Русский" },
+                    { code: 'en', label: "English" }
+                  ].map((item) => (
+                    <button
+                      key={item.code}
+                      onClick={() => {
+                        if (onLangChange) onLangChange(item.code);
+                        setLangMenuOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 12px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        color: lang === item.code ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                        background: lang === item.code ? 'rgba(6, 182, 212, 0.1)' : 'transparent',
+                        borderRadius: 6,
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)' }} />
-
-            <div
+            {/* Profile Avatar Pill */}
+            <button
+              onClick={() => handleSelectNav('profile')}
+              title="Profilga o'tish"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 8,
+                padding: '5px 10px',
+                borderRadius: 10,
+                background: currentView === 'profile'
+                  ? 'rgba(34, 197, 94, 0.18)'
+                  : 'rgba(255, 255, 255, 0.05)',
+                border: currentView === 'profile'
+                  ? '1.5px solid #22c55e'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
+                color: 'var(--text-primary)',
                 fontSize: '0.85rem',
-                fontWeight: 700,
-                color: '#f97316',
+                fontWeight: 600,
+                cursor: 'pointer',
               }}
-              title="Ketma-ketlik (Streak)"
             >
-              <Flame size={15} color="#f97316" />
-              <span>{user?.streak_count ?? 5}</span>
-            </div>
-
-            <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)' }} />
-
-            <div
-              style={{
+              <div style={{
+                width: 26,
+                height: 26,
+                borderRadius: '50%',
+                background: '#FDE047',
+                border: '1.5px solid #FEF08A',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                color: '#34d399',
+                justifyContent: 'center',
+                color: '#854D0E',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                overflow: 'hidden',
+              }}>
+                <img
+                  src="/student_avatar.jpg"
+                  alt="avatar"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+              <span className="profile-name-text">
+                {user?.name?.split(' ')[0] || 'John'}
+              </span>
+            </button>
+
+            {/* HAMBURGER MENU BUTTON (Prominent for Laptop, Tablet, Desktop) */}
+            <button
+              id="btn-hamburger-menu"
+              onClick={() => setDrawerOpen(true)}
+              title="Menyu"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
-              title="Daraja"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              }}
             >
-              <Zap size={14} color="#34d399" />
-              <span>Lvl {user?.level ?? 1}</span>
-            </div>
+              <Menu size={22} strokeWidth={2.4} />
+            </button>
           </div>
+        </div>
+      </header>
 
-          {/* Sound Toggle */}
-          <button
-            onClick={toggleSound}
-            title={soundOn ? "Monitor tovushini o'chirish" : "Monitor tovushini yoqish"}
+      {/* ========================================================= */}
+      {/* HAMBURGER MENU DRAWER (Laptop, Tablet, Mobile)            */}
+      {/* ========================================================= */}
+      {drawerOpen && (
+        <div
+          onClick={() => setDrawerOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(4, 9, 20, 0.7)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            zIndex: 100,
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <div
+            className="drawer-slide-in"
+            onClick={(e) => e.stopPropagation()}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
+              width: '100%',
+              maxWidth: 360,
+              height: '100%',
+              background: '#0d1627',
+              borderLeft: '1px solid rgba(56, 189, 248, 0.2)',
+              boxShadow: '-10px 0 35px rgba(0, 0, 0, 0.6)',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: soundOn ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-              border: soundOn ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
-              color: soundOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              padding: '24px 20px',
             }}
           >
-            {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
-          </button>
+            {/* Drawer Header: User Profile Summary & Close */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingBottom: 20,
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              marginBottom: 16,
+            }}>
+              <div
+                onClick={() => handleSelectNav('profile')}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+              >
+                <div style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: '#FDE047',
+                  border: '2px solid #FEF08A',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <img
+                    src="/student_avatar.jpg"
+                    alt="avatar"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff' }}>
+                    {user?.name || 'John'}
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    {user?.specialty || 'Medical Student'}
+                  </div>
+                </div>
+              </div>
 
-          {/* Language Selector */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setLangMenuOpen(!langMenuOpen)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '6px 10px',
-                borderRadius: 8,
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-              }}
-            >
-              <Globe size={14} />
-              <span>{lang?.toUpperCase() || 'UZ'}</span>
-              <ChevronDown size={14} />
-            </button>
-            {langMenuOpen && (
+              {/* Close Drawer Button */}
+              <button
+                onClick={() => setDrawerOpen(false)}
+                title="Yopish"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Navigation Menu Items (5 items from bottom bar) */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              flex: 1,
+              overflowY: 'auto',
+            }}>
               <div style={{
-                position: 'absolute',
-                right: 0,
-                top: 40,
-                background: '#0e172a',
-                border: '1px solid var(--border-color)',
-                borderRadius: 10,
-                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                minWidth: 100,
-                overflow: 'hidden',
-                zIndex: 60,
+                fontSize: '11px',
+                fontWeight: 800,
+                color: 'var(--text-muted)',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                padding: '4px 8px',
               }}>
-                {['uz', 'ru', 'en'].map(code => (
+                Asosiy Menyu
+              </div>
+
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentView === item.id;
+
+                return (
                   <button
-                    key={code}
-                    onClick={() => {
-                      onLangChange(code);
-                      setLangMenuOpen(false);
-                    }}
+                    key={item.id}
+                    id={`drawer-item-${item.id}`}
+                    onClick={() => handleSelectNav(item.id)}
                     style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '8px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      padding: '12px 16px',
+                      borderRadius: 14,
+                      background: isActive
+                        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.12))'
+                        : 'transparent',
+                      border: isActive
+                        ? '1.5px solid rgba(34, 197, 94, 0.4)'
+                        : '1px solid transparent',
+                      cursor: 'pointer',
                       textAlign: 'left',
-                      fontSize: '0.85rem',
-                      color: lang === code ? '#38bdf8' : 'var(--text-primary)',
-                      background: lang === code ? 'rgba(6,182,212,0.1)' : 'transparent',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'transparent';
                     }}
                   >
-                    {code === 'uz' ? "O'zbekcha" : code === 'ru' ? "Русский" : "English"}
+                    {/* Icon container */}
+                    <div style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      background: isActive ? '#DCFCE7' : 'rgba(255, 255, 255, 0.05)',
+                      border: isActive ? '1.5px solid #86EFAC' : '1px solid rgba(255, 255, 255, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isActive ? '#16A34A' : 'var(--text-muted)',
+                      flexShrink: 0,
+                    }}>
+                      <Icon size={20} strokeWidth={2.4} />
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: '15px',
+                        fontWeight: 700,
+                        color: isActive ? '#4ade80' : '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}>
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span style={{
+                            background: '#f43f5e',
+                            color: '#fff',
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: 99,
+                          }}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
+                        {item.subtitle}
+                      </div>
+                    </div>
                   </button>
-                ))}
+                );
+              })}
+
+              {/* Extra item: Store & Tariffs */}
+              <button
+                onClick={() => handleSelectNav('store')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: '12px 16px',
+                  borderRadius: 14,
+                  background: currentView === 'store'
+                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.12))'
+                    : 'transparent',
+                  border: currentView === 'store'
+                    ? '1.5px solid rgba(139, 92, 246, 0.4)'
+                    : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  marginTop: 6,
+                }}
+              >
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: 'rgba(139, 92, 246, 0.15)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#c084fc',
+                  flexShrink: 0,
+                }}>
+                  <Sparkles size={20} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+                    Tariflar & Do'kon
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Premium & tangalar xaridi
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Drawer Footer: Logout */}
+            {onLogout && (
+              <div style={{
+                paddingTop: 16,
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                marginTop: 12,
+              }}>
+                <button
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    onLogout();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: 12,
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    color: '#f87171',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <LogOut size={18} />
+                  <span>Tizimdan chiqish</span>
+                </button>
               </div>
             )}
           </div>
-
-          {/* Profile Trigger */}
-          <button
-            onClick={onOpenProfile}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 12px',
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(37,99,235,0.15))',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
-              color: 'var(--text-primary)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-            }}
-          >
-            <div style={{
-              width: 26,
-              height: 26,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-            }}>
-              {user?.name ? user.name[0] : 'D'}
-            </div>
-            <span className="profile-name-text">
-              {user?.name?.split(' ')[0] || 'Shifokor'}
-            </span>
-          </button>
-
-          {/* Logout Button */}
-          <button
-            onClick={onLogout}
-            title="Chiqish"
-            style={{
-              padding: 8,
-              borderRadius: 8,
-              background: 'rgba(244, 63, 94, 0.1)',
-              border: '1px solid rgba(244, 63, 94, 0.2)',
-              color: '#fb7185',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <LogOut size={16} />
-          </button>
-
-          {/* Mobile Menu */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="mobile-menu-btn"
-            style={{ padding: 6, color: '#fff' }}
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div style={{
-          padding: '14px 0 18px',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-        }}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setCurrentView(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  fontSize: '0.92rem',
-                  fontWeight: 600,
-                  color: isActive ? '#38bdf8' : 'var(--text-secondary)',
-                  background: isActive ? 'rgba(6, 182, 212, 0.12)' : 'transparent',
-                }}
-              >
-                <Icon size={18} color={isActive ? '#38bdf8' : 'var(--text-muted)'} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
         </div>
       )}
-    </header>
+    </>
   );
 }
