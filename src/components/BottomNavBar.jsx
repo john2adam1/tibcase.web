@@ -13,8 +13,7 @@ export default function BottomNavBar({
 }) {
   const tabs = [
     { id: 'cases', label: 'Home', icon: Building2 },
-    { id: 'simulation', label: 'Simulation', icon: HeartPulse },
-    { id: 'clinics', label: 'Clinics', icon: Stethoscope },
+    { id: 'clinics', label: 'Category', icon: Stethoscope },
     { id: 'leaderboard', label: 'Ranking', icon: Award },
     { id: 'profile', label: 'Profile', icon: User },
   ];

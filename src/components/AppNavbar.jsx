@@ -41,11 +41,10 @@ export default function AppNavbar({
     setSoundEnabled(next);
   };
 
-  // The 5 menu items from the bottom navigation
+  // The menu items for navigation
   const navItems = [
     { id: 'cases', label: 'Home', subtitle: 'Klinik keyslar katalogi', icon: Building2 },
-    { id: 'simulation', label: 'Simulation', subtitle: 'Interaktiv simulyatsiya', icon: HeartPulse, badge: activeCase ? 'Faol' : null },
-    { id: 'clinics', label: 'Clinics', subtitle: 'Bo\'limlar & Klinika', icon: Stethoscope },
+    { id: 'clinics', label: 'Category', subtitle: "Bo'limlar & Kategoriyalar", icon: Stethoscope },
     { id: 'leaderboard', label: 'Ranking', subtitle: 'Peshqadamlar reytingi', icon: Award },
     { id: 'profile', label: 'Profile', subtitle: 'Mening profilim & Sozlamalar', icon: User },
   ];
@@ -548,50 +547,6 @@ export default function AppNavbar({
                   </button>
                 );
               })}
-
-              {/* Extra item: Store & Tariffs */}
-              <button
-                onClick={() => handleSelectNav('store')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                  padding: '12px 16px',
-                  borderRadius: 14,
-                  background: currentView === 'store'
-                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.12))'
-                    : 'transparent',
-                  border: currentView === 'store'
-                    ? '1.5px solid rgba(139, 92, 246, 0.4)'
-                    : '1px solid transparent',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  marginTop: 6,
-                }}
-              >
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  background: 'rgba(139, 92, 246, 0.15)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#c084fc',
-                  flexShrink: 0,
-                }}>
-                  <Sparkles size={20} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
-                    Tariflar & Do'kon
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
-                    Premium & tangalar xaridi
-                  </div>
-                </div>
-              </button>
             </div>
 
             {/* Drawer Footer: Logout */}
