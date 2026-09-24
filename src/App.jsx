@@ -8,6 +8,8 @@ import DebriefModal from './components/DebriefModal';
 import StoreTariffs from './components/StoreTariffs';
 import Leaderboard from './components/Leaderboard';
 import ProfileModal from './components/ProfileModal';
+import ProfileView from './components/ProfileView';
+import BottomNavBar from './components/BottomNavBar';
 import CaseDetailModal from './components/CaseDetailModal';
 import AuthModal from './components/AuthModal';
 
@@ -219,7 +221,7 @@ export default function App() {
         setCurrentView={setCurrentView}
         user={user}
         activeCase={activeCase}
-        onOpenProfile={() => setProfileModalOpen(true)}
+        onOpenProfile={() => setCurrentView('profile')}
         onLogout={handleLogout}
         lang={lang}
         onLangChange={handleLangChange}
@@ -269,6 +271,30 @@ export default function App() {
         {/* Leaderboard View */}
         {currentView === 'leaderboard' && (
           <Leaderboard user={user} />
+        )}
+
+        {/* Profile & Settings View (Figma mobile design) */}
+        {currentView === 'profile' && (
+          <ProfileView
+            user={user}
+            onUserUpdate={setUser}
+            onOpenStore={() => setCurrentView('store')}
+            onNavigate={(view) => setCurrentView(view)}
+            lang={lang}
+            onLangChange={handleLangChange}
+            onLogout={handleLogout}
+          />
+        )}
+
+        {/* Clinics Catalog View */}
+        {currentView === 'clinics' && (
+          <CasesCatalog
+            cases={cases}
+            categories={categories}
+            onSelectCase={(item) => setSelectedDetailCase(item)}
+            onToggleFavorite={handleToggleFavorite}
+            onStartSimulation={handleStartSimulation}
+          />
         )}
       </main>
 
@@ -345,10 +371,15 @@ export default function App() {
           <div>© 2026 <strong>TibCase AI</strong>. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.</div>
           <div style={{ display: 'flex', gap: 20 }}>
             <span>AHA & ESC Standartlari</span>
-            <span>Gemini AI Core</span>
           </div>
         </div>
       </footer>
+
+      {/* Bottom Navigation Bar matching Figma design */}
+      <BottomNavBar
+        currentView={currentView}
+        onSelectView={(view) => setCurrentView(view)}
+      />
     </div>
   );
 }
