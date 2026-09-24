@@ -4,6 +4,7 @@ import LandingPage from './components/LandingPage';
 import AppNavbar from './components/AppNavbar';
 import CasesCatalog from './components/CasesCatalog';
 import SimulationRoom from './components/SimulationRoom';
+import CaseSimulationRoom from './components/CaseSimulationRoom';
 import DebriefModal from './components/DebriefModal';
 import StoreTariffs from './components/StoreTariffs';
 import Leaderboard from './components/Leaderboard';
@@ -253,20 +254,12 @@ export default function App() {
           />
         )}
 
-        {/* Live Simulation Room View */}
+        {/* Live Interactive Case Simulation Room (Figma exact UI) */}
         {currentView === 'simulation' && (
-          <SimulationRoom
-            caseItem={activeCase || cases[0] || {
-              id: 'stemi-1',
-              title: "Shoshilinch Kardiologiya / O'tkir Koronar Sindrom",
-              subtitle: "62 yoshli bemor ko'krak sohasidagi kuchli og'riq bilan",
-              category_name: "Kardiologiya",
-              patient_gender: "male",
-              patient_age: 62,
-              chief_complaint: "62 yoshli erkak bemor shoshilinch qabul bo'limiga olib kelindi. Ko'krak qafasi ortidagi bosuvchi, chap qo'lga uzatiluvchi kuchli og'riq va sovuq ter bosishi mavjud."
-            }}
-            onExitSimulation={() => setCurrentView('cases')}
-            onFinishSimulation={handleFinishSimulation}
+          <CaseSimulationRoom
+            caseItem={activeCase || cases[0]}
+            onExitSimulation={() => setCurrentView('roadmap')}
+            onFinishCase={handleFinishSimulation}
           />
         )}
 
