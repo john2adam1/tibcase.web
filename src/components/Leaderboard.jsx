@@ -33,22 +33,23 @@ export default function Leaderboard({ user }) {
     return () => { mounted = false; };
   }, [filterType]);
 
-  const items = leaderboard?.items || [
-    { rank: 1, name: "Dr. Sardorbek Qodirov", xp: 1450, level: 7, streak_count: 14, cases_solved: 38 },
-    { rank: 2, name: "Dilnoza Olimova", xp: 1120, level: 6, streak_count: 11, cases_solved: 29 },
-    { rank: 3, name: "Javohir Toshpulatov", xp: 980, level: 5, streak_count: 8, cases_solved: 24 },
-    { rank: 4, name: "Dr. Malika Rahimova", xp: 740, level: 4, streak_count: 6, cases_solved: 19 },
-    { rank: 5, name: "Ulug'bek Nazarov", xp: 580, level: 4, streak_count: 5, cases_solved: 15 }
-  ];
+  const items = leaderboard?.items || [];
+  const me = leaderboard?.me || null;
 
-  const me = leaderboard?.me || {
-    rank: 4,
-    name: user?.name || "Dr. Akmal Karimov",
-    xp: user?.xp || 630,
-    level: user?.level || 1,
-    streak_count: user?.streak_count || 5,
-    cases_solved: 8
-  };
+  if (loading) {
+    return (
+      <div style={{
+        width: '100%', minHeight: '85vh', background: '#F8FAFC',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+      }}>
+        <div style={{ textAlign: 'center', color: '#94A3B8' }}>
+          <Trophy size={40} style={{ marginBottom: 12, opacity: 0.5 }} />
+          <p style={{ fontWeight: 700 }}>{t('lead.title')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -164,13 +165,12 @@ export default function Leaderboard({ user }) {
                 {items[1].name.charAt(0)}
               </div>
               <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[1].name}</div>
-              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Lvl {items[1].level}</div>
               <div style={{
                 fontSize: '16px',
                 fontWeight: 900,
                 color: '#16A34A',
               }}>
-                {items[1].xp} XP
+                {items[1].activity} {t('lead.casesSolved')}
               </div>
             </div>
           )}
@@ -205,13 +205,12 @@ export default function Leaderboard({ user }) {
                 {items[0].name.charAt(0)}
               </div>
               <div style={{ fontWeight: 900, fontSize: '15px', color: '#0F172A', marginBottom: 2 }}>{items[0].name}</div>
-              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Lvl {items[0].level}</div>
               <div style={{
                 fontSize: '18px',
                 fontWeight: 900,
                 color: '#D97706',
               }}>
-                {items[0].xp} XP
+                {items[0].activity} {t('lead.casesSolved')}
               </div>
             </div>
           )}
@@ -244,19 +243,18 @@ export default function Leaderboard({ user }) {
                 {items[2].name.charAt(0)}
               </div>
               <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[2].name}</div>
-              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Lvl {items[2].level}</div>
               <div style={{
                 fontSize: '16px',
                 fontWeight: 900,
                 color: '#16A34A',
               }}>
-                {items[2].xp} XP
+                {items[2].activity} {t('lead.casesSolved')}
               </div>
             </div>
           )}
         </div>
 
-        {/* My Position Highlight Bar */}
+        {me && (
         <div style={{
           background: '#DCFCE7',
           border: '1.5px solid #86EFAC',
@@ -287,7 +285,7 @@ export default function Leaderboard({ user }) {
                 {me.name} {t('lead.you')}
               </div>
               <div style={{ fontSize: '12px', color: '#15803D' }}>
-                Lvl {me.level} • {me.cases_solved} {t('lead.casesSolved')}
+                {me.activity} {t('lead.casesSolved')}
               </div>
             </div>
           </div>
@@ -296,9 +294,10 @@ export default function Leaderboard({ user }) {
             fontWeight: 900,
             color: '#166534',
           }}>
-            {me.xp} XP
+            #{me.rank}
           </div>
         </div>
+        )}
 
         {/* Rankings Table/List */}
         <div style={{
@@ -334,7 +333,7 @@ export default function Leaderboard({ user }) {
                     {item.name}
                   </div>
                   <div style={{ fontSize: '12px', color: '#64748B' }}>
-                    Lvl {item.level} • {item.cases_solved} {t('lead.casesSolved')}
+                    {item.activity} {t('lead.casesSolved')}
                   </div>
                 </div>
               </div>
@@ -342,9 +341,9 @@ export default function Leaderboard({ user }) {
               <div style={{
                 fontSize: '14px',
                 fontWeight: 900,
-                color: '#16A34A',
+                color: item.is_me ? '#166534' : '#16A34A',
               }}>
-                {item.xp} XP
+                {item.activity}
               </div>
             </div>
           ))}

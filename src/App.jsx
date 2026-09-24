@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api, getLang, setLang } from './api';
+import { api, getLang, setLang, setToken, setRefreshToken, setStoredUser } from './api';
 import LandingPage from './components/LandingPage';
 import AppNavbar from './components/AppNavbar';
 import CasesCatalog from './components/CasesCatalog';
@@ -41,6 +41,9 @@ export default function App() {
   const [faqs, setFaqs] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [abouts, setAbouts] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [userLimit, setUserLimit] = useState(null);
 
   // Active Simulation states
   const [activeCase, setActiveCase] = useState(null);
@@ -81,14 +84,22 @@ export default function App() {
           casesData,
           tariffsData,
           partnersData,
-          faqsData
+          faqsData,
+          aboutsData,
+          contactsData,
+          bannersData,
+          limitData,
         ] = await Promise.all([
           api.getUserProfile().catch(() => null),
           api.getCategories().catch(() => []),
           api.getCases().catch(() => []),
           api.getTariffs().catch(() => []),
           api.getPartners().catch(() => []),
-          api.getFaqs().catch(() => [])
+          api.getFaqs().catch(() => []),
+          api.getAbout().catch(() => []),
+          api.getContacts().catch(() => []),
+          api.getBanners().catch(() => []),
+          api.getUserLimit().catch(() => null),
         ]);
 
         if (isMounted) {
@@ -98,6 +109,10 @@ export default function App() {
           if (tariffsData) setTariffs(tariffsData);
           if (partnersData) setPartners(partnersData);
           if (faqsData) setFaqs(faqsData);
+          if (aboutsData) setAbouts(aboutsData);
+          if (contactsData) setContacts(contactsData);
+          if (bannersData) setBanners(bannersData);
+          if (limitData) setUserLimit(limitData);
         }
       } catch (err) {
         console.warn('Initial load handled:', err.message);
@@ -110,20 +125,34 @@ export default function App() {
   }, [lang]);
 
   // Auth Handlers
-  const handleLoginSuccess = (loggedInUser) => {
+  const handleLoginSuccess = async (loggedInUser) => {
     setUser(loggedInUser);
+    setStoredUser(loggedInUser);
     setIsAuthenticated(true);
     localStorage.setItem('tibcase_authenticated', 'true');
     setCurrentView('cases');
-    showToast(`Xush kelibsiz, ${loggedInUser.name}!`);
+    showToast(`Xush kelibsiz, ${loggedInUser.name || ''}!`);
+
+    // Refresh full profile from API
+    try {
+      const freshProfile = await api.getUserProfile();
+      if (freshProfile) {
+        setUser(freshProfile);
+        setStoredUser(freshProfile);
+      }
+    } catch { /* use whatever came from login */ }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('tibcase_authenticated');
+    setToken(null);
+    setRefreshToken(null);
+    setStoredUser(null);
+    setUser(null);
     setActiveCase(null);
     setProfileModalOpen(false);
-    showToast("Tizimdan chiqildi");
+    showToast(t('settings.logOut') + ' ✓');
   };
 
   // Simulation Triggers

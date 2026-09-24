@@ -11,15 +11,18 @@ import {
   X,
   Zap
 } from 'lucide-react';
-import { api, setStoredUser, setToken } from '../api';
+import { api, setStoredUser, setToken, setRefreshToken } from '../api';
+import { useTranslation } from '../i18n.jsx';
 
 export default function AuthModal({
   isOpen,
   onClose,
   onLoginSuccess,
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState('input'); // 'input' | 'otp'
-  const [identifier, setIdentifier] = useState('+998 90 123 45 67');
+  const [identifier, setIdentifier] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -33,11 +36,13 @@ export default function AuthModal({
     setLoading(true);
     setErrorMsg('');
     try {
-      await api.sendOtp(identifier.trim(), 'phone');
+      // First check if user exists
+      await api.checkUser(identifier.trim());
+      // Then send OTP
+      await api.sendOtp(identifier.trim(), identifier.includes('@') ? 'email' : 'phone');
       setStep('otp');
     } catch (err) {
-      // In dev or demo mode, advance to OTP step smoothly
-      setStep('otp');
+      setErrorMsg(err.message || t('auth.sendError'));
     } finally {
       setLoading(false);
     }
@@ -49,122 +54,172 @@ export default function AuthModal({
     setErrorMsg('');
 
     try {
-      const res = await api.confirmOtp(identifier.trim(), code.trim(), '', 'phone');
+      const type = identifier.includes('@') ? 'email' : 'phone';
+      const res = await api.confirmOtp(identifier.trim(), code.trim(), referralCode.trim(), type);
+
+      // Store tokens
       if (res?.access_token) {
         setToken(res.access_token);
       }
-      const userObj = {
-        name: "Dr. Akmal Karimov",
-        phone_number: identifier,
-        level: 3,
-        xp: 320,
-        coins: 15,
-        streak_count: 5
-      };
-      setStoredUser(userObj);
-      onLoginSuccess(userObj);
+      if (res?.refresh_token) {
+        setRefreshToken(res.refresh_token);
+      }
+
+      // Fetch real user profile
+      try {
+        const profile = await api.getUserProfile();
+        setStoredUser(profile);
+        onLoginSuccess(profile);
+      } catch {
+        // If profile fetch fails, use basic info from the response
+        const basicUser = {
+          id: res?.id || '',
+          name: '',
+          phone_number: identifier,
+          role: res?.role || 'user',
+        };
+        setStoredUser(basicUser);
+        onLoginSuccess(basicUser);
+      }
       onClose();
-    } catch {
-      // Fallback demo user login
-      const demoUser = {
-        name: "Dr. Akmal Karimov",
-        phone_number: identifier,
-        level: 3,
-        xp: 320,
-        coins: 15,
-        streak_count: 5
-      };
-      setStoredUser(demoUser);
-      onLoginSuccess(demoUser);
-      onClose();
+    } catch (err) {
+      setErrorMsg(err.message || t('auth.confirmError'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOneClickDemo = () => {
-    const demoDoctor = {
-      name: "Dr. Akmal Karimov",
-      specialization: "Shifokor-ordinant • Shoshilinch tibbiyot",
-      email: "akmal.doc@tibcase.uz",
-      phone_number: "+998 90 123 45 67",
-      level: 3,
-      xp: 320,
-      coins: 15,
-      streak_count: 5
-    };
-    setStoredUser(demoDoctor);
-    onLoginSuccess(demoDoctor);
-    onClose();
+  // White claymorphic card style
+  const cardStyle = {
+    width: '100%',
+    maxWidth: 440,
+    padding: 32,
+    position: 'relative',
+    background: '#FFFFFF',
+    borderRadius: 28,
+    border: '2px solid #E2E8F0',
+    boxShadow: '0 4px 0 #E2E8F0, 0 20px 50px rgba(15, 23, 42, 0.08)',
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '14px 16px',
+    borderRadius: 16,
+    background: '#F8FAFC',
+    border: '2px solid #E2E8F0',
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    color: '#0F172A',
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    boxSizing: 'border-box',
+    outline: 'none',
+    transition: 'border-color 0.2s ease',
+  };
+
+  const btnPrimaryStyle = {
+    width: '100%',
+    padding: '14px',
+    borderRadius: 18,
+    border: 'none',
+    background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+    color: '#FFFFFF',
+    fontSize: '0.95rem',
+    fontWeight: 700,
+    cursor: loading ? 'not-allowed' : 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)',
+    opacity: loading ? 0.7 : 1,
+    transition: 'all 0.2s ease',
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="glass-panel"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: 440,
-          padding: 32,
-          position: 'relative',
-          background: '#0d1527',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)',
-        }}
-      >
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 200,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(15, 23, 42, 0.4)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        padding: 16,
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={cardStyle}>
         {/* Close Button */}
         <button
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: 18,
-            right: 18,
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: 'rgba(255, 255, 255, 0.08)',
+            top: 16,
+            right: 16,
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            background: '#F1F5F9',
+            border: '1.5px solid #E2E8F0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--text-muted)',
+            color: '#64748B',
+            cursor: 'pointer',
           }}
         >
           <X size={18} />
         </button>
 
-        {/* Brand Icon */}
+        {/* Brand Logo */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            background: 'linear-gradient(135deg, #06b6d4, #2563eb)',
+            width: 56,
+            height: 56,
+            borderRadius: 18,
+            background: 'linear-gradient(135deg, #22C55E, #16A34A)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 14px',
-            boxShadow: '0 0 20px rgba(6, 182, 212, 0.4)',
+            margin: '0 auto 16px',
+            boxShadow: '0 6px 20px rgba(34, 197, 94, 0.35)',
           }}>
-            <Activity className="heart-pulse" size={26} color="#fff" />
+            <Activity size={28} color="#fff" />
           </div>
 
-          <h3 style={{ fontSize: '1.4rem', marginBottom: 4 }}>
-            TibCase Profiliga Kirish
+          <h3 style={{
+            fontSize: '1.4rem',
+            fontWeight: 800,
+            color: '#0F172A',
+            marginBottom: 4,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+          }}>
+            {t('auth.title')}
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
-            Klinik simulyatsiyalar va shaxsiy rivojlanish hisoboti
+          <p style={{
+            color: '#64748B',
+            fontSize: '0.88rem',
+            fontWeight: 500,
+            margin: 0,
+          }}>
+            {t('auth.subtitle')}
           </p>
         </div>
 
+        {/* Error Alert */}
         {errorMsg && (
           <div style={{
             padding: '10px 14px',
-            borderRadius: 8,
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid #ef4444',
-            color: '#f87171',
+            borderRadius: 14,
+            background: '#FEF2F2',
+            border: '1.5px solid #FCA5A5',
+            color: '#DC2626',
             fontSize: '0.85rem',
+            fontWeight: 600,
             marginBottom: 16,
           }}>
             {errorMsg}
@@ -177,45 +232,54 @@ export default function AuthModal({
               <label style={{
                 display: 'block',
                 fontSize: '0.8rem',
-                color: 'var(--text-secondary)',
-                marginBottom: 6,
-                fontWeight: 600,
+                color: '#64748B',
+                marginBottom: 8,
+                fontWeight: 700,
               }}>
-                Telefon Raqam yoki Email
+                {t('auth.phoneLabel')}
               </label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '12px 14px',
-                borderRadius: 10,
-                background: 'rgba(15, 23, 42, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-              }}>
-                <Phone size={18} color="var(--text-muted)" />
+              <div style={{ position: 'relative' }}>
+                <Phone size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
                   placeholder="+998 90 123 45 67"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    width: '100%',
-                    fontSize: '0.95rem',
-                    color: '#fff',
-                  }}
+                  style={{ ...inputStyle, paddingLeft: 42 }}
+                  onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
                 />
               </div>
+            </div>
+
+            {/* Referral code (optional) */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '0.8rem',
+                color: '#64748B',
+                marginBottom: 8,
+                fontWeight: 700,
+              }}>
+                {t('auth.referralLabel')}
+              </label>
+              <input
+                type="text"
+                placeholder={t('auth.referralPlaceholder')}
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
+                onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
+              />
             </div>
 
             <button
               type="submit"
               disabled={loading || !identifier.trim()}
-              className="btn-primary"
-              style={{ padding: '12px', fontSize: '0.95rem', width: '100%' }}
+              style={btnPrimaryStyle}
             >
-              <span>{loading ? "Yuborilmoqda..." : "Tasdiqlash Kodini Olish"}</span>
+              <span>{loading ? t('auth.sending') : t('auth.sendCode')}</span>
               <ArrowRight size={16} />
             </button>
           </form>
@@ -225,73 +289,72 @@ export default function AuthModal({
               <label style={{
                 display: 'block',
                 fontSize: '0.8rem',
-                color: 'var(--text-secondary)',
-                marginBottom: 6,
-                fontWeight: 600,
+                color: '#64748B',
+                marginBottom: 8,
+                fontWeight: 700,
               }}>
-                SMS / Email Tasdiqlash Kodi
+                {t('auth.otpLabel')}
               </label>
               <input
                 type="text"
-                placeholder="6 xonali kod (masalan: 123456)"
+                placeholder="123456"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
+                maxLength={6}
                 style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: 10,
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  fontSize: '1.2rem',
-                  letterSpacing: '0.2em',
+                  ...inputStyle,
+                  fontSize: '1.3rem',
+                  letterSpacing: '0.3em',
                   textAlign: 'center',
-                  fontWeight: 700,
+                  fontWeight: 800,
                 }}
+                onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
+                onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
               />
+              <p style={{
+                fontSize: '0.78rem',
+                color: '#94A3B8',
+                marginTop: 8,
+                fontWeight: 500,
+                textAlign: 'center',
+              }}>
+                {t('auth.otpSentTo')} <strong style={{ color: '#0F172A' }}>{identifier}</strong>
+              </p>
             </div>
 
             <button
               type="submit"
               disabled={loading || !code.trim()}
-              className="btn-primary"
-              style={{ padding: '12px', fontSize: '0.95rem', width: '100%' }}
+              style={btnPrimaryStyle}
             >
-              <span>{loading ? "Tekshirilmoqda..." : "Kirishni Tasdiqlash"}</span>
+              <span>{loading ? t('auth.verifying') : t('auth.confirm')}</span>
               <CheckCircle2 size={16} />
             </button>
+
+            {/* Resend / Change number */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('input');
+                  setCode('');
+                  setErrorMsg('');
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748B',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                {t('auth.changeNumber')}
+              </button>
+            </div>
           </form>
         )}
-
-        {/* Divider */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          margin: '24px 0 16px',
-        }}>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255, 255, 255, 0.1)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            yoki
-          </span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255, 255, 255, 0.1)' }} />
-        </div>
-
-        {/* Instant Demo Access Button */}
-        <button
-          onClick={handleOneClickDemo}
-          className="btn-secondary"
-          style={{
-            width: '100%',
-            padding: '12px',
-            fontSize: '0.9rem',
-            background: 'rgba(6, 182, 212, 0.1)',
-            border: '1px solid rgba(6, 182, 212, 0.3)',
-            color: 'var(--accent-cyan)',
-          }}
-        >
-          <Zap size={16} />
-          <span>Tezkor Sinov Rejimi (1-Bosqichli Kirish)</span>
-        </button>
       </div>
     </div>
   );

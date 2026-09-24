@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../api';
 import {
   Settings,
   Trophy,
@@ -42,6 +43,30 @@ export default function ProfileView({
   const [copiedId, setCopiedId] = useState(false);
   const [drLeoOpen, setDrLeoOpen] = useState(false);
 
+  // Real API data
+  const [completedSessions, setCompletedSessions] = useState([]);
+  const [ongoingSessions, setOngoingSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+
+  // Load completed/ongoing simulations from API
+  useEffect(() => {
+    let mounted = true;
+    setLoadingSessions(true);
+    Promise.all([
+      api.getCompletedSimulations().catch(() => ({ sessions: [], count: 0 })),
+      api.getOngoingSimulations().catch(() => ({ sessions: [], count: 0 })),
+    ]).then(([comp, ong]) => {
+      if (mounted) {
+        setCompletedSessions(comp?.sessions || []);
+        setOngoingSessions(ong?.sessions || []);
+      }
+    }).finally(() => { if (mounted) setLoadingSessions(false); });
+    return () => { mounted = false; };
+  }, []);
+
   // Sub-modals for Settings
   const [modalType, setModalType] = useState(null); // 'username' | 'coupon' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete'
   const [tempUsername, setTempUsername] = useState(user?.name || 'John');
@@ -64,31 +89,43 @@ export default function ProfileView({
     setTimeout(() => setCopiedId(false), 2200);
   };
 
-  const handleSaveUsername = () => {
+  const handleSaveUsername = async () => {
     if (!tempUsername.trim()) return;
-    if (onUserUpdate) {
-      onUserUpdate(prev => ({ ...(prev || {}), name: tempUsername.trim() }));
+    setSaveLoading(true);
+    try {
+      await api.updateUserProfile({ name: tempUsername.trim() });
+      if (onUserUpdate) {
+        onUserUpdate(prev => ({ ...(prev || {}), name: tempUsername.trim() }));
+      }
+      setModalType(null);
+      showToast(t('settings.save') + ' ✓');
+    } catch (err) {
+      showToast(err.message || 'Error');
+    } finally {
+      setSaveLoading(false);
     }
-    setModalType(null);
-    showToast('Username updated successfully!');
   };
 
-  const handleApplyCoupon = (e) => {
+  const handleApplyCoupon = async (e) => {
     e.preventDefault();
     if (!couponCode.trim()) return;
-    if (couponCode.trim().toUpperCase() === 'TIBCASE2026' || couponCode.trim().toUpperCase() === 'VIP') {
-      showToast('🎉 Coupon applied: 500 XP & 10 Cases unlocked!');
+    setPromoLoading(true);
+    try {
+      const res = await api.redeemPromocode(couponCode.trim());
+      const coinsAdded = res?.coins_added ?? 0;
+      showToast(`🎉 +${coinsAdded} ${t('settings.coins')}!`);
       if (onUserUpdate) {
         onUserUpdate(prev => ({
           ...(prev || {}),
-          xp: (prev?.xp || 0) + 500,
-          is_premium: true
+          coins: (prev?.coins || 0) + coinsAdded,
         }));
       }
       setCouponCode('');
       setModalType(null);
-    } else {
-      showToast('⚠️ Invalid or expired coupon code.');
+    } catch (err) {
+      showToast('⚠️ ' + (err.message || 'Invalid promocode'));
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -117,8 +154,8 @@ export default function ProfileView({
   const xpInCurrentLevel = totalXP % 1000;
   const xpProgressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / 1000) * 100));
 
-  const completedCount = user?.completed_cases_count || 0;
-  const ongoingCount = user?.ongoing_cases_count || 0;
+  const completedCount = completedSessions.length || user?.completed_cases_count || 0;
+  const ongoingCount = ongoingSessions.length || user?.ongoing_cases_count || 0;
 
   // Language display
   const getLanguageLabel = () => {
@@ -736,7 +773,7 @@ export default function ProfileView({
                     color: '#FFFFFF',
                     margin: '0 0 2px 0',
                   }}>
-                    Get Premium
+                    {t('settings.getPremium')}
                   </h3>
                   <p style={{
                     fontSize: '13px',
@@ -744,7 +781,7 @@ export default function ProfileView({
                     color: '#E9D5FF',
                     margin: 0,
                   }}>
-                    Unlimited case solving
+                    {t('settings.unlimitedCases')}
                   </p>
                 </div>
               </div>
@@ -765,7 +802,7 @@ export default function ProfileView({
               {/* Feedback */}
               <SettingsListItem
                 icon={<Mail size={20} color="#0F172A" strokeWidth={2} />}
-                label="Feedback"
+                label={t('settings.feedback')}
                 onClick={() => setModalType('feedback')}
               />
               <Divider />
@@ -773,7 +810,7 @@ export default function ProfileView({
               {/* Rate Us */}
               <SettingsListItem
                 icon={<Heart size={20} color="#0F172A" strokeWidth={2} />}
-                label="Rate Us"
+                label={t('settings.rateUs')}
                 onClick={() => setModalType('rate')}
               />
               <Divider />
@@ -781,7 +818,7 @@ export default function ProfileView({
               {/* Share with Friends */}
               <SettingsListItem
                 icon={<Share2 size={20} color="#0F172A" strokeWidth={2} />}
-                label="Share with Friends"
+                label={t('settings.shareWithFriends')}
                 onClick={handleShare}
               />
               <Divider />
@@ -789,7 +826,7 @@ export default function ProfileView({
               {/* Terms of Use */}
               <SettingsListItem
                 icon={<FileText size={20} color="#0F172A" strokeWidth={2} />}
-                label="Terms of Use"
+                label={t('settings.termsOfUse')}
                 onClick={() => setModalType('terms')}
               />
               <Divider />
@@ -797,7 +834,7 @@ export default function ProfileView({
               {/* Privacy Policy */}
               <SettingsListItem
                 icon={<Shield size={20} color="#0F172A" strokeWidth={2} />}
-                label="Privacy Policy"
+                label={t('settings.privacyPolicy')}
                 onClick={() => setModalType('privacy')}
               />
               <Divider />
@@ -805,7 +842,7 @@ export default function ProfileView({
               {/* Coupon Code */}
               <SettingsListItem
                 icon={<Tag size={20} color="#0F172A" strokeWidth={2} />}
-                label="Coupon Code"
+                label={t('settings.couponCode')}
                 onClick={() => setModalType('coupon')}
               />
             </div>
@@ -841,7 +878,7 @@ export default function ProfileView({
               {/* Change Username */}
               <SettingsListItem
                 icon={<User size={20} color="#0F172A" strokeWidth={2} />}
-                label="Change Username"
+                label={t('settings.changeUsername')}
                 subtitle={user?.name || 'John'}
                 onClick={() => {
                   setTempUsername(user?.name || 'John');
@@ -853,7 +890,7 @@ export default function ProfileView({
               {/* Restore Purchase */}
               <SettingsListItem
                 icon={<RotateCcw size={20} color="#0F172A" strokeWidth={2} />}
-                label="Restore Purchase"
+                label={t('settings.restorePurchase')}
                 onClick={() => showToast('Purchases restored successfully!')}
               />
               <Divider />
@@ -872,7 +909,7 @@ export default function ProfileView({
                   </div>
                   <div>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>
-                      User ID
+                      {t('settings.userId')}
                     </div>
                     <div style={{
                       fontSize: '12px',
@@ -912,7 +949,7 @@ export default function ProfileView({
               {/* Delete Account */}
               <SettingsListItem
                 icon={<Trash2 size={20} color="#EF4444" strokeWidth={2} />}
-                label="Delete Account"
+                label={t('settings.deleteAccount')}
                 labelColor="#EF4444"
                 onClick={() => setModalType('delete')}
               />
@@ -938,7 +975,7 @@ export default function ProfileView({
                   gap: 8,
                 }}
               >
-                Log Out
+                {t('settings.logOut')}
               </button>
             )}
 
@@ -1074,7 +1111,7 @@ export default function ProfileView({
                   boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
                 }}
               >
-                Save Changes
+                {saveLoading ? '...' : t('settings.save')}
               </button>
             </div>
           </ModalCard>
@@ -1120,7 +1157,7 @@ export default function ProfileView({
                   boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)',
                 }}
               >
-                Apply Coupon
+                {promoLoading ? '...' : t('store.activate')}
               </button>
             </form>
           </ModalCard>
@@ -1309,7 +1346,7 @@ export default function ProfileView({
                 <AlertCircle size={44} />
               </div>
               <p style={{ fontSize: '14px', fontWeight: 600, color: '#334155', margin: 0 }}>
-                Are you sure you want to delete your account? All earned XP, completed clinical cases, and tariffs will be permanently lost.
+                 {t('settings.deleteWarning')}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
                 <button
@@ -1324,10 +1361,15 @@ export default function ProfileView({
                     cursor: 'pointer',
                   }}
                 >
-                  Cancel
+                  {t('settings.cancel')}
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    setDeleteLoading(true);
+                    try {
+                      await api.deleteProfile();
+                    } catch { /* ignore */ }
+                    setDeleteLoading(false);
                     setModalType(null);
                     if (onLogout) onLogout();
                   }}
@@ -1341,7 +1383,7 @@ export default function ProfileView({
                     cursor: 'pointer',
                   }}
                 >
-                  Delete
+                  {deleteLoading ? '...' : t('settings.deleteBtn')}
                 </button>
               </div>
             </div>

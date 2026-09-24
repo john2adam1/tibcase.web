@@ -60,16 +60,21 @@ export default function StoreTariffs({
     setPaymentModalOpen(true);
   };
 
-  const handleSimulatePayment = (gateway) => {
-    alert(`To'lov tizimi (${gateway}) ulanmoqda... Xarid muvaffaqiyatli yakunlandi!`);
-    setPaymentModalOpen(false);
-    if (onUserUpdate && selectedTariff) {
-      const addedCoins = selectedTariff.coins || (selectedTariff.kind === 'coin_package' ? 100 : 0);
-      onUserUpdate(prev => ({
-        ...prev,
-        coins: (prev.coins || 0) + addedCoins,
-        has_subscription: true
-      }));
+  const handleSimulatePayment = async (gateway) => {
+    if (!selectedTariff) return;
+    try {
+      const result = await api.subscribe(selectedTariff.id, 0);
+      setPaymentModalOpen(false);
+      if (onUserUpdate && selectedTariff) {
+        const addedCoins = selectedTariff.coins || 0;
+        onUserUpdate(prev => ({
+          ...prev,
+          coins: (prev.coins || 0) + addedCoins,
+          has_subscription: true
+        }));
+      }
+    } catch (err) {
+      alert(err.message || 'Payment failed');
     }
   };
 
@@ -77,52 +82,7 @@ export default function StoreTariffs({
     return new Intl.NumberFormat('uz-UZ').format(price) + " so'm";
   };
 
-  const items = tariffs.length > 0 ? tariffs : [
-    {
-      id: 'sub_monthly',
-      name: 'Oylik Obuna (Pro)',
-      price: 99000,
-      period: 'oyiga',
-      kind: 'subscription',
-      is_popular: true,
-      coins: 50,
-      features: [
-        "Barcha bo'limlardagi keyslarga cheksiz kirish",
-        "Jonli ICU EKG monitor simulyatsiyasi",
-        "AI Debriefing va xatolar tahlili",
-        "+50 ta bonus tangalar"
-      ]
-    },
-    {
-      id: 'sub_yearly',
-      name: 'Yillik Obuna (VIP)',
-      price: 790000,
-      period: 'yiliga',
-      kind: 'subscription',
-      is_popular: false,
-      coins: 300,
-      features: [
-        "1 yil davomida barcha imkoniyatlar",
-        "Yangi qo'shiladigan keyslar prioriteti",
-        "Sertifikat generatsiyasi",
-        "+300 ta bonus tangalar"
-      ]
-    },
-    {
-      id: 'coins_pack_100',
-      name: '100 ta Tanga Paketi',
-      price: 35000,
-      period: 'bir martalik',
-      kind: 'coin_package',
-      is_popular: false,
-      coins: 100,
-      features: [
-        "100 ta tibbiy tanga",
-        "Qiyin keyslarni ochish imkoniyati",
-        "Klinik maslahatlardan foydalanish"
-      ]
-    }
-  ];
+  const items = tariffs;
 
   return (
     <div style={{
