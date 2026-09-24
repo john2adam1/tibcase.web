@@ -41,7 +41,7 @@ export default function AppNavbar({
     setSoundEnabled(next);
   };
 
-  // The menu items for navigation
+  // Nav menu items
   const navItems = [
     { id: 'cases', label: 'Home', subtitle: 'Klinik keyslar katalogi', icon: Building2 },
     { id: 'clinics', label: 'Category', subtitle: "Bo'limlar & Kategoriyalar", icon: Stethoscope },
@@ -64,10 +64,9 @@ export default function AppNavbar({
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(6, 11, 20, 0.94)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(56, 189, 248, 0.15)',
+        background: '#FFFFFF',
+        borderBottom: '1.5px solid #E2E8F0',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
         padding: '0 20px',
       }}>
         <div style={{
@@ -93,11 +92,11 @@ export default function AppNavbar({
               width: 40,
               height: 40,
               borderRadius: 12,
-              background: 'linear-gradient(135deg, #06b6d4, #2563eb)',
+              background: 'linear-gradient(135deg, #0284C7, #2563EB)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0 16px rgba(6, 182, 212, 0.4)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
             }}>
               <Activity className="heart-pulse" size={22} color="#ffffff" />
             </div>
@@ -106,18 +105,19 @@ export default function AppNavbar({
                 fontFamily: 'var(--font-heading)',
                 fontSize: '1.3rem',
                 fontWeight: 800,
-                color: '#fff',
+                color: '#0F172A',
               }}>
                 TibCase
               </span>
               <span style={{
                 marginLeft: 6,
-                background: 'rgba(6, 182, 212, 0.15)',
-                color: 'var(--accent-cyan)',
-                padding: '1px 6px',
-                borderRadius: 4,
+                background: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                color: '#2563EB',
+                padding: '2px 7px',
+                borderRadius: 99,
                 fontSize: '0.65rem',
-                fontWeight: 700,
+                fontWeight: 800,
               }}>
                 PRO
               </span>
@@ -125,15 +125,15 @@ export default function AppNavbar({
           </div>
 
           {/* Right Section: Stats, Quick Tools, and Hamburger Menu Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* User Stats Pill */}
             <div className="stats-bar" style={{
               display: 'flex',
               alignItems: 'center',
               gap: 12,
-              background: 'rgba(15, 23, 42, 0.7)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              padding: '4px 12px',
+              background: '#F8FAFC',
+              border: '1.5px solid #E2E8F0',
+              padding: '5px 14px',
               borderRadius: 99,
             }}>
               <div
@@ -143,17 +143,17 @@ export default function AppNavbar({
                   alignItems: 'center',
                   gap: 5,
                   fontSize: '0.85rem',
-                  fontWeight: 700,
-                  color: '#fbbf24',
+                  fontWeight: 800,
+                  color: '#D97706',
                   cursor: 'pointer',
                 }}
                 title="Tangalar balansi"
               >
-                <Coins size={15} color="#fbbf24" />
+                <Coins size={15} color="#D97706" />
                 <span>{user?.coins ?? 15}</span>
               </div>
 
-              <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)' }} />
+              <div style={{ width: 1, height: 14, background: '#CBD5E1' }} />
 
               <div
                 style={{
@@ -161,16 +161,16 @@ export default function AppNavbar({
                   alignItems: 'center',
                   gap: 5,
                   fontSize: '0.85rem',
-                  fontWeight: 700,
-                  color: '#f97316',
+                  fontWeight: 800,
+                  color: '#EA580C',
                 }}
                 title="Ketma-ketlik (Streak)"
               >
-                <Flame size={15} color="#f97316" />
+                <Flame size={15} color="#EA580C" />
                 <span>{user?.streak_count ?? 5}</span>
               </div>
 
-              <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)' }} />
+              <div style={{ width: 1, height: 14, background: '#CBD5E1' }} />
 
               <div
                 style={{
@@ -178,12 +178,12 @@ export default function AppNavbar({
                   alignItems: 'center',
                   gap: 5,
                   fontSize: '0.85rem',
-                  fontWeight: 700,
-                  color: '#34d399',
+                  fontWeight: 800,
+                  color: '#16A34A',
                 }}
                 title="Daraja"
               >
-                <Zap size={14} color="#34d399" />
+                <Zap size={14} color="#16A34A" />
                 <span>Lvl {user?.level ?? 1}</span>
               </div>
             </div>
@@ -191,17 +191,17 @@ export default function AppNavbar({
             {/* Sound Toggle */}
             <button
               onClick={toggleSound}
-              title={soundOn ? "Monitor tovushini o'chirish" : "Monitor tovushini yoqish"}
+              title={soundOn ? "Tovushni o'chirish" : "Tovushni yoqish"}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
+                width: 38,
+                height: 38,
+                borderRadius: 12,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: soundOn ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                border: soundOn ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: soundOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                background: '#F8FAFC',
+                border: '1.5px solid #E2E8F0',
+                color: soundOn ? '#0284C7' : '#94A3B8',
                 cursor: 'pointer',
               }}
             >
@@ -216,19 +216,19 @@ export default function AppNavbar({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  padding: '6px 10px',
-                  borderRadius: 8,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  color: 'var(--text-secondary)',
+                  padding: '7px 12px',
+                  borderRadius: 12,
+                  background: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  color: '#0F172A',
                   fontSize: '0.85rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: 'pointer',
                 }}
               >
-                <Globe size={15} />
+                <Globe size={15} color="#64748B" />
                 <span>{lang ? lang.toUpperCase() : 'UZ'}</span>
-                <ChevronDown size={14} />
+                <ChevronDown size={14} color="#64748B" />
               </button>
 
               {langMenuOpen && (
@@ -236,12 +236,12 @@ export default function AppNavbar({
                   position: 'absolute',
                   top: 'calc(100% + 8px)',
                   right: 0,
-                  background: '#0d1527',
-                  border: '1px solid rgba(56, 189, 248, 0.25)',
-                  borderRadius: 10,
-                  padding: 4,
-                  minWidth: 120,
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                  background: '#FFFFFF',
+                  border: '1.5px solid #E2E8F0',
+                  borderRadius: 14,
+                  padding: 6,
+                  minWidth: 130,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
                   zIndex: 60,
                 }}>
                   {[
@@ -260,10 +260,10 @@ export default function AppNavbar({
                         textAlign: 'left',
                         padding: '8px 12px',
                         fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: lang === item.code ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                        background: lang === item.code ? 'rgba(6, 182, 212, 0.1)' : 'transparent',
-                        borderRadius: 6,
+                        fontWeight: 700,
+                        color: lang === item.code ? '#16A34A' : '#0F172A',
+                        background: lang === item.code ? '#DCFCE7' : 'transparent',
+                        borderRadius: 8,
                         border: 'none',
                         cursor: 'pointer',
                       }}
@@ -275,7 +275,7 @@ export default function AppNavbar({
               )}
             </div>
 
-            {/* Profile Avatar Pill */}
+            {/* Profile Avatar Button */}
             <button
               onClick={() => handleSelectNav('profile')}
               title="Profilga o'tish"
@@ -283,32 +283,25 @@ export default function AppNavbar({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '5px 10px',
-                borderRadius: 10,
-                background: currentView === 'profile'
-                  ? 'rgba(34, 197, 94, 0.18)'
-                  : 'rgba(255, 255, 255, 0.05)',
-                border: currentView === 'profile'
-                  ? '1.5px solid #22c55e'
-                  : '1px solid rgba(255, 255, 255, 0.08)',
-                color: 'var(--text-primary)',
+                padding: '5px 12px',
+                borderRadius: 12,
+                background: currentView === 'profile' ? '#DCFCE7' : '#F8FAFC',
+                border: currentView === 'profile' ? '1.5px solid #86EFAC' : '1.5px solid #E2E8F0',
+                color: '#0F172A',
                 fontSize: '0.85rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
               <div style={{
-                width: 26,
-                height: 26,
+                width: 28,
+                height: 28,
                 borderRadius: '50%',
-                background: '#FDE047',
-                border: '1.5px solid #FEF08A',
+                background: '#FEF08A',
+                border: '1.5px solid #FDE047',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#854D0E',
-                fontSize: '0.75rem',
-                fontWeight: 800,
                 overflow: 'hidden',
               }}>
                 <img
@@ -319,11 +312,11 @@ export default function AppNavbar({
                 />
               </div>
               <span className="profile-name-text">
-                {user?.name?.split(' ')[0] || 'John'}
+                {user?.name?.split(' ')[0] || 'Dr. Akmal'}
               </span>
             </button>
 
-            {/* HAMBURGER MENU BUTTON (Prominent for Laptop, Tablet, Desktop) */}
+            {/* HAMBURGER MENU BUTTON (Laptop, Tablet, Desktop) */}
             <button
               id="btn-hamburger-menu"
               onClick={() => setDrawerOpen(true)}
@@ -331,10 +324,10 @@ export default function AppNavbar({
               style={{
                 width: 40,
                 height: 40,
-                borderRadius: 10,
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1.5px solid rgba(255, 255, 255, 0.15)',
-                color: '#fff',
+                borderRadius: 12,
+                background: '#F8FAFC',
+                border: '1.5px solid #E2E8F0',
+                color: '#0F172A',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -342,12 +335,12 @@ export default function AppNavbar({
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.2)';
-                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)';
+                e.currentTarget.style.background = '#EFF6FF';
+                e.currentTarget.style.borderColor = '#BFDBFE';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.background = '#F8FAFC';
+                e.currentTarget.style.borderColor = '#E2E8F0';
               }}
             >
               <Menu size={22} strokeWidth={2.4} />
@@ -357,7 +350,7 @@ export default function AppNavbar({
       </header>
 
       {/* ========================================================= */}
-      {/* HAMBURGER MENU DRAWER (Laptop, Tablet, Mobile)            */}
+      {/* HAMBURGER MENU DRAWER (Unified White Claymorphic Design)   */}
       {/* ========================================================= */}
       {drawerOpen && (
         <div
@@ -365,9 +358,8 @@ export default function AppNavbar({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(4, 9, 20, 0.7)',
+            background: 'rgba(15, 23, 42, 0.45)',
             backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
             zIndex: 100,
             display: 'flex',
             justifyContent: 'flex-end',
@@ -380,9 +372,9 @@ export default function AppNavbar({
               width: '100%',
               maxWidth: 360,
               height: '100%',
-              background: '#0d1627',
-              borderLeft: '1px solid rgba(56, 189, 248, 0.2)',
-              boxShadow: '-10px 0 35px rgba(0, 0, 0, 0.6)',
+              background: '#FFFFFF',
+              borderLeft: '1.5px solid #E2E8F0',
+              boxShadow: '-10px 0 35px rgba(0, 0, 0, 0.08)',
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
@@ -395,7 +387,7 @@ export default function AppNavbar({
               alignItems: 'center',
               justifyContent: 'space-between',
               paddingBottom: 20,
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              borderBottom: '1.5px solid #F1F5F9',
               marginBottom: 16,
             }}>
               <div
@@ -406,8 +398,8 @@ export default function AppNavbar({
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  background: '#FDE047',
-                  border: '2px solid #FEF08A',
+                  background: '#FEF08A',
+                  border: '2px solid #FDE047',
                   overflow: 'hidden',
                   display: 'flex',
                   alignItems: 'center',
@@ -420,10 +412,10 @@ export default function AppNavbar({
                   />
                 </div>
                 <div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff' }}>
-                    {user?.name || 'John'}
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
+                    {user?.name || 'Dr. Akmal Karimov'}
                   </div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>
                     {user?.specialty || 'Medical Student'}
                   </div>
                 </div>
@@ -437,9 +429,9 @@ export default function AppNavbar({
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: 'var(--text-muted)',
+                  background: '#F1F5F9',
+                  border: '1px solid #E2E8F0',
+                  color: '#64748B',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -450,97 +442,69 @@ export default function AppNavbar({
               </button>
             </div>
 
-            {/* Navigation Menu Items (5 items from bottom bar) */}
+            {/* Navigation Menu List */}
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 8,
+              gap: 10,
               flex: 1,
               overflowY: 'auto',
             }}>
               <div style={{
                 fontSize: '11px',
                 fontWeight: 800,
-                color: 'var(--text-muted)',
-                letterSpacing: '1px',
+                color: '#94A3B8',
+                letterSpacing: '0.8px',
                 textTransform: 'uppercase',
-                padding: '4px 8px',
+                marginBottom: 4,
               }}>
-                Asosiy Menyu
+                Asosiy Sahifalar
               </div>
 
               {navItems.map((item) => {
-                const Icon = item.icon;
                 const isActive = currentView === item.id;
+                const Icon = item.icon;
 
                 return (
                   <button
                     key={item.id}
-                    id={`drawer-item-${item.id}`}
+                    id={`drawer-nav-${item.id}`}
                     onClick={() => handleSelectNav(item.id)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 14,
-                      padding: '12px 16px',
-                      borderRadius: 14,
-                      background: isActive
-                        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.12))'
-                        : 'transparent',
-                      border: isActive
-                        ? '1.5px solid rgba(34, 197, 94, 0.4)'
-                        : '1px solid transparent',
+                      padding: '14px 16px',
+                      borderRadius: 18,
+                      background: isActive ? '#DCFCE7' : '#F8FAFC',
+                      border: isActive ? '1.5px solid #86EFAC' : '1.5px solid #E2E8F0',
+                      color: isActive ? '#16A34A' : '#0F172A',
                       cursor: 'pointer',
                       textAlign: 'left',
                       transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) e.currentTarget.style.background = 'transparent';
+                      boxShadow: isActive ? '0 4px 14px rgba(34, 197, 94, 0.2)' : 'none',
                     }}
                   >
-                    {/* Icon container */}
                     <div style={{
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       borderRadius: 12,
-                      background: isActive ? '#DCFCE7' : 'rgba(255, 255, 255, 0.05)',
-                      border: isActive ? '1.5px solid #86EFAC' : '1px solid rgba(255, 255, 255, 0.08)',
+                      background: isActive ? '#16A34A' : '#FFFFFF',
+                      border: isActive ? 'none' : '1px solid #E2E8F0',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: isActive ? '#16A34A' : 'var(--text-muted)',
+                      color: isActive ? '#FFFFFF' : '#64748B',
                       flexShrink: 0,
                     }}>
-                      <Icon size={20} strokeWidth={2.4} />
+                      <Icon size={18} strokeWidth={2.4} />
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: '15px',
-                        fontWeight: 700,
-                        color: isActive ? '#4ade80' : '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}>
-                        <span>{item.label}</span>
-                        {item.badge && (
-                          <span style={{
-                            background: '#f43f5e',
-                            color: '#fff',
-                            fontSize: '10px',
-                            fontWeight: 800,
-                            padding: '2px 8px',
-                            borderRadius: 99,
-                          }}>
-                            {item.badge}
-                          </span>
-                        )}
+                      <div style={{ fontSize: '14.5px', fontWeight: 800 }}>
+                        {item.label}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
+                      <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: 1 }}>
                         {item.subtitle}
                       </div>
                     </div>
@@ -549,39 +513,40 @@ export default function AppNavbar({
               })}
             </div>
 
-            {/* Drawer Footer: Logout */}
-            {onLogout && (
-              <div style={{
-                paddingTop: 16,
-                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                marginTop: 12,
-              }}>
+            {/* Bottom Drawer Actions: Logout */}
+            <div style={{
+              paddingTop: 16,
+              borderTop: '1.5px solid #F1F5F9',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}>
+              {onLogout && (
                 <button
                   onClick={() => {
                     setDrawerOpen(false);
                     onLogout();
                   }}
                   style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: 12,
-                    background: 'rgba(239, 68, 68, 0.12)',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    color: '#f87171',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
+                    padding: '12px',
+                    borderRadius: 16,
+                    background: '#FEE2E2',
+                    border: '1.5px solid #FECACA',
+                    color: '#DC2626',
+                    fontSize: '13.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
                   }}
                 >
-                  <LogOut size={18} />
-                  <span>Tizimdan chiqish</span>
+                  <LogOut size={16} />
+                  <span>Chiqish</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

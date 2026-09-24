@@ -442,16 +442,16 @@ export default function App() {
       {/* Workspace Footer */}
       <footer style={{
         padding: '20px 24px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        background: 'rgba(6, 11, 20, 0.9)',
+        borderTop: '1.5px solid #E2E8F0',
+        background: '#FFFFFF',
         textAlign: 'center',
-        fontSize: '0.82rem',
-        color: 'var(--text-muted)',
+        fontSize: '0.85rem',
+        color: '#64748B',
       }}>
         <div style={{ maxWidth: 1380, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <div>© 2026 <strong>TibCase AI</strong>. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.</div>
           <div style={{ display: 'flex', gap: 20 }}>
-            <span>AHA & ESC Standartlari</span>
+            <span style={{ color: '#16A34A', fontWeight: 700 }}>AHA & ESC Standartlari</span>
           </div>
         </div>
       </footer>

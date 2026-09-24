@@ -161,12 +161,12 @@ export default function CaseSimulationRoom({
   return (
     <div style={{
       width: '100%',
-      minHeight: '100vh',
-      background: '#0B1320',
+      minHeight: '90vh',
+      background: '#F8FAFC',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '12px 16px 80px 16px',
+      padding: '16px 16px 90px 16px',
       boxSizing: 'border-box',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
       position: 'relative',
@@ -196,13 +196,14 @@ export default function CaseSimulationRoom({
               width: 42,
               height: 42,
               borderRadius: '50%',
-              background: '#131E30',
-              border: '1.5px solid #20334E',
+              background: '#FFFFFF',
+              border: '1.5px solid #E2E8F0',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#94A3B8',
+              color: '#0F172A',
               flexShrink: 0,
             }}
           >
@@ -214,7 +215,7 @@ export default function CaseSimulationRoom({
             <h2 style={{
               fontSize: '15px',
               fontWeight: 800,
-              color: '#FFFFFF',
+              color: '#0F172A',
               margin: '0 0 2px 0',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -237,7 +238,7 @@ export default function CaseSimulationRoom({
           </div>
 
           {/* Clinical Hint & Finish Case Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <button
               id="btn-clinical-hint"
               onClick={() => setHintModalOpen(true)}
@@ -246,13 +247,13 @@ export default function CaseSimulationRoom({
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                background: '#131E30',
-                border: '1.5px solid #20334E',
+                background: '#FEF3C7',
+                border: '1.5px solid #FDE68A',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: '#F59E0B',
+                color: '#D97706',
               }}
             >
               <Lightbulb size={18} fill="#FDE047" color="#D97706" />
@@ -265,16 +266,15 @@ export default function CaseSimulationRoom({
               style={{
                 padding: '8px 14px',
                 borderRadius: 99,
-                background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-                border: '1px solid #B91C1C',
-                color: '#FFFFFF',
+                background: '#FEE2E2',
+                border: '1.5px solid #FECACA',
+                color: '#DC2626',
                 fontSize: '12px',
                 fontWeight: 800,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
               }}
             >
               <Flag size={13} />
@@ -294,7 +294,7 @@ export default function CaseSimulationRoom({
           minHeight: 280,
           maxHeight: '46vh',
           overflowY: 'auto',
-          padding: '8px 4px',
+          padding: '8px 2px',
         }}>
           {/* Messages list */}
           {messages.map((msg) => {
@@ -317,7 +317,7 @@ export default function CaseSimulationRoom({
                     padding: '12px 16px',
                     fontSize: '14px',
                     fontWeight: 600,
-                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
                     lineHeight: 1.45,
                   }}>
                     {msg.text}
@@ -342,13 +342,13 @@ export default function CaseSimulationRoom({
                 {msg.evaluation && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{
-                      background: msg.evaluation.type === 'wrong' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-                      color: msg.evaluation.type === 'wrong' ? '#F87171' : '#4ADE80',
+                      background: msg.evaluation.type === 'wrong' ? '#FEE2E2' : '#DCFCE7',
+                      color: msg.evaluation.type === 'wrong' ? '#DC2626' : '#16A34A',
                       fontSize: '11px',
                       fontWeight: 800,
                       padding: '3px 10px',
                       borderRadius: 99,
-                      border: msg.evaluation.type === 'wrong' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
+                      border: msg.evaluation.type === 'wrong' ? '1px solid #FECACA' : '1px solid #86EFAC',
                     }}>
                       {msg.evaluation.badge}
                     </span>
@@ -356,13 +356,13 @@ export default function CaseSimulationRoom({
                 )}
 
                 <div style={{
-                  background: '#131E30',
-                  borderRadius: '4px 18px 18px 18px',
-                  border: '1px solid #20334E',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
-                  padding: '14px 18px',
-                  color: '#E2E8F0',
-                  fontSize: '13.5px',
+                  background: '#FFFFFF',
+                  borderRadius: '4px 20px 20px 20px',
+                  border: '1.5px solid #E2E8F0',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
+                  padding: '15px 18px',
+                  color: '#1E293B',
+                  fontSize: '14px',
                   fontWeight: 500,
                   lineHeight: 1.55,
                   whiteSpace: 'pre-line',
@@ -398,11 +398,12 @@ export default function CaseSimulationRoom({
               flex: 1,
               padding: '14px 18px',
               borderRadius: 99,
-              background: '#131E30',
-              border: '1.5px solid #20334E',
+              background: '#FFFFFF',
+              border: '1.5px solid #CBD5E1',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
               fontSize: '14px',
               fontWeight: 500,
-              color: '#FFFFFF',
+              color: '#0F172A',
               outline: 'none',
               boxSizing: 'border-box',
             }}
@@ -415,9 +416,9 @@ export default function CaseSimulationRoom({
               width: 48,
               height: 48,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #0284C7 0%, #2563EB 100%)',
+              background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
               border: 'none',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+              boxShadow: '0 6px 18px rgba(34, 197, 94, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -450,23 +451,25 @@ export default function CaseSimulationRoom({
               type="button"
               onClick={() => handlePerformAction(quickText)}
               style={{
-                background: '#131E30',
-                border: '1px solid #20334E',
+                background: '#FFFFFF',
+                border: '1.5px solid #E2E8F0',
                 borderRadius: 99,
                 padding: '6px 12px',
                 fontSize: '11px',
                 fontWeight: 700,
-                color: '#94A3B8',
+                color: '#475569',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#38BDF8';
-                e.currentTarget.style.borderColor = '#0284C7';
+                e.currentTarget.style.color = '#16A34A';
+                e.currentTarget.style.borderColor = '#86EFAC';
+                e.currentTarget.style.background = '#DCFCE7';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#94A3B8';
-                e.currentTarget.style.borderColor = '#20334E';
+                e.currentTarget.style.color = '#475569';
+                e.currentTarget.style.borderColor = '#E2E8F0';
+                e.currentTarget.style.background = '#FFFFFF';
               }}
             >
               + {quickText}
@@ -488,7 +491,7 @@ export default function CaseSimulationRoom({
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(11, 19, 32, 0.85)',
+          background: 'rgba(15, 23, 42, 0.5)',
           backdropFilter: 'blur(8px)',
           zIndex: 130,
           display: 'flex',
@@ -499,10 +502,10 @@ export default function CaseSimulationRoom({
           <div style={{
             width: '100%',
             maxWidth: 440,
-            background: '#131E30',
+            background: '#FFFFFF',
             borderRadius: 30,
-            border: '2px solid #20334E',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+            border: '2px solid #E2E8F0',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
             padding: '28px 24px',
             display: 'flex',
             flexDirection: 'column',
@@ -515,22 +518,21 @@ export default function CaseSimulationRoom({
               width: 72,
               height: 72,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #FEF08A, #FDE047)',
-              border: '3px solid #FACC15',
-              boxShadow: '0 0 25px rgba(234, 179, 8, 0.4)',
+              background: '#FEF3C7',
+              border: '2px solid #FDE68A',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#B45309',
+              color: '#D97706',
             }}>
               <Award size={40} strokeWidth={2.4} />
             </div>
 
             <div>
-              <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#FFFFFF', margin: '0 0 4px 0' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0' }}>
                 Keys Muvaffaqiyatli Yakunlandi!
               </h2>
-              <p style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8', margin: 0 }}>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', margin: 0 }}>
                 {caseItem?.title || 'Klinik Keys'}
               </p>
             </div>
@@ -542,29 +544,29 @@ export default function CaseSimulationRoom({
               gap: 10,
               width: '100%',
             }}>
-              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#0B1320', border: '1px solid #20334E' }}>
-                <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748B' }}>NATIJA</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#4ADE80' }}>{finalScore}%</div>
+              <div style={{ padding: '12px 8px', borderRadius: 18, background: '#DCFCE7', border: '1.5px solid #86EFAC' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#166534' }}>NATIJA</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#16A34A' }}>{finalScore}%</div>
               </div>
-              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#0B1320', border: '1px solid #20334E' }}>
-                <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748B' }}>XP</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#FBBF24' }}>+250</div>
+              <div style={{ padding: '12px 8px', borderRadius: 18, background: '#FEF3C7', border: '1.5px solid #FDE68A' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#92400E' }}>XP</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#D97706' }}>+250</div>
               </div>
-              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#0B1320', border: '1px solid #20334E' }}>
-                <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748B' }}>VAQT</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#38BDF8' }}>{formatTimer(secondsElapsed)}</div>
+              <div style={{ padding: '12px 8px', borderRadius: 18, background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1E40AF' }}>VAQT</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563EB' }}>{formatTimer(secondsElapsed)}</div>
               </div>
             </div>
 
             {/* Key Clinical Learning Point */}
             <div style={{
-              background: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
+              background: '#F0FDF4',
+              border: '1.5px solid #86EFAC',
               borderRadius: 18,
               padding: '14px 16px',
               textAlign: 'left',
-              fontSize: '12.5px',
-              color: '#86EFAC',
+              fontSize: '13px',
+              color: '#166534',
               lineHeight: 1.5,
             }}>
               <strong>Klinik Xulosa:</strong> Anafilaktik shok holatida har daqiqa g'animat. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon qismiga mushak ichiga kiritilishi shart.
@@ -582,11 +584,11 @@ export default function CaseSimulationRoom({
                 style={{
                   padding: '12px',
                   borderRadius: 16,
-                  background: '#1E293B',
-                  border: '1px solid #334155',
-                  color: '#CBD5E1',
+                  background: '#F1F5F9',
+                  border: '1.5px solid #CBD5E1',
+                  color: '#475569',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '13.5px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -607,9 +609,9 @@ export default function CaseSimulationRoom({
                   border: 'none',
                   color: '#FFFFFF',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '13.5px',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
+                  boxShadow: '0 6px 18px rgba(34, 197, 94, 0.35)',
                 }}
               >
                 Davom etish

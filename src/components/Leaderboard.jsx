@@ -42,276 +42,312 @@ export default function Leaderboard({ user }) {
   const me = leaderboard?.me || {
     rank: 4,
     name: user?.name || "Dr. Akmal Karimov",
-    xp: user?.xp || 320,
-    level: user?.level || 3,
+    xp: user?.xp || 630,
+    level: user?.level || 1,
     streak_count: user?.streak_count || 5,
     cases_solved: 8
   };
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px 80px' }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 36 }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          color: '#fbbf24',
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          marginBottom: 8,
-        }}>
-          <Trophy size={16} />
-          <span>Yetakchilar Jadvali</span>
+    <div style={{
+      width: '100%',
+      minHeight: '85vh',
+      background: '#F8FAFC',
+      padding: '32px 16px 100px 16px',
+      boxSizing: 'border-box',
+      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+    }}>
+      <div style={{ maxWidth: 780, margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: '#FEF3C7',
+            border: '1.5px solid #FDE68A',
+            color: '#D97706',
+            fontSize: '12px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            padding: '5px 14px',
+            borderRadius: 99,
+            marginBottom: 10,
+          }}>
+            <Trophy size={14} />
+            <span>Peshqadamlar Reytingi</span>
+          </div>
+          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#0F172A', margin: '4px 0 6px 0' }}>
+            Klinik Reyting va Yetakchilar
+          </h1>
+          <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>
+            Eng ko'p keys yechgan va yuqori diagnostik aniqlik ko'rsatgan shifokorlar
+          </p>
         </div>
-        <h1 style={{ fontSize: 'clamp(2rem, 3.5vw, 2.6rem)', marginBottom: 8 }}>
-          Klinik Reyting va Peshqadamlar
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
-          Eng ko'p keys yechgan va yuqori diagnostik aniqlik ko'rsatgan shifokorlar
-        </p>
-      </div>
 
-      {/* Filter Tabs */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        marginBottom: 32,
-      }}>
-        <div style={{
-          display: 'inline-flex',
-          background: 'rgba(15, 23, 42, 0.7)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: 12,
-          padding: 4,
-        }}>
-          {[
-            { id: 'day', label: 'Bugun' },
-            { id: 'week', label: 'Shu Hafta' },
-            { id: 'month', label: 'Shu Oy' },
-            { id: 'total', label: 'Umumiy' },
-          ].map(f => (
-            <button
-              key={f.id}
-              onClick={() => setFilterType(f.id)}
-              style={{
-                padding: '8px 18px',
-                borderRadius: 8,
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                background: filterType === f.id ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
-                color: filterType === f.id ? '#38bdf8' : 'var(--text-secondary)',
-                border: filterType === f.id ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid transparent',
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Top 3 Podium Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 16,
-        marginBottom: 32,
-        alignItems: 'flex-end',
-      }}>
-        {/* Silver (Rank 2) */}
-        {items[1] && (
-          <div className="glass-panel" style={{
-            padding: 20,
-            textAlign: 'center',
-            order: 1,
-            border: '1px solid rgba(148, 163, 184, 0.3)',
-          }}>
-            <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥈</div>
-            <div style={{
-              width: 50,
-              height: 50,
-              borderRadius: '50%',
-              margin: '0 auto 10px',
-              background: 'linear-gradient(135deg, #94a3b8, #64748b)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 800,
-            }}>
-              {items[1].name.charAt(0)}
-            </div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 2 }}>{items[1].name}</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>Lvl {items[1].level}</div>
-            <div style={{
-              fontSize: '1.15rem',
-              fontWeight: 800,
-              color: '#38bdf8',
-            }}>
-              {items[1].xp} XP
-            </div>
-          </div>
-        )}
-
-        {/* Gold (Rank 1) */}
-        {items[0] && (
-          <div className="glass-panel" style={{
-            padding: '28px 20px',
-            textAlign: 'center',
-            order: 2,
-            border: '2px solid rgba(251, 191, 36, 0.6)',
-            boxShadow: '0 10px 30px rgba(251, 191, 36, 0.25)',
-            transform: 'translateY(-12px)',
-          }}>
-            <div style={{ fontSize: '2.4rem', marginBottom: 4 }}>👑</div>
-            <div style={{
-              width: 62,
-              height: 62,
-              borderRadius: '50%',
-              margin: '0 auto 10px',
-              background: 'linear-gradient(135deg, #fbbf24, #d97706)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 900,
-              fontSize: '1.2rem',
-              boxShadow: '0 0 16px rgba(251, 191, 36, 0.5)',
-            }}>
-              {items[0].name.charAt(0)}
-            </div>
-            <div style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: 2 }}>{items[0].name}</div>
-            <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 600, marginBottom: 8 }}>
-              Lvl {items[0].level} • {items[0].streak_count} kun streak 🔥
-            </div>
-            <div style={{
-              fontSize: '1.35rem',
-              fontWeight: 900,
-              color: '#fbbf24',
-            }}>
-              {items[0].xp} XP
-            </div>
-          </div>
-        )}
-
-        {/* Bronze (Rank 3) */}
-        {items[2] && (
-          <div className="glass-panel" style={{
-            padding: 20,
-            textAlign: 'center',
-            order: 3,
-            border: '1px solid rgba(217, 119, 6, 0.3)',
-          }}>
-            <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥉</div>
-            <div style={{
-              width: 50,
-              height: 50,
-              borderRadius: '50%',
-              margin: '0 auto 10px',
-              background: 'linear-gradient(135deg, #d97706, #92400e)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 800,
-            }}>
-              {items[2].name.charAt(0)}
-            </div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 2 }}>{items[2].name}</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>Lvl {items[2].level}</div>
-            <div style={{
-              fontSize: '1.15rem',
-              fontWeight: 800,
-              color: '#38bdf8',
-            }}>
-              {items[2].xp} XP
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Leaderboard Full List */}
-      <div className="glass-panel" style={{ padding: 16, marginBottom: 24 }}>
+        {/* Filter Tabs matching Profile style */}
         <div style={{
           display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
+          justifyContent: 'center',
+          marginBottom: 28,
         }}>
-          {items.map((row, index) => {
-            const isMe = row.name === me.name;
-            return (
-              <div
-                key={index}
+          <div style={{
+            display: 'inline-flex',
+            background: '#FFFFFF',
+            border: '1.5px solid #E2E8F0',
+            borderRadius: 99,
+            padding: 4,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+          }}>
+            {[
+              { id: 'day', label: 'Bugun' },
+              { id: 'week', label: 'Shu Hafta' },
+              { id: 'month', label: 'Shu Oy' },
+              { id: 'total', label: 'Umumiy' },
+            ].map(f => (
+              <button
+                key={f.id}
+                onClick={() => setFilterType(f.id)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 18px',
-                  borderRadius: 12,
-                  background: isMe ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                  border: isMe ? '1px solid var(--accent-cyan)' : '1px solid transparent',
+                  padding: '8px 18px',
+                  borderRadius: 99,
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  background: filterType === f.id ? '#16A34A' : 'transparent',
+                  color: filterType === f.id ? '#FFFFFF' : '#64748B',
+                  boxShadow: filterType === f.id ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{
-                    width: 28,
-                    fontSize: '1rem',
-                    fontWeight: 800,
-                    color: index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : index === 2 ? '#d97706' : 'var(--text-muted)',
-                    textAlign: 'center',
-                  }}>
-                    #{row.rank || index + 1}
-                  </div>
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                  <div style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 10,
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    color: '#fff',
-                  }}>
-                    {row.name.charAt(0)}
-                  </div>
+        {/* Top 3 Podium Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 14,
+          marginBottom: 28,
+          alignItems: 'flex-end',
+        }}>
+          {/* Silver (Rank 2) */}
+          {items[1] && (
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: 24,
+              border: '1.5px solid #E2E8F0',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+              padding: '20px 14px',
+              textAlign: 'center',
+              order: 1,
+            }}>
+              <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥈</div>
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                margin: '0 auto 10px',
+                background: '#E2E8F0',
+                border: '2px solid #CBD5E1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#475569',
+                fontWeight: 900,
+              }}>
+                {items[1].name.charAt(0)}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[1].name}</div>
+              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Lvl {items[1].level}</div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 900,
+                color: '#16A34A',
+              }}>
+                {items[1].xp} XP
+              </div>
+            </div>
+          )}
 
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: isMe ? 'var(--accent-cyan)' : '#fff' }}>
-                      {row.name} {isMe && '(Siz)'}
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      Daraja: Lvl {row.level} • Yechilgan: {row.cases_solved || 12} keys
-                    </div>
-                  </div>
-                </div>
+          {/* Gold (Rank 1) */}
+          {items[0] && (
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: 26,
+              border: '2px solid #FDE68A',
+              boxShadow: '0 8px 24px rgba(245, 158, 11, 0.15)',
+              padding: '26px 16px',
+              textAlign: 'center',
+              order: 2,
+              transform: 'translateY(-10px)',
+            }}>
+              <div style={{ fontSize: '2.2rem', marginBottom: 4 }}>👑</div>
+              <div style={{
+                width: 58,
+                height: 58,
+                borderRadius: '50%',
+                margin: '0 auto 10px',
+                background: '#FEF08A',
+                border: '2.5px solid #FACC15',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#B45309',
+                fontWeight: 900,
+                fontSize: '18px',
+              }}>
+                {items[0].name.charAt(0)}
+              </div>
+              <div style={{ fontWeight: 900, fontSize: '15px', color: '#0F172A', marginBottom: 2 }}>{items[0].name}</div>
+              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Lvl {items[0].level}</div>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 900,
+                color: '#D97706',
+              }}>
+                {items[0].xp} XP
+              </div>
+            </div>
+          )}
 
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{
-                    fontSize: '1.1rem',
-                    fontWeight: 800,
-                    color: '#38bdf8',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}>
-                    <Zap size={16} color="#38bdf8" />
-                    <span>{row.xp} XP</span>
+          {/* Bronze (Rank 3) */}
+          {items[2] && (
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: 24,
+              border: '1.5px solid #E2E8F0',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+              padding: '20px 14px',
+              textAlign: 'center',
+              order: 3,
+            }}>
+              <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥉</div>
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                margin: '0 auto 10px',
+                background: '#FFEDD5',
+                border: '2px solid #FDBA74',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#C2410C',
+                fontWeight: 900,
+              }}>
+                {items[2].name.charAt(0)}
+              </div>
+              <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[2].name}</div>
+              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Lvl {items[2].level}</div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: 900,
+                color: '#16A34A',
+              }}>
+                {items[2].xp} XP
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* My Position Highlight Bar */}
+        <div style={{
+          background: '#DCFCE7',
+          border: '1.5px solid #86EFAC',
+          borderRadius: 20,
+          padding: '14px 20px',
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              background: '#16A34A',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 900,
+              fontSize: '14px',
+            }}>
+              #{me.rank}
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#166534' }}>
+                {me.name} (Siz)
+              </div>
+              <div style={{ fontSize: '12px', color: '#15803D' }}>
+                Lvl {me.level} • {me.cases_solved} ta keys yechilgan
+              </div>
+            </div>
+          </div>
+          <div style={{
+            fontSize: '16px',
+            fontWeight: 900,
+            color: '#166534',
+          }}>
+            {me.xp} XP
+          </div>
+        </div>
+
+        {/* Rankings Table/List */}
+        <div style={{
+          background: '#FFFFFF',
+          borderRadius: 24,
+          border: '1.5px solid #E2E8F0',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+          overflow: 'hidden',
+        }}>
+          {items.map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 20px',
+                borderBottom: idx < items.length - 1 ? '1px solid #F1F5F9' : 'none',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  color: item.rank <= 3 ? '#D97706' : '#94A3B8',
+                  minWidth: 24,
+                }}>
+                  #{item.rank}
+                </span>
+
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A' }}>
+                    {item.name}
                   </div>
-                  {row.streak_count > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: '#f97316', display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end' }}>
-                      <Flame size={12} color="#f97316" />
-                      <span>{row.streak_count} kun</span>
-                    </div>
-                  )}
+                  <div style={{ fontSize: '12px', color: '#64748B' }}>
+                    Lvl {item.level} • {item.cases_solved} keys
+                  </div>
                 </div>
               </div>
-            );
-          })}
+
+              <div style={{
+                fontSize: '14px',
+                fontWeight: 900,
+                color: '#16A34A',
+              }}>
+                {item.xp} XP
+              </div>
+            </div>
+          ))}
         </div>
+
       </div>
     </div>
   );
