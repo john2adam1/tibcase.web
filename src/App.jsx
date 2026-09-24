@@ -297,9 +297,10 @@ export default function App() {
           />
         )}
 
-        {/* Clinics / All Categories View */}
+        {/* Clinics / All Categories View (Only real API categories) */}
         {currentView === 'clinics' && (
           <CategoriesView
+            categories={categories}
             onSelectCategory={(cat) => {
               setSelectedCategory(cat);
               setCurrentView('roadmap');
@@ -308,28 +309,25 @@ export default function App() {
           />
         )}
 
-        {/* Category Roadmap View (Duolingo-style segmented nodes) */}
+        {/* Category Roadmap View (Duolingo-style segmented nodes from API) */}
         {currentView === 'roadmap' && (
           <RoadmapView
-            category={selectedCategory || {
-              id: 'emergency',
-              title: 'Emergency Medicine',
-              emoji: '🚑',
-              casesCount: 60,
-              solvedCount: 0
-            }}
-            onSelectNode={(node) => {
-              setSelectedRoadmapNode(node);
+            category={selectedCategory || categories[0]}
+            onSelectNode={(caseItem) => {
+              setSelectedDetailCase(caseItem);
+              setSelectedRoadmapNode(caseItem);
               setCurrentView('case-details');
             }}
             onBack={() => setCurrentView('clinics')}
           />
         )}
 
-        {/* Case Details View */}
+        {/* Case Details View (Real API case data) */}
         {currentView === 'case-details' && (
           <CaseDetailsView
+            caseItem={selectedDetailCase || cases[0]}
             onStartCase={() => {
+              setActiveCase(selectedDetailCase || cases[0]);
               setIsPreparingCase(true);
             }}
             onBack={() => setCurrentView('roadmap')}

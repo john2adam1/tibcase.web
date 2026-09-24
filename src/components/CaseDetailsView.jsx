@@ -15,31 +15,29 @@ import {
 } from 'lucide-react';
 
 export default function CaseDetailsView({
-  caseItem = {
-    id: 'emer-013',
-    case_number: '013',
-    case_id_code: '#EMER_E_013',
-    category: 'EMERGENCY MEDICINE',
-    urgency: 'URGENT',
-    title: 'Emergency Medicine Case #013',
-    difficulty: 'Easy',
-    duration: '10 min',
-    reward_xp: '+250 XP',
-    patient_gender: 'Female',
-    patient_age: 26,
-    vitals: {
-      bp: '88/54',
-      hr: '128 bpm',
-      rr: '26 /dk',
-      spo2: '92 %',
-      temp: '36.8 °C'
-    },
-    anamnesis: '26-year-old female presents 10 minutes after eating a peanut-containing dessert with generalized itching, urticaria, throat tightness, and shortness of breath. She can only speak in short sentences and has lip swelling.'
-  },
+  caseItem,
   onStartCase,
   onBack
 }) {
   const [anamnesisExpanded, setAnamnesisExpanded] = useState(true);
+
+  const displayTitle = caseItem?.title || 'Shoshilinch kardiologiya / Oʻtkir koronar sindrom';
+  const displayCategory = caseItem?.category_name?.toUpperCase() || caseItem?.category || 'KARDIOLOGIYA';
+  const displayUrgency = caseItem?.urgency || (caseItem?.difficulty === 'hard' ? 'CRITICAL' : 'URGENT');
+  const displayCode = caseItem?.case_id_code || `#CASE_${String(caseItem?.id || '013').slice(0, 8).toUpperCase()}`;
+  const displayDifficulty = caseItem?.difficulty ? (caseItem.difficulty.charAt(0).toUpperCase() + caseItem.difficulty.slice(1)) : 'Easy';
+  const displayDuration = caseItem?.expected_duration_minutes ? `${caseItem.expected_duration_minutes} min` : (caseItem?.duration || '10 min');
+  const displayGender = caseItem?.patient_gender === 'female' ? 'Female' : 'Male';
+  const displayAge = caseItem?.patient_age ? `${caseItem.patient_age} years old` : '45 years old';
+  const displayAnamnesis = caseItem?.chief_complaint || caseItem?.anamnesis || 'Bemor shikoyatlari va kasallik anamnezi.';
+
+  const vitals = caseItem?.vitals || {
+    bp: '88/54',
+    hr: '128 bpm',
+    rr: '26 /dk',
+    spo2: '92 %',
+    temp: '36.8 °C'
+  };
 
   return (
     <div style={{
@@ -113,7 +111,7 @@ export default function CaseDetailsView({
             padding: '4px 10px',
             borderRadius: 8,
           }}>
-            {caseItem.category || 'EMERGENCY MEDICINE'}
+            {displayCategory}
           </span>
           <span style={{
             background: '#FEE2E2',
@@ -125,24 +123,24 @@ export default function CaseDetailsView({
             padding: '4px 10px',
             borderRadius: 8,
           }}>
-            {caseItem.urgency || 'URGENT'}
+            {displayUrgency}
           </span>
         </div>
 
         {/* Case Title and Code */}
         <div>
           <h2 style={{
-            fontSize: '26px',
+            fontSize: '24px',
             fontWeight: 900,
             color: '#0F172A',
             letterSpacing: '-0.02em',
             margin: '0 0 6px 0',
             lineHeight: 1.25,
           }}>
-            {caseItem.title || 'Emergency Medicine Case #013'}
+            {displayTitle}
           </h2>
           <div style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8' }}>
-            Case ID: {caseItem.case_id_code || '#EMER_E_013'}
+            Case ID: {displayCode}
           </div>
         </div>
 
@@ -181,7 +179,7 @@ export default function CaseDetailsView({
               DIFFICULTY
             </div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
-              {caseItem.difficulty || 'Easy'}
+              {displayDifficulty}
             </div>
           </div>
 
@@ -214,7 +212,7 @@ export default function CaseDetailsView({
               DURATION
             </div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
-              {caseItem.duration || '10 min'}
+              {displayDuration}
             </div>
           </div>
 
@@ -247,7 +245,7 @@ export default function CaseDetailsView({
               REWARD
             </div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: '#16A34A' }}>
-              {caseItem.reward_xp || '+250 XP'}
+              +250 XP
             </div>
           </div>
         </div>
@@ -270,7 +268,7 @@ export default function CaseDetailsView({
             margin: 0,
             textAlign: 'center',
           }}>
-            {caseItem.patient_gender || 'Female'}, {caseItem.patient_age || 26} years old
+            {displayGender}, {displayAge}
           </h3>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -288,7 +286,7 @@ export default function CaseDetailsView({
               flexShrink: 0,
               fontSize: '28px',
             }}>
-              <span>👧</span>
+              <span>{displayGender.includes('Female') ? '👧' : '👨'}</span>
               {/* Online Green Badge */}
               <div style={{
                 position: 'absolute',
@@ -321,7 +319,7 @@ export default function CaseDetailsView({
                 alignItems: 'center',
                 gap: 5,
               }}>
-                🩺 {caseItem.vitals?.bp || '88/54'}
+                🩺 {vitals.bp}
               </span>
 
               {/* HR */}
@@ -336,7 +334,7 @@ export default function CaseDetailsView({
                 alignItems: 'center',
                 gap: 5,
               }}>
-                ❤️ {caseItem.vitals?.hr || '128 bpm'}
+                ❤️ {vitals.hr}
               </span>
 
               {/* RR */}
@@ -351,7 +349,7 @@ export default function CaseDetailsView({
                 alignItems: 'center',
                 gap: 5,
               }}>
-                🫁 {caseItem.vitals?.rr || '26 /dk'}
+                🫁 {vitals.rr}
               </span>
 
               {/* SpO2 */}
@@ -366,7 +364,7 @@ export default function CaseDetailsView({
                 alignItems: 'center',
                 gap: 5,
               }}>
-                🧬 {caseItem.vitals?.spo2 || '92 %'}
+                🧬 {vitals.spo2}
               </span>
 
               {/* Temp */}
@@ -381,7 +379,7 @@ export default function CaseDetailsView({
                 alignItems: 'center',
                 gap: 5,
               }}>
-                🌡️ {caseItem.vitals?.temp || '36.8 °C'}
+                🌡️ {vitals.temp}
               </span>
             </div>
           </div>
@@ -425,7 +423,7 @@ export default function CaseDetailsView({
               lineHeight: 1.6,
               color: '#334155',
             }}>
-              {caseItem.anamnesis}
+              {displayAnamnesis}
             </div>
           )}
         </div>

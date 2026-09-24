@@ -90,16 +90,25 @@ async function request(path, options = {}) {
 // Mobile/Web API Endpoints
 export const api = {
   // Categories & Cases
+  // Categories & Topics & Cases
   getCategories: async () => {
     try {
-      const res = await request('/mobile/category');
+      const res = await request('/mobile/category?limit=100');
       return res.data || res.categories || [];
-    } catch {
-      return [
-        { id: "2ef837ab-9bcb-42d9-9959-087c0d049794", name: "Kardiologiya", audience: "doctor", cases_count: 1 },
-        { id: "emerg-1", name: "Shoshilinch Yordam", audience: "doctor", cases_count: 1 },
-        { id: "citizen-1", name: "Birinchi Yordam (BLS)", audience: "citizen", cases_count: 1 }
-      ];
+    } catch (err) {
+      console.warn('Error fetching categories from API:', err.message);
+      return [];
+    }
+  },
+
+  getTopics: async (categoryId) => {
+    try {
+      const url = categoryId ? `/mobile/topic?category_id=${categoryId}&limit=100` : '/mobile/topic?limit=100';
+      const res = await request(url);
+      return res.data || [];
+    } catch (err) {
+      console.warn('Error fetching topics from API:', err.message);
+      return [];
     }
   },
 
