@@ -13,12 +13,14 @@ import {
   Zap
 } from 'lucide-react';
 import { api } from '../api';
+import { useTranslation } from '../i18n.jsx';
 
 export default function StoreTariffs({
   tariffs = [],
   user,
   onUserUpdate,
 }) {
+  const { t } = useTranslation();
   const [promocode, setPromocode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoResult, setPromoResult] = useState(null);
@@ -150,13 +152,13 @@ export default function StoreTariffs({
             marginBottom: 10,
           }}>
             <Coins size={14} />
-            <span>Obunalar va Tangalar Do'koni</span>
+            <span>{t('store.badge')}</span>
           </div>
           <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#0F172A', margin: '4px 0 6px 0' }}>
-            Bilimingizga Sarmoya Kiriting
+            {t('store.title')}
           </h1>
           <p style={{ color: '#64748B', fontSize: '14px', maxWidth: 560, margin: '0 auto' }}>
-            Cheksiz klinik keyslar, reanimatsiya monitori va professional protokollarga to'liq kirish
+            {t('store.subtitle')}
           </p>
         </div>
 
@@ -180,11 +182,11 @@ export default function StoreTariffs({
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <Gift size={20} color="#D97706" />
                 <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0F172A', margin: 0 }}>
-                  Promokodingiz bormi?
+                  {t('store.promoTitle')}
                 </h3>
               </div>
               <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-                Hamkor kurslardan olgan promokodingizni kiriting va bepul tangalarga ega bo'ling:
+                {t('store.promoSubtitle')}
               </p>
             </div>
 
@@ -221,7 +223,7 @@ export default function StoreTariffs({
                   boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)',
                 }}
               >
-                {promoLoading ? "..." : "Faollashtirish"}
+                {promoLoading ? "..." : t('store.activate')}
               </button>
             </form>
           </div>
@@ -282,7 +284,7 @@ export default function StoreTariffs({
                   borderRadius: 99,
                   boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)',
                 }}>
-                  ENG MASHHUR
+                  {t('store.popular')}
                 </div>
               )}
 
@@ -345,7 +347,7 @@ export default function StoreTariffs({
                   boxShadow: tariff.is_popular ? '0 6px 18px rgba(34, 197, 94, 0.35)' : 'none',
                 }}
               >
-                Tanlash va Ulanish
+                {t('store.selectAndConnect')}
               </button>
             </div>
           ))}
@@ -383,7 +385,7 @@ export default function StoreTariffs({
             }}
           >
             <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '0 0 6px 0' }}>
-              To'lov Tizimini Tanlang
+              {t('store.paymentTitle')}
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 20px 0' }}>
               {selectedTariff?.name} — {formatPrice(selectedTariff?.price || 0)}
@@ -405,7 +407,7 @@ export default function StoreTariffs({
                     cursor: 'pointer',
                   }}
                 >
-                  {paySystem} orqali to'lash
+                  {paySystem} {t('store.payVia')}
                 </button>
               ))}
             </div>

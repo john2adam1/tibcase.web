@@ -7,6 +7,7 @@ import {
   Inbox
 } from 'lucide-react';
 import { api } from '../api';
+import { useTranslation } from '../i18n.jsx';
 
 const getCategoryMeta = (cat) => {
   const name = (cat?.name || '').toLowerCase();
@@ -47,6 +48,7 @@ export default function CategoriesView({
   onSelectCategory,
   onBack
 }) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState(initialCategories);
   const [loading, setLoading] = useState(!initialCategories || initialCategories.length === 0);
 
@@ -102,7 +104,7 @@ export default function CategoriesView({
           {onBack && (
             <button
               onClick={onBack}
-              title="Orqaga"
+              title={t('cat.back')}
               style={{
                 width: 40,
                 height: 40,
@@ -131,7 +133,7 @@ export default function CategoriesView({
             textAlign: 'center',
             paddingRight: onBack ? 40 : 0,
           }}>
-            All Categories
+            {t('cat.title')}
           </h1>
         </div>
 
@@ -180,16 +182,16 @@ export default function CategoriesView({
             gap: 12,
           }}>
             <Inbox size={48} color="#94A3B8" />
-            <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
-              Hozircha bo'limlar mavjud emas
-            </div>
-            <div style={{ fontSize: '13px', color: '#64748B' }}>
-              API orqali yangi klinik bo'limlar qo'shilgach, bu yerda avtomatik paydo bo'ladi.
-            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              Kategoriyalar topilmadi
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
+              Serverda hozircha hech qanday bo'lim mavjud emas.
+            </p>
           </div>
         )}
 
-        {/* ONLY Real Categories from API */}
+        {/* Categories 2-Column Grid */}
         {!loading && categories.length > 0 && (
           <div style={{
             display: 'grid',
@@ -280,7 +282,7 @@ export default function CategoriesView({
                       color: '#64748B',
                     }}>
                       <Star size={13} fill={meta.starColor} color={meta.starColor} />
-                      <span>{casesCount} Cases Waiting</span>
+                      <span>{casesCount} {t('cat.cases')}</span>
                     </div>
                   </div>
                 </div>

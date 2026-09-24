@@ -20,6 +20,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { getSoundEnabled, setSoundEnabled } from '../audio';
+import { useTranslation } from '../i18n.jsx';
 
 export default function AppNavbar({
   currentView,
@@ -28,9 +29,9 @@ export default function AppNavbar({
   activeCase,
   onOpenProfile,
   onLogout,
-  lang,
   onLangChange,
 }) {
+  const { t, lang, setLang } = useTranslation();
   const [soundOn, setSoundOn] = useState(getSoundEnabled());
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -41,12 +42,12 @@ export default function AppNavbar({
     setSoundEnabled(next);
   };
 
-  // Nav menu items
+  // Nav menu items translated
   const navItems = [
-    { id: 'cases', label: 'Home', subtitle: 'Klinik keyslar katalogi', icon: Building2 },
-    { id: 'clinics', label: 'Category', subtitle: "Bo'limlar & Kategoriyalar", icon: Stethoscope },
-    { id: 'leaderboard', label: 'Ranking', subtitle: 'Peshqadamlar reytingi', icon: Award },
-    { id: 'profile', label: 'Profile', subtitle: 'Mening profilim & Sozlamalar', icon: User },
+    { id: 'cases', label: t('nav.home'), subtitle: 'Klinik keyslar katalogi', icon: Building2 },
+    { id: 'clinics', label: t('nav.category'), subtitle: "Bo'limlar & Kategoriyalar", icon: Stethoscope },
+    { id: 'leaderboard', label: t('nav.ranking'), subtitle: 'Peshqadamlar reytingi', icon: Award },
+    { id: 'profile', label: t('nav.profile'), subtitle: 'Mening profilim & Sozlamalar', icon: User },
   ];
 
   const handleSelectNav = (id) => {
@@ -56,6 +57,12 @@ export default function AppNavbar({
       setCurrentView(id);
     }
     setDrawerOpen(false);
+  };
+
+  const handleSelectLanguage = (code) => {
+    setLang(code);
+    if (onLangChange) onLangChange(code);
+    setLangMenuOpen(false);
   };
 
   return (
@@ -119,7 +126,7 @@ export default function AppNavbar({
                 fontSize: '0.65rem',
                 fontWeight: 800,
               }}>
-                PRO
+                {t('nav.pro', 'PRO')}
               </span>
             </div>
           </div>
@@ -147,7 +154,7 @@ export default function AppNavbar({
                   color: '#D97706',
                   cursor: 'pointer',
                 }}
-                title="Tangalar balansi"
+                title={t('nav.coins')}
               >
                 <Coins size={15} color="#D97706" />
                 <span>{user?.coins ?? 15}</span>
@@ -164,7 +171,7 @@ export default function AppNavbar({
                   fontWeight: 800,
                   color: '#EA580C',
                 }}
-                title="Ketma-ketlik (Streak)"
+                title={t('nav.streak')}
               >
                 <Flame size={15} color="#EA580C" />
                 <span>{user?.streak_count ?? 5}</span>
@@ -181,7 +188,7 @@ export default function AppNavbar({
                   fontWeight: 800,
                   color: '#16A34A',
                 }}
-                title="Daraja"
+                title={t('nav.level')}
               >
                 <Zap size={14} color="#16A34A" />
                 <span>Lvl {user?.level ?? 1}</span>
@@ -191,7 +198,7 @@ export default function AppNavbar({
             {/* Sound Toggle */}
             <button
               onClick={toggleSound}
-              title={soundOn ? "Tovushni o'chirish" : "Tovushni yoqish"}
+              title={soundOn ? t('nav.soundOn') : t('nav.soundOff')}
               style={{
                 width: 38,
                 height: 38,
@@ -251,10 +258,7 @@ export default function AppNavbar({
                   ].map((item) => (
                     <button
                       key={item.code}
-                      onClick={() => {
-                        if (onLangChange) onLangChange(item.code);
-                        setLangMenuOpen(false);
-                      }}
+                      onClick={() => handleSelectLanguage(item.code)}
                       style={{
                         width: '100%',
                         textAlign: 'left',
@@ -278,7 +282,7 @@ export default function AppNavbar({
             {/* Profile Avatar Button */}
             <button
               onClick={() => handleSelectNav('profile')}
-              title="Profilga o'tish"
+              title={t('nav.profile')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -316,11 +320,11 @@ export default function AppNavbar({
               </span>
             </button>
 
-            {/* HAMBURGER MENU BUTTON (Laptop, Tablet, Desktop) */}
+            {/* HAMBURGER MENU BUTTON */}
             <button
               id="btn-hamburger-menu"
               onClick={() => setDrawerOpen(true)}
-              title="Menyu"
+              title={t('nav.menu')}
               style={{
                 width: 40,
                 height: 40,
@@ -399,7 +403,7 @@ export default function AppNavbar({
                   height: 48,
                   borderRadius: '50%',
                   background: '#FEF08A',
-                  border: '2px solid #FDE047',
+                  border: '2px solid #FDE68A',
                   overflow: 'hidden',
                   display: 'flex',
                   alignItems: 'center',
@@ -416,7 +420,7 @@ export default function AppNavbar({
                     {user?.name || 'Dr. Akmal Karimov'}
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>
-                    {user?.specialty || 'Medical Student'}
+                    {user?.specialty || t('profile.student')}
                   </div>
                 </div>
               </div>
@@ -458,7 +462,7 @@ export default function AppNavbar({
                 textTransform: 'uppercase',
                 marginBottom: 4,
               }}>
-                Asosiy Sahifalar
+                {t('nav.mainPages')}
               </div>
 
               {navItems.map((item) => {
@@ -543,7 +547,7 @@ export default function AppNavbar({
                   }}
                 >
                   <LogOut size={16} />
-                  <span>Chiqish</span>
+                  <span>{t('nav.logout')}</span>
                 </button>
               )}
             </div>

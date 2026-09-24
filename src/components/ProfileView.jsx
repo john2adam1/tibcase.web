@@ -25,16 +25,18 @@ import {
   MessageCircle,
   AlertCircle
 } from 'lucide-react';
+import { useTranslation } from '../i18n.jsx';
 
 export default function ProfileView({
   user,
   onUserUpdate,
   onOpenStore,
   onNavigate,
-  lang = 'en',
   onLangChange,
   onLogout
 }) {
+  const { t, lang: appLang, setLang } = useTranslation();
+  const lang = appLang || 'uz';
   const [currentScreen, setCurrentScreen] = useState('profile'); // 'profile' | 'settings'
   const [activeTab, setActiveTab] = useState('completed'); // 'completed' | 'ongoing'
   const [copiedId, setCopiedId] = useState(false);
@@ -170,14 +172,14 @@ export default function ProfileView({
                 margin: 0,
                 textAlign: 'center',
               }}>
-                Profile
+                {t('profile.title')}
               </h1>
 
               {/* Gold Settings Gear Button */}
               <button
                 id="btn-settings-toggle"
                 onClick={() => setCurrentScreen('settings')}
-                title="Settings"
+                title={t('profile.settings')}
                 style={{
                   width: 44,
                   height: 44,
@@ -248,7 +250,6 @@ export default function ProfileView({
                       objectFit: 'cover',
                     }}
                     onError={(e) => {
-                      // Fallback SVG if image not loaded yet
                       e.target.style.display = 'none';
                     }}
                   />
@@ -281,7 +282,7 @@ export default function ProfileView({
                     color: '#64748B',
                     margin: 0,
                   }}>
-                    {user?.specialty || 'Medical Student'}
+                    {user?.specialty || t('profile.student')}
                   </p>
                 </div>
 
@@ -311,13 +312,13 @@ export default function ProfileView({
                   fontSize: '13px',
                 }}>
                   <span style={{ fontWeight: 800, color: '#1E293B', fontSize: '14px' }}>
-                    Level {currentLevel}
+                    {t('profile.level')} {currentLevel}
                   </span>
                   <span style={{ fontWeight: 700, color: '#94A3B8', fontSize: '12px' }}>
                     {xpInCurrentLevel}/1000 XP
                   </span>
                   <span style={{ fontWeight: 700, color: '#64748B', fontSize: '14px' }}>
-                    Level {nextLevel}
+                    {t('profile.level')} {nextLevel}
                   </span>
                 </div>
 
@@ -391,7 +392,7 @@ export default function ProfileView({
                   color: '#64748B',
                   letterSpacing: '0.6px',
                 }}>
-                  TOTAL XP
+                  {t('profile.totalXp')}
                 </div>
               </div>
 
@@ -434,7 +435,7 @@ export default function ProfileView({
                   color: '#64748B',
                   letterSpacing: '0.6px',
                 }}>
-                  COMPLETED
+                  {t('profile.completed')}
                 </div>
               </div>
 
@@ -477,7 +478,7 @@ export default function ProfileView({
                   color: '#64748B',
                   letterSpacing: '0.6px',
                 }}>
-                  ONGOING
+                  {t('profile.ongoing')}
                 </div>
               </div>
             </div>
@@ -522,7 +523,7 @@ export default function ProfileView({
                 }}
               >
                 <CheckCircle2 size={18} strokeWidth={2.5} color={activeTab === 'completed' ? '#FFFFFF' : '#94A3B8'} />
-                <span>Completed</span>
+                <span>{t('profile.completedTab')}</span>
               </button>
 
               {/* Tab: Ongoing */}
@@ -551,7 +552,7 @@ export default function ProfileView({
                 }}
               >
                 <Clock size={18} strokeWidth={2.5} color={activeTab === 'ongoing' ? '#FFFFFF' : '#94A3B8'} />
-                <span>Ongoing</span>
+                <span>{t('profile.ongoingTab')}</span>
               </button>
             </div>
 
@@ -617,7 +618,7 @@ export default function ProfileView({
                 color: '#94A3B8',
                 margin: 0,
               }}>
-                {activeTab === 'completed' ? 'No completed cases yet' : 'No ongoing cases yet'}
+                {activeTab === 'completed' ? t('profile.noCompleted') : 'No ongoing cases yet'}
               </p>
 
               {/* Quick action button to explore cases */}
@@ -638,7 +639,7 @@ export default function ProfileView({
                   gap: 6,
                 }}
               >
-                <span>Browse Cases</span>
+                <span>{t('profile.browseCases')}</span>
                 <ChevronRight size={14} />
               </button>
             </div>
@@ -688,7 +689,7 @@ export default function ProfileView({
                 textAlign: 'center',
                 paddingRight: 40, // offset back button for optical center
               }}>
-                Settings
+                {t('profile.settings')}
               </h1>
             </div>
 
@@ -821,7 +822,7 @@ export default function ProfileView({
             }}>
               <SettingsListItem
                 icon={<Globe size={20} color="#0F172A" strokeWidth={2} />}
-                label="Language Selection"
+                label={t('profile.language')}
                 subtitle={getLanguageLabel()}
                 onClick={() => setModalType('language')}
               />
@@ -1129,19 +1130,20 @@ export default function ProfileView({
       {/* 3. Language Selection Modal */}
       {modalType === 'language' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Select Language" onClose={() => setModalType(null)}>
+          <ModalCard title={t('profile.selectLanguage')} onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { code: 'en', flag: '🇺🇸', label: 'English' },
                 { code: 'uz', flag: '🇺🇿', label: 'Oʻzbekcha' },
-                { code: 'ru', flag: '🇷🇺', label: 'Русский' }
+                { code: 'ru', flag: '🇷🇺', label: 'Русский' },
+                { code: 'en', flag: '🇺🇸', label: 'English' }
               ].map((item) => (
                 <button
                   key={item.code}
                   onClick={() => {
+                    setLang(item.code);
                     if (onLangChange) onLangChange(item.code);
                     setModalType(null);
-                    showToast(`Language changed to ${item.label}`);
+                    showToast(item.code === 'uz' ? "Til o'zgartirildi: O'ZBEKCHA" : (item.code === 'ru' ? "Язык изменен: РУССКИЙ" : `Language changed to ${item.label}`));
                   }}
                   style={{
                     display: 'flex',

@@ -6,16 +6,19 @@ import {
   Award,
   User
 } from 'lucide-react';
+import { useTranslation } from '../i18n.jsx';
 
 export default function BottomNavBar({
   currentView,
   onSelectView,
 }) {
+  const { t } = useTranslation();
+
   const tabs = [
-    { id: 'cases', label: 'Home', icon: Building2 },
-    { id: 'clinics', label: 'Category', icon: Stethoscope },
-    { id: 'leaderboard', label: 'Ranking', icon: Award },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'cases', label: t('nav.home', 'Home'), icon: Building2 },
+    { id: 'clinics', label: t('nav.category', 'Category'), icon: Stethoscope },
+    { id: 'leaderboard', label: t('nav.ranking', 'Ranking'), icon: Award },
+    { id: 'profile', label: t('nav.profile', 'Profile'), icon: User },
   ];
 
   return (

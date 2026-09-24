@@ -19,8 +19,11 @@ import QuickGuideModal from './components/QuickGuideModal';
 import CaseDetailModal from './components/CaseDetailModal';
 import AuthModal from './components/AuthModal';
 import HomeView from './components/HomeView';
+import { useTranslation } from './i18n.jsx';
 
 export default function App() {
+  const { lang, setLang, t } = useTranslation();
+
   // Authentication status: default to false so visitor sees clean Landing Page first
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('tibcase_authenticated') === 'true';
@@ -28,7 +31,6 @@ export default function App() {
 
   const [currentView, setCurrentView] = useState('cases'); // 'cases' | 'simulation' | 'store' | 'leaderboard'
   const [activeMode, setActiveMode] = useState('clinical'); // 'clinical' | 'citizen'
-  const [lang, setLangState] = useState(getLang());
 
   // Data states
   const [user, setUser] = useState(null);
@@ -63,8 +65,8 @@ export default function App() {
 
   const handleLangChange = (newLang) => {
     setLang(newLang);
-    setLangState(newLang);
-    showToast(`Til o'zgartirildi: ${newLang.toUpperCase()}`);
+    const msg = newLang === 'uz' ? "Til o'zgartirildi: O'ZBEKCHA" : (newLang === 'ru' ? "Язык изменен: РУССКИЙ" : "Language changed: ENGLISH");
+    showToast(msg);
   };
 
   // Initial Data Fetch

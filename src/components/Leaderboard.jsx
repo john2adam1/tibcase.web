@@ -10,8 +10,10 @@ import {
   Zap
 } from 'lucide-react';
 import { api } from '../api';
+import { useTranslation } from '../i18n.jsx';
 
 export default function Leaderboard({ user }) {
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState('total');
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -76,13 +78,13 @@ export default function Leaderboard({ user }) {
             marginBottom: 10,
           }}>
             <Trophy size={14} />
-            <span>Peshqadamlar Reytingi</span>
+            <span>{t('lead.badge')}</span>
           </div>
           <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#0F172A', margin: '4px 0 6px 0' }}>
-            Klinik Reyting va Yetakchilar
+            {t('lead.title')}
           </h1>
           <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>
-            Eng ko'p keys yechgan va yuqori diagnostik aniqlik ko'rsatgan shifokorlar
+            {t('lead.subtitle')}
           </p>
         </div>
 
@@ -101,10 +103,10 @@ export default function Leaderboard({ user }) {
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
           }}>
             {[
-              { id: 'day', label: 'Bugun' },
-              { id: 'week', label: 'Shu Hafta' },
-              { id: 'month', label: 'Shu Oy' },
-              { id: 'total', label: 'Umumiy' },
+              { id: 'day', label: t('lead.today') },
+              { id: 'week', label: t('lead.thisWeek') },
+              { id: 'month', label: t('lead.thisMonth') },
+              { id: 'total', label: t('lead.allTime') },
             ].map(f => (
               <button
                 key={f.id}
@@ -282,10 +284,10 @@ export default function Leaderboard({ user }) {
             </div>
             <div>
               <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#166534' }}>
-                {me.name} (Siz)
+                {me.name} {t('lead.you')}
               </div>
               <div style={{ fontSize: '12px', color: '#15803D' }}>
-                Lvl {me.level} • {me.cases_solved} ta keys yechilgan
+                Lvl {me.level} • {me.cases_solved} {t('lead.casesSolved')}
               </div>
             </div>
           </div>
@@ -332,7 +334,7 @@ export default function Leaderboard({ user }) {
                     {item.name}
                   </div>
                   <div style={{ fontSize: '12px', color: '#64748B' }}>
-                    Lvl {item.level} • {item.cases_solved} keys
+                    Lvl {item.level} • {item.cases_solved} {t('lead.casesSolved')}
                   </div>
                 </div>
               </div>

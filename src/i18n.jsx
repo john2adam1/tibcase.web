@@ -1,0 +1,415 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getLang, setLang as apiSetLang } from './api';
+
+export const translations = {
+  uz: {
+    // Nav
+    'nav.home': 'Asosiy',
+    'nav.category': "Bo'limlar",
+    'nav.ranking': 'Reyting',
+    'nav.profile': 'Profil',
+    'nav.coins': 'Tangalar',
+    'nav.streak': 'Ketma-ketlik',
+    'nav.level': 'Daraja',
+    'nav.menu': 'Menyu',
+    'nav.mainPages': 'Asosiy Sahifalar',
+    'nav.logout': 'Chiqish',
+    'nav.pro': 'PRO',
+    'nav.soundOn': "Tovushni o'chirish",
+    'nav.soundOff': 'Tovushni yoqish',
+
+    // Home View
+    'home.greeting': 'Salom',
+    'home.welcomeSubtitle': "Virtual reanimatsiya palatasiga xush kelibsiz. Real bemorlar holatini boshqaring va klinik mahoratingizni oshiring.",
+    'home.aiEngine': 'AI Klinik Simulyatsiya Dvigateli',
+    'home.startSimulation': 'Simulyatsiyani Boshlash',
+    'home.startSimulationDesc': "Bemor ko'rsatkichlari real vaqtda modellashtiriladi: EKG monitor, qon bosimi va SpO2 o'zgarishlari sizning buyruqlaringizga bog'liq.",
+    'home.icuFeature': 'Real ICU Monitor',
+    'home.icuDesc': "Jonli EKG to'lqini",
+    'home.deptFeature': "Klinik Bo'limlar",
+    'home.deptDesc': 'API dan dinamik',
+    'home.protocolFeature': 'Xalqaro Protokol',
+    'home.protocolDesc': 'AHA & ESC Standartlari',
+
+    // Modal (Screenshot 5)
+    'modal.configTitle': 'Simulyatsiya Sozlamalari',
+    'modal.step1': "1. CASE BO'LIMINI TANLANG",
+    'modal.clinicalMode': 'Clinical Mode',
+    'modal.randomOption': "— Istalgan bo'lim (Random) —",
+    'modal.step2': '2. QIYINCHILIK DARAJASINI TANLANG',
+    'modal.easy': 'Oson',
+    'modal.medium': "O'rta",
+    'modal.hard': 'Qiyin',
+    'modal.step3': '3. DAVOMIYLIK (DURATION) NI TANLANG',
+    'modal.min5': '5 daqiqa',
+    'modal.min10': '10 daqiqa',
+    'modal.min15': '15 daqiqa',
+    'modal.startBtn': 'Boshlash >',
+
+    // Simulation Room
+    'sim.headerCase': 'Klinik Simulyatsiya Keysi',
+    'sim.actionsCount': 'ta harakat',
+    'sim.finishBtn': 'Yakunlash',
+    'sim.hintTitle': 'Klinik maslahat',
+    'sim.orderPlaceholder': 'Tibbiy buyruq yoki dori vositasini yozing...',
+    'sim.caseCompleted': 'Keys Muvaffaqiyatli Yakunlandi!',
+    'sim.score': 'NATIJA',
+    'sim.xp': 'XP',
+    'sim.time': 'VAQT',
+    'sim.clinicalPearlTitle': 'Klinik Xulosa:',
+    'sim.retry': 'Qaytadan',
+    'sim.continue': 'Davom etish',
+    'sim.leadII': 'LEAD II • ECG NORMAL FILTER',
+    'sim.stable': 'BARQAROR',
+    'sim.unstable': 'NOBARQAROR',
+    'sim.critical': 'KRITIK',
+    'sim.hintDefault': "Anafilaktik shok holatida zudlik bilan hayotni saqlovchi dori vositasini o'ylang. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon tomoniga mushak ichiga kiritilishi birinchi darajali oltin standart hisoblanadi.",
+    'sim.pearlDefault': "Anafilaktik shok holatida har daqiqa g'animat. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon qismiga mushak ichiga kiritilishi shart.",
+
+    // Leaderboard
+    'lead.title': 'Klinik Reyting va Yetakchilar',
+    'lead.subtitle': "Eng ko'p keys yechgan va yuqori diagnostik aniqlik ko'rsatgan shifokorlar",
+    'lead.badge': 'Peshqadamlar Reytingi',
+    'lead.today': 'Bugun',
+    'lead.thisWeek': 'Shu Hafta',
+    'lead.thisMonth': 'Shu Oy',
+    'lead.allTime': 'Umumiy',
+    'lead.you': '(Siz)',
+    'lead.casesSolved': 'ta keys yechilgan',
+
+    // Store & Tariffs
+    'store.title': 'Bilimingizga Sarmoya Kiriting',
+    'store.subtitle': "Cheksiz klinik keyslar, reanimatsiya monitori va professional protokollarga to'liq kirish",
+    'store.badge': "Obunalar va Tangalar Do'koni",
+    'store.promoTitle': 'Promokodingiz bormi?',
+    'store.promoSubtitle': "Hamkor kurslardan olgan promokodingizni kiriting va bepul tangalarga ega bo'ling:",
+    'store.activate': 'Faollashtirish',
+    'store.popular': 'ENG MASHHUR',
+    'store.selectAndConnect': 'Tanlash va Ulanish',
+    'store.paymentTitle': "To'lov Tizimini Tanlang",
+    'store.payVia': "orqali to'lash",
+
+    // Profile & Settings
+    'profile.title': 'Profil',
+    'profile.level': 'Daraja',
+    'profile.totalXp': 'JAMI XP',
+    'profile.completed': 'YAKUNLANGAN',
+    'profile.ongoing': 'JARAYONDA',
+    'profile.completedTab': 'Yakunlangan',
+    'profile.ongoingTab': 'Jarayonda',
+    'profile.noCompleted': "Hozircha yakunlangan keyslar yo'q",
+    'profile.browseCases': "Keyslarni Ko'rish >",
+    'profile.settings': 'Sozlamalar',
+    'profile.language': 'Til (Language)',
+    'profile.selectLanguage': 'Tilni tanlang',
+    'profile.sound': 'Tovush effektlari',
+    'profile.soundOn': 'Yoniq',
+    'profile.soundOff': "O'chiq",
+    'profile.notifications': 'Bildirishnomalar',
+    'profile.terms': 'Foydalanish shartlari',
+    'profile.privacy': 'Maxfiylik siyosati',
+    'profile.help': "Yordam va qo'llab-quvvatlash",
+    'profile.logout': 'Tizimdan chiqish',
+    'profile.save': 'Saqlash',
+    'profile.back': 'Orqaga',
+    'profile.student': 'Tibbiyot talabasi',
+
+    // Categories
+    'cat.title': "Klinik Bo'limlar",
+    'cat.subtitle': "O'zingiz qiziqqan yo'nalishni tanlang va amaliyotni boshlang",
+    'cat.cases': 'keys',
+    'cat.topics': 'mavzu',
+    'cat.back': 'Orqaga',
+
+    // General
+    'gen.copyright': '© 2026 TibCase AI. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.',
+    'gen.standards': 'AHA & ESC Standartlari',
+  },
+
+  ru: {
+    // Nav
+    'nav.home': 'Главная',
+    'nav.category': 'Категории',
+    'nav.ranking': 'Рейтинг',
+    'nav.profile': 'Профиль',
+    'nav.coins': 'Монеты',
+    'nav.streak': 'Серия',
+    'nav.level': 'Уровень',
+    'nav.menu': 'Меню',
+    'nav.mainPages': 'Основные разделы',
+    'nav.logout': 'Выйти',
+    'nav.pro': 'PRO',
+    'nav.soundOn': 'Выключить звук',
+    'nav.soundOff': 'Включить звук',
+
+    // Home View
+    'home.greeting': 'Здравствуйте',
+    'home.welcomeSubtitle': 'Добро пожаловать в виртуальное отделение реанимации. Управляйте состоянием пациентов и развивайте клинические навыки.',
+    'home.aiEngine': 'Движок клинической симуляции AI',
+    'home.startSimulation': 'Начать симуляцию',
+    'home.startSimulationDesc': 'Показатели пациента моделируются в реальном времени: ЭКГ, давление и SpO2 меняются в зависимости от ваших решений.',
+    'home.icuFeature': 'Реальный монитор ICU',
+    'home.icuDesc': 'Живая волна ЭКГ',
+    'home.deptFeature': 'Клинические отделения',
+    'home.deptDesc': 'Динамически из API',
+    'home.protocolFeature': 'Международный протокол',
+    'home.protocolDesc': 'Стандарты AHA & ESC',
+
+    // Modal
+    'modal.configTitle': 'Настройки симуляции',
+    'modal.step1': '1. ВЫБЕРИТЕ ОТДЕЛЕНИЕ КЕЙСА',
+    'modal.clinicalMode': 'Clinical Mode',
+    'modal.randomOption': '— Любой раздел (Случайно) —',
+    'modal.step2': '2. ВЫБЕРИТЕ УРОВЕНЬ СЛОЖНОСТИ',
+    'modal.easy': 'Легкий',
+    'modal.medium': 'Средний',
+    'modal.hard': 'Сложный',
+    'modal.step3': '3. ВЫБЕРИТЕ ДЛИТЕЛЬНОСТЬ',
+    'modal.min5': '5 минут',
+    'modal.min10': '10 минут',
+    'modal.min15': '15 минут',
+    'modal.startBtn': 'Начать >',
+
+    // Simulation Room
+    'sim.headerCase': 'Клинический симуляционный кейс',
+    'sim.actionsCount': 'действий',
+    'sim.finishBtn': 'Завершить',
+    'sim.hintTitle': 'Клиническая подсказка',
+    'sim.orderPlaceholder': 'Введите клиническое назначение или препарат...',
+    'sim.caseCompleted': 'Кейс успешно завершен!',
+    'sim.score': 'РЕЗУЛЬТАТ',
+    'sim.xp': 'XP',
+    'sim.time': 'ВРЕМЯ',
+    'sim.clinicalPearlTitle': 'Клинический вывод:',
+    'sim.retry': 'Заново',
+    'sim.continue': 'Продолжить',
+    'sim.leadII': 'ОТВЕДЕНИЕ II • ЭКГ НОРМАЛЬНЫЙ ФИЛЬТР',
+    'sim.stable': 'СТАБИЛЬНЫЙ',
+    'sim.unstable': 'НЕСТАБИЛЬНЫЙ',
+    'sim.critical': 'КРИТИЧЕСКИЙ',
+    'sim.hintDefault': 'При анафилактическом шоке немедленно используйте препарат первой линии. Эпинефрин (Адреналин) внутримышечно в передне-боковую часть бедра является золотым стандартом.',
+    'sim.pearlDefault': 'При анафилаксии дорога каждая минута. Эпинефрин (Адреналин) должен вводиться безотлагательно внутримышечно в бедро.',
+
+    // Leaderboard
+    'lead.title': 'Клинический рейтинг и лидеры',
+    'lead.subtitle': 'Врачи, решившие наибольшее количество кейсов с высокой диагностической точностью',
+    'lead.badge': 'Рейтинг лидеров',
+    'lead.today': 'Сегодня',
+    'lead.thisWeek': 'Эта неделя',
+    'lead.thisMonth': 'Этот месяц',
+    'lead.allTime': 'Все время',
+    'lead.you': '(Вы)',
+    'lead.casesSolved': 'кейсов решено',
+
+    // Store & Tariffs
+    'store.title': 'Инвестируйте в свои знания',
+    'store.subtitle': 'Неограниченный доступ к клиническим кейсам, монитору реанимации и протоколам',
+    'store.badge': 'Магазин подписок и монет',
+    'store.promoTitle': 'Есть промокод?',
+    'store.promoSubtitle': 'Введите промокод от партнеров и получите бонусные монеты:',
+    'store.activate': 'Активировать',
+    'store.popular': 'САМЫЙ ПОПУЛЯРНЫЙ',
+    'store.selectAndConnect': 'Выбрать и подключить',
+    'store.paymentTitle': 'Выберите платежную систему',
+    'store.payVia': 'Оплатить через',
+
+    // Profile & Settings
+    'profile.title': 'Профиль',
+    'profile.level': 'Уровень',
+    'profile.totalXp': 'ВСЕГО XP',
+    'profile.completed': 'ЗАВЕРШЕНО',
+    'profile.ongoing': 'В ПРОЦЕССЕ',
+    'profile.completedTab': 'Завершенные',
+    'profile.ongoingTab': 'В процессе',
+    'profile.noCompleted': 'Пока нет завершенных кейсов',
+    'profile.browseCases': 'Посмотреть кейсы >',
+    'profile.settings': 'Настройки',
+    'profile.language': 'Язык (Language)',
+    'profile.selectLanguage': 'Выберите язык',
+    'profile.sound': 'Звуковые эффекты',
+    'profile.soundOn': 'Вкл',
+    'profile.soundOff': 'Выкл',
+    'profile.notifications': 'Уведомления',
+    'profile.terms': 'Условия использования',
+    'profile.privacy': 'Политика конфиденциальности',
+    'profile.help': 'Помощь и поддержка',
+    'profile.logout': 'Выйти из аккаунта',
+    'profile.save': 'Сохранить',
+    'profile.back': 'Назад',
+    'profile.student': 'Студент-медик',
+
+    // Categories
+    'cat.title': 'Клинические отделения',
+    'cat.subtitle': 'Выберите интересующее медицинское направление и начните практику',
+    'cat.cases': 'кейсов',
+    'cat.topics': 'тем',
+    'cat.back': 'Назад',
+
+    // General
+    'gen.copyright': '© 2026 TibCase AI. Виртуальный клинический симулятор для врачей и студентов.',
+    'gen.standards': 'Стандарты AHA & ESC',
+  },
+
+  en: {
+    // Nav
+    'nav.home': 'Home',
+    'nav.category': 'Categories',
+    'nav.ranking': 'Ranking',
+    'nav.profile': 'Profile',
+    'nav.coins': 'Coins',
+    'nav.streak': 'Streak',
+    'nav.level': 'Level',
+    'nav.menu': 'Menu',
+    'nav.mainPages': 'Main Pages',
+    'nav.logout': 'Log Out',
+    'nav.pro': 'PRO',
+    'nav.soundOn': 'Mute Sound',
+    'nav.soundOff': 'Unmute Sound',
+
+    // Home View
+    'home.greeting': 'Hello',
+    'home.welcomeSubtitle': 'Welcome to the virtual emergency ICU. Manage realistic patients and elevate your clinical diagnostic acumen.',
+    'home.aiEngine': 'AI Clinical Simulation Engine',
+    'home.startSimulation': 'Start Simulation',
+    'home.startSimulationDesc': 'Patient vitals react in real time: ECG rhythm, blood pressure, and SpO2 fluctuate directly based on your medical orders.',
+    'home.icuFeature': 'Real ICU Monitor',
+    'home.icuDesc': 'Live ECG rhythm wave',
+    'home.deptFeature': 'Clinical Departments',
+    'home.deptDesc': 'Dynamic from API',
+    'home.protocolFeature': 'Global Protocols',
+    'home.protocolDesc': 'AHA & ESC Standards',
+
+    // Modal
+    'modal.configTitle': 'Simulation Settings',
+    'modal.step1': '1. SELECT CASE DEPARTMENT',
+    'modal.clinicalMode': 'Clinical Mode',
+    'modal.randomOption': '— Any Department (Random) —',
+    'modal.step2': '2. SELECT DIFFICULTY LEVEL',
+    'modal.easy': 'Easy',
+    'modal.medium': 'Medium',
+    'modal.hard': 'Hard',
+    'modal.step3': '3. SELECT DURATION',
+    'modal.min5': '5 minutes',
+    'modal.min10': '10 minutes',
+    'modal.min15': '15 minutes',
+    'modal.startBtn': 'Start >',
+
+    // Simulation Room
+    'sim.headerCase': 'Clinical Simulation Case',
+    'sim.actionsCount': 'actions',
+    'sim.finishBtn': 'Finish Case',
+    'sim.hintTitle': 'Clinical Hint',
+    'sim.orderPlaceholder': 'Type clinical order or medication...',
+    'sim.caseCompleted': 'Case Successfully Completed!',
+    'sim.score': 'SCORE',
+    'sim.xp': 'XP',
+    'sim.time': 'TIME',
+    'sim.clinicalPearlTitle': 'Clinical Pearls:',
+    'sim.retry': 'Retry',
+    'sim.continue': 'Continue',
+    'sim.leadII': 'LEAD II • ECG NORMAL FILTER',
+    'sim.stable': 'STABLE',
+    'sim.unstable': 'UNSTABLE',
+    'sim.critical': 'CRITICAL',
+    'sim.hintDefault': 'In anaphylactic shock, administer first-line life-saving medications immediately. Intramuscular epinephrine into the anterolateral thigh is the gold standard.',
+    'sim.pearlDefault': 'Every minute counts in anaphylaxis. Intramuscular epinephrine (adrenaline) into the anterolateral thigh must never be delayed.',
+
+    // Leaderboard
+    'lead.title': 'Clinical Ranking & Leaderboard',
+    'lead.subtitle': 'Doctors and students with top diagnostic accuracy and completed clinical cases',
+    'lead.badge': 'Leaderboard',
+    'lead.today': 'Today',
+    'lead.thisWeek': 'This Week',
+    'lead.thisMonth': 'This Month',
+    'lead.allTime': 'All Time',
+    'lead.you': '(You)',
+    'lead.casesSolved': 'cases solved',
+
+    // Store & Tariffs
+    'store.title': 'Invest in Your Medical Knowledge',
+    'store.subtitle': 'Full access to interactive clinical cases, real-time ICU monitor, and international protocols',
+    'store.badge': 'Store & Subscriptions',
+    'store.promoTitle': 'Have a Promocode?',
+    'store.promoSubtitle': 'Enter your promo code from partner events to unlock free clinical coins:',
+    'store.activate': 'Activate',
+    'store.popular': 'MOST POPULAR',
+    'store.selectAndConnect': 'Select & Subscribe',
+    'store.paymentTitle': 'Select Payment Method',
+    'store.payVia': 'Pay with',
+
+    // Profile & Settings
+    'profile.title': 'Profile',
+    'profile.level': 'Level',
+    'profile.totalXp': 'TOTAL XP',
+    'profile.completed': 'COMPLETED',
+    'profile.ongoing': 'ONGOING',
+    'profile.completedTab': 'Completed',
+    'profile.ongoingTab': 'Ongoing',
+    'profile.noCompleted': 'No completed cases yet',
+    'profile.browseCases': 'Browse Cases >',
+    'profile.settings': 'Settings',
+    'profile.language': 'Language',
+    'profile.selectLanguage': 'Select Language',
+    'profile.sound': 'Sound Effects',
+    'profile.soundOn': 'On',
+    'profile.soundOff': 'Off',
+    'profile.notifications': 'Notifications',
+    'profile.terms': 'Terms of Use',
+    'profile.privacy': 'Privacy Policy',
+    'profile.help': 'Help & Support',
+    'profile.logout': 'Log Out',
+    'profile.save': 'Save',
+    'profile.back': 'Back',
+    'profile.student': 'Medical Student',
+
+    // Categories
+    'cat.title': 'Clinical Departments',
+    'cat.subtitle': 'Choose your specialty of interest and begin clinical simulation practice',
+    'cat.cases': 'cases',
+    'cat.topics': 'topics',
+    'cat.back': 'Back',
+
+    // General
+    'gen.copyright': '© 2026 TibCase AI. Virtual Clinical Simulator for Doctors and Students.',
+    'gen.standards': 'AHA & ESC Standards',
+  }
+};
+
+const LanguageContext = createContext({
+  lang: 'uz',
+  setLang: () => {},
+  t: (key) => key,
+});
+
+export function LanguageProvider({ children }) {
+  const [lang, setLangState] = useState(() => getLang() || 'uz');
+
+  const changeLanguage = (newLang) => {
+    if (translations[newLang]) {
+      apiSetLang(newLang);
+      setLangState(newLang);
+    }
+  };
+
+  const t = (key, fallback = '') => {
+    const currentDict = translations[lang] || translations.uz;
+    if (currentDict && currentDict[key]) {
+      return currentDict[key];
+    }
+    // Fallback to Uzbek
+    if (translations.uz && translations.uz[key]) {
+      return translations.uz[key];
+    }
+    return fallback || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ lang, setLang: changeLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useTranslation() {
+  return useContext(LanguageContext);
+}

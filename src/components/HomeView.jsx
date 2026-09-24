@@ -10,6 +10,7 @@ import {
   X,
   Play
 } from 'lucide-react';
+import { useTranslation } from '../i18n.jsx';
 
 export default function HomeView({
   user,
@@ -17,12 +18,25 @@ export default function HomeView({
   onStartSimulation,
   onOpenClinics
 }) {
+  const { t, lang } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
 
   // Modal configuration states
   const [selectedCategory, setSelectedCategory] = useState('random');
   const [difficulty, setDifficulty] = useState("O'rta"); // 'Oson' | "O'rta" | 'Qiyin'
   const [duration, setDuration] = useState('10 daqiqa'); // '5 daqiqa' | '10 daqiqa' | '15 daqiqa'
+
+  const difficultyLevels = [
+    { id: 'Oson', label: t('modal.easy') },
+    { id: "O'rta", label: t('modal.medium') },
+    { id: 'Qiyin', label: t('modal.hard') }
+  ];
+
+  const durationOptions = [
+    { id: '5 daqiqa', label: t('modal.min5') },
+    { id: '10 daqiqa', label: t('modal.min10') },
+    { id: '15 daqiqa', label: t('modal.min15') }
+  ];
 
   const handleLaunch = () => {
     setModalOpen(false);
@@ -86,7 +100,7 @@ export default function HomeView({
             margin: '6px 0 0 0',
             letterSpacing: '-0.5px',
           }}>
-            Salom, Dr. {user?.name?.split(' ')[0] || 'Akmal'}! 👋
+            {t('home.greeting')}, Dr. {user?.name?.split(' ')[0] || 'Akmal'}! 👋
           </h1>
           <p style={{
             fontSize: '14.5px',
@@ -95,7 +109,7 @@ export default function HomeView({
             maxWidth: 440,
             lineHeight: 1.5,
           }}>
-            Virtual reanimatsiya palatasiga xush kelibsiz. Real bemorlar holatini boshqaring va klinik mahoratingizni oshiring.
+            {t('home.welcomeSubtitle')}
           </p>
         </div>
 
@@ -128,7 +142,7 @@ export default function HomeView({
             color: '#16A34A',
           }}>
             <Sparkles size={14} />
-            <span>AI Klinik Simulyatsiya Dvigateli</span>
+            <span>{t('home.aiEngine')}</span>
           </div>
 
           <div>
@@ -138,7 +152,7 @@ export default function HomeView({
               color: '#0F172A',
               margin: '0 0 6px 0',
             }}>
-              Yangi Simulyatsiyani Boshlash
+              {t('home.startSimulation')}
             </h2>
             <p style={{
               fontSize: '14px',
@@ -147,7 +161,7 @@ export default function HomeView({
               lineHeight: 1.5,
               maxWidth: 460,
             }}>
-              Bemor ko'rsatkichlari real vaqtda modellashtiriladi: EKG monitor, qon bosimi va SpO2 o'zgarishlari sizning buyruqlaringizga bog'liq.
+              {t('home.startSimulationDesc')}
             </p>
           </div>
 
@@ -183,7 +197,7 @@ export default function HomeView({
             }}
           >
             <Play size={20} fill="#FFFFFF" />
-            <span>Simulyatsiyani Boshlash</span>
+            <span>{t('home.startSimulation')}</span>
             <ChevronRight size={20} strokeWidth={2.6} />
           </button>
         </div>
@@ -221,10 +235,10 @@ export default function HomeView({
               <Activity size={20} />
             </div>
             <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A' }}>
-              Real ICU Monitor
+              {t('home.icuFeature')}
             </span>
             <span style={{ fontSize: '11px', color: '#64748B' }}>
-              Jonli EKG to'lqini
+              {t('home.icuDesc')}
             </span>
           </div>
 
@@ -258,10 +272,10 @@ export default function HomeView({
               <Stethoscope size={20} />
             </div>
             <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A' }}>
-              Klinik Bo'limlar
+              {t('home.deptFeature')}
             </span>
             <span style={{ fontSize: '11px', color: '#64748B' }}>
-              API dan dinamik
+              {t('home.deptDesc')}
             </span>
           </div>
 
@@ -291,10 +305,10 @@ export default function HomeView({
               <CheckCircle2 size={20} />
             </div>
             <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A' }}>
-              Xalqaro Protokol
+              {t('home.protocolFeature')}
             </span>
             <span style={{ fontSize: '11px', color: '#64748B' }}>
-              AHA & ESC 2024
+              {t('home.protocolDesc')}
             </span>
           </div>
         </div>
@@ -337,7 +351,7 @@ export default function HomeView({
             {/* Modal Header with Close Button */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A' }}>
-                Simulyatsiya Sozlamalari
+                {t('modal.configTitle')}
               </div>
               <button
                 onClick={() => setModalOpen(false)}
@@ -379,7 +393,7 @@ export default function HomeView({
                   color: '#475569',
                   letterSpacing: '0.6px',
                 }}>
-                  1. CASE BO'LIMINI TANLANG
+                  {t('modal.step1')}
                 </span>
                 <span style={{
                   fontSize: '11px',
@@ -390,7 +404,7 @@ export default function HomeView({
                   padding: '3px 10px',
                   borderRadius: 99,
                 }}>
-                  Clinical Mode
+                  {t('modal.clinicalMode')}
                 </span>
               </div>
 
@@ -414,7 +428,7 @@ export default function HomeView({
                     appearance: 'none',
                   }}
                 >
-                  <option value="random">— Istalgan bo'lim (Random) —</option>
+                  <option value="random">{t('modal.randomOption')}</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name || cat.title}
@@ -456,7 +470,7 @@ export default function HomeView({
                 gap: 6,
               }}>
                 <Clock size={14} color="#64748B" />
-                <span>2. QIYINCHILIK DARAJASINI TANLANG</span>
+                <span>{t('modal.step2')}</span>
               </div>
 
               <div style={{
@@ -464,13 +478,13 @@ export default function HomeView({
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: 8,
               }}>
-                {['Oson', "O'rta", 'Qiyin'].map((level) => {
-                  const isSelected = difficulty === level;
+                {difficultyLevels.map((lvl) => {
+                  const isSelected = difficulty === lvl.id;
                   return (
                     <button
-                      key={level}
+                      key={lvl.id}
                       type="button"
-                      onClick={() => setDifficulty(level)}
+                      onClick={() => setDifficulty(lvl.id)}
                       style={{
                         padding: '14px 8px',
                         borderRadius: 14,
@@ -484,7 +498,7 @@ export default function HomeView({
                         boxShadow: isSelected ? '0 4px 14px rgba(22, 163, 74, 0.3)' : 'none',
                       }}
                     >
-                      {level}
+                      {lvl.label}
                     </button>
                   );
                 })}
@@ -511,7 +525,7 @@ export default function HomeView({
                 gap: 6,
               }}>
                 <span style={{ fontSize: '13px' }}>⏱</span>
-                <span>3. DAVOMIYLIK (DURATION) NI TANLANG</span>
+                <span>{t('modal.step3')}</span>
               </div>
 
               <div style={{
@@ -519,13 +533,13 @@ export default function HomeView({
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: 8,
               }}>
-                {['5 daqiqa', '10 daqiqa', '15 daqiqa'].map((dur) => {
-                  const isSelected = duration === dur;
+                {durationOptions.map((dur) => {
+                  const isSelected = duration === dur.id;
                   return (
                     <button
-                      key={dur}
+                      key={dur.id}
                       type="button"
-                      onClick={() => setDuration(dur)}
+                      onClick={() => setDuration(dur.id)}
                       style={{
                         padding: '14px 8px',
                         borderRadius: 14,
@@ -539,7 +553,7 @@ export default function HomeView({
                         boxShadow: isSelected ? '0 4px 14px rgba(22, 163, 74, 0.3)' : 'none',
                       }}
                     >
-                      {dur}
+                      {dur.label}
                     </button>
                   );
                 })}
@@ -569,7 +583,7 @@ export default function HomeView({
               }}
             >
               <Sparkles size={18} fill="#FFFFFF" />
-              <span>Boshlash &gt;</span>
+              <span>{t('modal.startBtn')}</span>
             </button>
           </div>
         </div>

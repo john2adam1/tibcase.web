@@ -11,12 +11,15 @@ import {
 } from 'lucide-react';
 import HospitalMonitor from './HospitalMonitor';
 import ClinicalHintModal from './ClinicalHintModal';
+import { useTranslation } from '../i18n.jsx';
 
 export default function CaseSimulationRoom({
   caseItem,
   onExitSimulation,
   onFinishCase
 }) {
+  const { t, lang } = useTranslation();
+
   // Patient Status: 'stable' | 'unstable' | 'critical'
   const [patientStatus, setPatientStatus] = useState('unstable');
 
@@ -42,7 +45,13 @@ export default function CaseSimulationRoom({
     {
       id: 'init-1',
       sender: 'patient',
-      text: caseItem?.chief_complaint || "26 yoshli ayol bemor. Yer yong'oqli desert iste'mol qilgandan 10 daqiqa o'tib, butun tanada qichishish, eshakemi (urtikariya), tomoq qisishi va nafas qisishi shikoyati bilan reanimatsiya palatasiga keltirildi. Gapirishi qiyinlashgan, lablarida shish bor. Qanday tezkor chora ko'rasiz?",
+      text: caseItem?.chief_complaint || (
+        lang === 'ru'
+          ? "26-летняя пациентка доставлена в ОРИТ через 10 минут после десерта с арахисом. Жалобы: зуд, генерализованная крапивница, отек горла и одышка. Речь затруднена, губы отечны. Ваши экстренные действия?"
+          : (lang === 'en'
+            ? "26-year-old female presents to the ICU 10 minutes after eating a peanut dessert with generalized itching, urticaria, throat tightness, and severe shortness of breath. She can only speak in short phrases. What is your immediate clinical management?"
+            : "26 yoshli ayol bemor. Yer yong'oqli desert iste'mol qilgandan 10 daqiqa o'tib, butun tanada qichishish, eshakemi (urtikariya), tomoq qisishi va nafas qisishi shikoyati bilan reanimatsiya palatasiga keltirildi. Gapirishi qiyinlashgan, lablarida shish bor. Qanday tezkor chora ko'rasiz?")
+      ),
       time: '00:00'
     }
   ]);
@@ -81,10 +90,10 @@ export default function CaseSimulationRoom({
     setQuestionsCount(prev => prev + 1);
 
     const lower = userText.toLowerCase();
-    const isParacetamol = lower.includes('paratsetamol') || lower.includes('paracetamol');
-    const isEpi = lower.includes('epinephrine') || lower.includes('adrenaline') || lower.includes('adrenalin');
-    const isOxygen = lower.includes('oxygen') || lower.includes('kislorod');
-    const isSaline = lower.includes('saline') || lower.includes('fizraster') || lower.includes('0.9%') || lower.includes('infuziya');
+    const isParacetamol = lower.includes('paratsetamol') || lower.includes('paracetamol') || lower.includes('парацетамол');
+    const isEpi = lower.includes('epinephrine') || lower.includes('adrenaline') || lower.includes('adrenalin') || lower.includes('эпинефрин') || lower.includes('адреналин');
+    const isOxygen = lower.includes('oxygen') || lower.includes('kislorod') || lower.includes('кислород');
+    const isSaline = lower.includes('saline') || lower.includes('fizraster') || lower.includes('0.9%') || lower.includes('infuziya') || lower.includes('физраствор');
 
     // Add user message
     const userMsg = {
@@ -100,39 +109,59 @@ export default function CaseSimulationRoom({
     if (isParacetamol) {
       evaluation = {
         type: 'wrong',
-        badge: '↓ Notoʻgʻri koʻrsatma'
+        badge: lang === 'ru' ? '↓ Неверное назначение' : (lang === 'en' ? '↓ Incorrect choice' : '↓ Notoʻgʻri koʻrsatma')
       };
-      systemReply = "Paratsetamol berildi. Biroq bemorning tomoq qisishi va nafas siqilishi kuchaymoqda!\n\n\"Nafas olishim yanada qiyinlashmoqda, tomog'im bo'g'ilyapti...\" - deb arang shivirladi. Yurak urishi tezlashdi va qon bosimi tushib ketmoqda.";
+      systemReply = lang === 'ru'
+        ? "Парацетамол введен. Однако отек гортани и удушье нарастают!\n\n\"Дышать еще тяжелее, в горле ком...\" — еле слышно хрипит пациентка. Тахикардия усиливается, артериальное давление падает."
+        : (lang === 'en'
+          ? "Paracetamol administered. Throat tightness and respiratory distress are worsening rapidly!\n\n\"I can't catch my breath, my throat is closing up...\" she gasps. Blood pressure is dropping."
+          : "Paratsetamol berildi. Biroq bemorning tomoq qisishi va nafas siqilishi kuchaymoqda!\n\n\"Nafas olishim yanada qiyinlashmoqda, tomog'im bo'g'ilyapti...\" - deb arang shivirladi. Yurak urishi tezlashdi va qon bosimi tushib ketmoqda.");
       setPatientStatus('critical');
       setVitals({ hr: 142, temp: 36.9, bp: '78/48', rr: 30, spo2: 88 });
     } else if (isEpi) {
       evaluation = {
         type: 'correct',
-        badge: '↑ Ajoyib klinik qaror'
+        badge: lang === 'ru' ? '↑ Отличное решение' : (lang === 'en' ? '↑ Excellent choice' : '↑ Ajoyib klinik qaror')
       };
-      systemReply = "Epinefrin (Adrenalin) 0.5 mg zudlik bilan sonning old-yon qismiga mushak ichiga (IM) kiritildi!\n\n2 daqiqa ichida bronxospazm pasaydi, laringo-edema kamaydi. Bemor erkin nafas ola boshladi, qon bosimi ko'tarildi.";
+      systemReply = lang === 'ru'
+        ? "Эпинефрин (Адреналин) 0.5 мг немедленно введен внутримышечно в передне-боковую часть бедра!\n\nВ течение 2 минут бронхоспазм уменьшился, отек гортани спал. Пациентка дышит свободно, АД стабилизировалось."
+        : (lang === 'en'
+          ? "Epinephrine 0.5 mg administered IM into the anterolateral thigh!\n\nWithin 2 minutes, bronchospasm relieves and stridor improves. Blood pressure climbs toward normal."
+          : "Epinefrin (Adrenalin) 0.5 mg zudlik bilan sonning old-yon qismiga mushak ichiga (IM) kiritildi!\n\n2 daqiqa ichida bronxospazm pasaydi, laringo-edema kamaydi. Bemor erkin nafas ola boshladi, qon bosimi ko'tarildi.");
       setPatientStatus('stable');
       setVitals({ hr: 98, temp: 36.8, bp: '115/75', rr: 18, spo2: 98 });
     } else if (isOxygen) {
       evaluation = {
         type: 'correct',
-        badge: '↑ Toʻgʻri chora'
+        badge: lang === 'ru' ? '↑ Верное действие' : (lang === 'en' ? '↑ Correct action' : '↑ Toʻgʻri chora')
       };
-      systemReply = "Rezervuar niqob orqali 15 L/min yuqori oqimli O2 kislorod ingalyatsiyasi ulandi. SpO2 ko'rsatkichi 92% dan 97% gacha yaxshilandi.";
+      systemReply = lang === 'ru'
+        ? "Высокопоточный кислород 15 л/мин подключен через маску с резервуаром. SpO2 вырос с 92% до 97%."
+        : (lang === 'en'
+          ? "High-flow O2 at 15 L/min started via non-rebreather mask. SpO2 improved from 92% to 97%."
+          : "Rezervuar niqob orqali 15 L/min yuqori oqimli O2 kislorod ingalyatsiyasi ulandi. SpO2 ko'rsatkichi 92% dan 97% gacha yaxshilandi.");
       setVitals(v => ({ ...v, spo2: 97, rr: 20 }));
     } else if (isSaline) {
       evaluation = {
         type: 'correct',
-        badge: '↑ Toʻgʻri chora'
+        badge: lang === 'ru' ? '↑ Верное действие' : (lang === 'en' ? '↑ Correct action' : '↑ Toʻgʻri chora')
       };
-      systemReply = "Vena ichiga 1000 ml 0.9% NaCl fiziologik eritmasi tezkor oqim bilan yuborildi. Qon bosimi barqarorlashmoqda.";
+      systemReply = lang === 'ru'
+        ? "Внутривенно болюсно введен 1000 мл 0.9% раствора NaCl. Гемодинамика стабилизируется."
+        : (lang === 'en'
+          ? "1000 mL 0.9% Normal Saline bolus started. Hemodynamics stabilizing."
+          : "Vena ichiga 1000 ml 0.9% NaCl fiziologik eritmasi tezkor oqim bilan yuborildi. Qon bosimi barqarorlashmoqda.");
       setVitals(v => ({ ...v, bp: '105/65', hr: 110 }));
     } else {
       evaluation = {
         type: 'neutral',
-        badge: 'Buyruq qabul qilindi'
+        badge: lang === 'ru' ? 'Назначение принято' : (lang === 'en' ? 'Order processed' : 'Buyruq qabul qilindi')
       };
-      systemReply = `Buyruq bajarildi: "${userText}". Bemor ICU monitor nazoratida ushlab turilibdi.`;
+      systemReply = lang === 'ru'
+        ? `Назначение выполнено: "${userText}". Пациент находится под непрерывным мониторингом ОРИТ.`
+        : (lang === 'en'
+          ? `Action performed: "${userText}". Patient remains on ICU telemetry.`
+          : `Buyruq bajarildi: "${userText}". Bemor ICU monitor nazoratida ushlab turilibdi.`);
     }
 
     const replyMsg = {
@@ -221,7 +250,7 @@ export default function CaseSimulationRoom({
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}>
-              {caseItem?.title || 'Klinik Simulyatsiya Keysi'}
+              {caseItem?.title || t('sim.headerCase')}
             </h2>
             <div style={{
               display: 'flex',
@@ -233,7 +262,7 @@ export default function CaseSimulationRoom({
               color: '#64748B',
             }}>
               <span>⏱ {formatTimer(secondsElapsed)}</span>
-              <span>💬 {questionsCount} ta harakat</span>
+              <span>💬 {questionsCount} {t('sim.actionsCount')}</span>
             </div>
           </div>
 
@@ -242,7 +271,7 @@ export default function CaseSimulationRoom({
             <button
               id="btn-clinical-hint"
               onClick={() => setHintModalOpen(true)}
-              title="Klinik maslahat"
+              title={t('sim.hintTitle')}
               style={{
                 width: 40,
                 height: 40,
@@ -262,7 +291,7 @@ export default function CaseSimulationRoom({
             <button
               id="btn-finish-case"
               onClick={handleFinishSimulation}
-              title="Keysni yakunlash"
+              title={t('sim.finishBtn')}
               style={{
                 padding: '8px 14px',
                 borderRadius: 99,
@@ -278,7 +307,7 @@ export default function CaseSimulationRoom({
               }}
             >
               <Flag size={13} />
-              <span>Yakunlash</span>
+              <span>{t('sim.finishBtn')}</span>
             </button>
           </div>
         </div>
@@ -393,7 +422,7 @@ export default function CaseSimulationRoom({
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Tibbiy buyruq yoki dori vositasini yozing..."
+            placeholder={t('sim.orderPlaceholder')}
             style={{
               flex: 1,
               padding: '14px 18px',
@@ -441,10 +470,10 @@ export default function CaseSimulationRoom({
           paddingTop: 4,
         }}>
           {[
-            "Epinefrin 0.5 mg IM",
-            "Yuqori oqimli O2 kislorod",
-            "0.9% NaCl 1000 ml IV",
-            "Paratsetamol 500 mg"
+            lang === 'ru' ? "Эпинефрин 0.5 мг в/м" : (lang === 'en' ? "Epinephrine 0.5 mg IM" : "Epinefrin 0.5 mg IM"),
+            lang === 'ru' ? "Кислород 15 л/мин" : (lang === 'en' ? "High-flow O2 (15 L/min)" : "Yuqori oqimli O2 kislorod"),
+            lang === 'ru' ? "0.9% NaCl 1000 мл в/в" : (lang === 'en' ? "0.9% NaCl 1000 mL IV" : "0.9% NaCl 1000 ml IV"),
+            lang === 'ru' ? "Парацетамол 500 мг" : (lang === 'en' ? "Paracetamol 500 mg" : "Paratsetamol 500 mg")
           ].map((quickText, idx) => (
             <button
               key={idx}
@@ -483,7 +512,7 @@ export default function CaseSimulationRoom({
       <ClinicalHintModal
         isOpen={hintModalOpen}
         onClose={() => setHintModalOpen(false)}
-        hintText="Anafilaktik shok holatida zudlik bilan hayotni saqlovchi dori vositasini o'ylang. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon tomoniga mushak ichiga kiritilishi birinchi darajali oltin standart hisoblanadi."
+        hintText={t('sim.hintDefault')}
       />
 
       {/* 6. CASE COMPLETED DEBRIEFING SCREEN */}
@@ -530,10 +559,10 @@ export default function CaseSimulationRoom({
 
             <div>
               <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0' }}>
-                Keys Muvaffaqiyatli Yakunlandi!
+                {t('sim.caseCompleted')}
               </h2>
               <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', margin: 0 }}>
-                {caseItem?.title || 'Klinik Keys'}
+                {caseItem?.title || t('sim.headerCase')}
               </p>
             </div>
 
@@ -545,15 +574,15 @@ export default function CaseSimulationRoom({
               width: '100%',
             }}>
               <div style={{ padding: '12px 8px', borderRadius: 18, background: '#DCFCE7', border: '1.5px solid #86EFAC' }}>
-                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#166534' }}>NATIJA</div>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#166534' }}>{t('sim.score')}</div>
                 <div style={{ fontSize: '20px', fontWeight: 900, color: '#16A34A' }}>{finalScore}%</div>
               </div>
               <div style={{ padding: '12px 8px', borderRadius: 18, background: '#FEF3C7', border: '1.5px solid #FDE68A' }}>
-                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#92400E' }}>XP</div>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#92400E' }}>{t('sim.xp')}</div>
                 <div style={{ fontSize: '20px', fontWeight: 900, color: '#D97706' }}>+250</div>
               </div>
               <div style={{ padding: '12px 8px', borderRadius: 18, background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
-                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1E40AF' }}>VAQT</div>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1E40AF' }}>{t('sim.time')}</div>
                 <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563EB' }}>{formatTimer(secondsElapsed)}</div>
               </div>
             </div>
@@ -569,7 +598,7 @@ export default function CaseSimulationRoom({
               color: '#166534',
               lineHeight: 1.5,
             }}>
-              <strong>Klinik Xulosa:</strong> Anafilaktik shok holatida har daqiqa g'animat. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon qismiga mushak ichiga kiritilishi shart.
+              <strong>{t('sim.clinicalPearlTitle')}</strong> {t('sim.pearlDefault')}
             </div>
 
             {/* Actions */}
@@ -597,7 +626,7 @@ export default function CaseSimulationRoom({
                 }}
               >
                 <RotateCcw size={15} />
-                <span>Qaytadan</span>
+                <span>{t('sim.retry')}</span>
               </button>
 
               <button
@@ -614,7 +643,7 @@ export default function CaseSimulationRoom({
                   boxShadow: '0 6px 18px rgba(34, 197, 94, 0.35)',
                 }}
               >
-                Davom etish
+                {t('sim.continue')}
               </button>
             </div>
           </div>
