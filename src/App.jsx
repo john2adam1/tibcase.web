@@ -10,6 +10,11 @@ import Leaderboard from './components/Leaderboard';
 import ProfileModal from './components/ProfileModal';
 import ProfileView from './components/ProfileView';
 import BottomNavBar from './components/BottomNavBar';
+import CategoriesView from './components/CategoriesView';
+import RoadmapView from './components/RoadmapView';
+import CaseDetailsView from './components/CaseDetailsView';
+import PreparingCaseLoader from './components/PreparingCaseLoader';
+import QuickGuideModal from './components/QuickGuideModal';
 import CaseDetailModal from './components/CaseDetailModal';
 import AuthModal from './components/AuthModal';
 
@@ -37,6 +42,12 @@ export default function App() {
   const [activeCase, setActiveCase] = useState(null);
   const [selectedDetailCase, setSelectedDetailCase] = useState(null);
   const [debriefData, setDebriefData] = useState(null);
+
+  // Roadmap & Case Flow states
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedRoadmapNode, setSelectedRoadmapNode] = useState(null);
+  const [isPreparingCase, setIsPreparingCase] = useState(false);
+  const [showQuickGuide, setShowQuickGuide] = useState(false);
 
   // Modals
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -286,14 +297,42 @@ export default function App() {
           />
         )}
 
-        {/* Clinics Catalog View */}
+        {/* Clinics / All Categories View */}
         {currentView === 'clinics' && (
-          <CasesCatalog
-            cases={cases}
-            categories={categories}
-            onSelectCase={(item) => setSelectedDetailCase(item)}
-            onToggleFavorite={handleToggleFavorite}
-            onStartSimulation={handleStartSimulation}
+          <CategoriesView
+            onSelectCategory={(cat) => {
+              setSelectedCategory(cat);
+              setCurrentView('roadmap');
+            }}
+            onBack={() => setCurrentView('cases')}
+          />
+        )}
+
+        {/* Category Roadmap View (Duolingo-style segmented nodes) */}
+        {currentView === 'roadmap' && (
+          <RoadmapView
+            category={selectedCategory || {
+              id: 'emergency',
+              title: 'Emergency Medicine',
+              emoji: '🚑',
+              casesCount: 60,
+              solvedCount: 0
+            }}
+            onSelectNode={(node) => {
+              setSelectedRoadmapNode(node);
+              setCurrentView('case-details');
+            }}
+            onBack={() => setCurrentView('clinics')}
+          />
+        )}
+
+        {/* Case Details View */}
+        {currentView === 'case-details' && (
+          <CaseDetailsView
+            onStartCase={() => {
+              setIsPreparingCase(true);
+            }}
+            onBack={() => setCurrentView('roadmap')}
           />
         )}
       </main>
@@ -338,6 +377,31 @@ export default function App() {
       )}
 
       {/* Toast Notification */}
+      {/* Preparing Case Loading Screen (Screenshot 4) */}
+      {isPreparingCase && (
+        <PreparingCaseLoader
+          duration={2000}
+          onFinish={() => {
+            setIsPreparingCase(false);
+            setShowQuickGuide(true);
+          }}
+        />
+      )}
+
+      {/* Quick Guide Modal (Screenshot 5) */}
+      {showQuickGuide && (
+        <QuickGuideModal
+          onProceed={() => {
+            setShowQuickGuide(false);
+            setCurrentView('simulation');
+          }}
+          onSkip={() => {
+            setShowQuickGuide(false);
+            setCurrentView('simulation');
+          }}
+        />
+      )}
+
       {toast && (
         <div style={{
           position: 'fixed',
