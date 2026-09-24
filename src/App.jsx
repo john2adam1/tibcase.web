@@ -18,6 +18,7 @@ import PreparingCaseLoader from './components/PreparingCaseLoader';
 import QuickGuideModal from './components/QuickGuideModal';
 import CaseDetailModal from './components/CaseDetailModal';
 import AuthModal from './components/AuthModal';
+import HomeView from './components/HomeView';
 
 export default function App() {
   // Authentication status: default to false so visitor sees clean Landing Page first
@@ -142,6 +143,32 @@ export default function App() {
     }
   };
 
+  const handleStartSimulationFromHome = async ({ categoryId, difficulty, duration }) => {
+    try {
+      showToast("Klinik keys tayyorlanmoqda...");
+      let targetCase = null;
+
+      if (categoryId && categoryId !== 'random') {
+        const catCases = await api.getCases({ category_id: categoryId });
+        if (catCases && catCases.length > 0) {
+          targetCase = catCases[Math.floor(Math.random() * catCases.length)];
+        }
+      }
+
+      if (!targetCase) {
+        const randomRes = await api.getRandomCase();
+        targetCase = randomRes?.data || randomRes || (cases && cases.length > 0 ? cases[Math.floor(Math.random() * cases.length)] : null);
+      }
+
+      setActiveCase(targetCase || cases[0]);
+      setIsPreparingCase(true);
+    } catch (err) {
+      console.warn("Case launch fallback:", err);
+      setActiveCase(cases[0]);
+      setIsPreparingCase(true);
+    }
+  };
+
   const handleFinishSimulation = async (result) => {
     try {
       showToast("AI Debriefing hisoboti tayyorlanmoqda...");
@@ -243,22 +270,21 @@ export default function App() {
 
       {/* Internal Views */}
       <main style={{ flex: 1 }}>
-        {/* Cases Catalog View */}
+        {/* Clean AI Chatbot-Style Home View */}
         {currentView === 'cases' && (
-          <CasesCatalog
-            cases={cases}
+          <HomeView
+            user={user}
             categories={categories}
-            onSelectCase={(item) => setSelectedDetailCase(item)}
-            onToggleFavorite={handleToggleFavorite}
-            onStartSimulation={handleStartSimulation}
+            onStartSimulation={handleStartSimulationFromHome}
+            onOpenClinics={() => setCurrentView('clinics')}
           />
         )}
 
-        {/* Live Interactive Case Simulation Room (Figma exact UI) */}
+        {/* Live Interactive Case Simulation Room with Real Hospital Monitor */}
         {currentView === 'simulation' && (
           <CaseSimulationRoom
             caseItem={activeCase || cases[0]}
-            onExitSimulation={() => setCurrentView('roadmap')}
+            onExitSimulation={() => setCurrentView('cases')}
             onFinishCase={handleFinishSimulation}
           />
         )}

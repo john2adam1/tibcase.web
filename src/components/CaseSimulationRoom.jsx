@@ -3,25 +3,13 @@ import {
   ChevronLeft,
   Lightbulb,
   CheckCircle2,
-  Paperclip,
-  Send,
   ArrowRight,
-  User,
-  Heart,
-  Thermometer,
-  Activity,
-  Wind,
-  X,
-  Sparkles,
-  FileText,
-  AlertTriangle,
+  RotateCcw,
   Award,
-  Stethoscope,
-  FlaskConical,
-  Users,
-  BriefcaseMedical,
-  RotateCcw
+  Send,
+  Flag
 } from 'lucide-react';
+import HospitalMonitor from './HospitalMonitor';
 import ClinicalHintModal from './ClinicalHintModal';
 
 export default function CaseSimulationRoom({
@@ -29,13 +17,10 @@ export default function CaseSimulationRoom({
   onExitSimulation,
   onFinishCase
 }) {
-  // Stages: 'decision' | 'intervention' | 'monitoring' | 'discharge'
-  const [activeStage, setActiveStage] = useState('decision');
-
-  // Status: 'stable' | 'unstable' | 'critical' | 'recovered'
+  // Patient Status: 'stable' | 'unstable' | 'critical'
   const [patientStatus, setPatientStatus] = useState('unstable');
 
-  // Vitals
+  // Real-time Vitals connected directly to the Hospital ICU Monitor
   const [vitals, setVitals] = useState({
     hr: 129,
     temp: 36.8,
@@ -48,21 +33,8 @@ export default function CaseSimulationRoom({
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [questionsCount, setQuestionsCount] = useState(0);
 
-  // Mentor guidance toast ("HOCAN DİYOR Kİ")
-  const [mentorToast, setMentorToast] = useState({
-    visible: true,
-    text: "This medication is not typically used for this presentation. What is the primary goal of treatment in this situation?"
-  });
-
   // Clinical Hint modal
   const [hintModalOpen, setHintModalOpen] = useState(false);
-
-  // Left Paperclip drawer (Medical records / Attachments)
-  const [recordsDrawerOpen, setRecordsDrawerOpen] = useState(false);
-  const [paperclipAlert, setPaperclipAlert] = useState(true);
-
-  // Action Category Picker Tray: null | 'exam' | 'tests' | 'consultation' | 'treatment'
-  const [actionCategory, setActionCategory] = useState(null);
 
   // Chat / Actions log
   const [inputText, setInputText] = useState('');
@@ -70,7 +42,7 @@ export default function CaseSimulationRoom({
     {
       id: 'init-1',
       sender: 'patient',
-      text: caseItem?.chief_complaint || "26-year-old female presents 10 minutes after eating a peanut-containing dessert with generalized itching, urticaria, throat tightness, and shortness of breath. She can only speak in short sentences and has lip swelling. What would you like to do?",
+      text: caseItem?.chief_complaint || "26 yoshli ayol bemor. Yer yong'oqli desert iste'mol qilgandan 10 daqiqa o'tib, butun tanada qichishish, eshakemi (urtikariya), tomoq qisishi va nafas qisishi shikoyati bilan reanimatsiya palatasiga keltirildi. Gapirishi qiyinlashgan, lablarida shish bor. Qanday tezkor chora ko'rasiz?",
       time: '00:00'
     }
   ]);
@@ -100,46 +72,19 @@ export default function CaseSimulationRoom({
     return `${m}:${s}`;
   };
 
-  // Clinical options list for each medical category
-  const categoryOptions = {
-    exam: [
-      { id: 'ex-1', label: 'Check Airway & Stridor', desc: 'Inspect oral cavity, uvula and vocal cords' },
-      { id: 'ex-2', label: 'Lung Auscultation', desc: 'Bilateral wheezing / bronchospasm check' },
-      { id: 'ex-3', label: 'Skin Inspection', desc: 'Check for generalized urticaria, rash, angioedema' },
-      { id: 'ex-4', label: 'Pupillary Reflex & GCS', desc: 'Assess consciousness & neurological baseline' }
-    ],
-    tests: [
-      { id: 'ts-1', label: '12-Lead ECG Monitor', desc: 'Monitor rhythm, tachycardia or ischemia' },
-      { id: 'ts-2', label: 'Arterial Blood Gas (ABG)', desc: 'Assess PaO2, PaCO2, pH and lactate' },
-      { id: 'ts-3', label: 'Complete Blood Count (CBC)', desc: 'Baseline hematocrit, leukocytosis' },
-      { id: 'ts-4', label: 'Blood Glucose & Serum Tryptase', desc: 'Confirm mast cell degranulation marker' }
-    ],
-    consultation: [
-      { id: 'co-1', label: 'Ask about Peanut Allergy history', desc: '"Do you have known severe food or drug allergies?"' },
-      { id: 'co-2', label: 'Ask if Carrying EpiPen', desc: '"Do you carry an epinephrine auto-injector?"' },
-      { id: 'co-3', label: 'Ask about Asthma or Cardiac history', desc: '"Do you have asthma or heart disease?"' }
-    ],
-    treatment: [
-      { id: 'tr-1', label: 'Epinephrine (Adrenaline) 0.5 mg IM', desc: 'First-line life saving drug into anterolateral thigh', correct: true },
-      { id: 'tr-2', label: 'High-flow Oxygen via Non-Rebreather 15 L/min', desc: 'Target SpO2 > 94-96%', correct: true },
-      { id: 'tr-3', label: 'IV Normal Saline Bolus (1000 mL)', desc: 'Combat distributive shock and hypotension', correct: true },
-      { id: 'tr-4', label: 'Diphenhydramine 50 mg IV + Methylprednisolone', desc: 'Second-line antihistamine and corticosteroid', correct: true },
-      { id: 'tr-5', label: 'Paracetamol 500 mg PO', desc: 'Oral antipyretic/analgesic', correct: false }
-    ]
-  };
-
-  // Submit clinical action
+  // Submit clinical action / order
   const handlePerformAction = (actionText) => {
-    if (!actionText.trim()) return;
+    if (!actionText || !actionText.trim()) return;
 
     const userText = actionText.trim();
     setInputText('');
-    setActionCategory(null);
     setQuestionsCount(prev => prev + 1);
 
-    const isParacetamol = userText.toLowerCase().includes('paratsetamol') || userText.toLowerCase().includes('paracetamol');
-    const isEpi = userText.toLowerCase().includes('epinephrine') || userText.toLowerCase().includes('adrenaline') || userText.toLowerCase().includes('adrenalin');
-    const isOxygen = userText.toLowerCase().includes('oxygen') || userText.toLowerCase().includes('kislorod');
+    const lower = userText.toLowerCase();
+    const isParacetamol = lower.includes('paratsetamol') || lower.includes('paracetamol');
+    const isEpi = lower.includes('epinephrine') || lower.includes('adrenaline') || lower.includes('adrenalin');
+    const isOxygen = lower.includes('oxygen') || lower.includes('kislorod');
+    const isSaline = lower.includes('saline') || lower.includes('fizraster') || lower.includes('0.9%') || lower.includes('infuziya');
 
     // Add user message
     const userMsg = {
@@ -155,43 +100,39 @@ export default function CaseSimulationRoom({
     if (isParacetamol) {
       evaluation = {
         type: 'wrong',
-        badge: '↓ Yanlış seçim'
+        badge: '↓ Notoʻgʻri koʻrsatma'
       };
-      systemReply = "Paracetamol 500 mg PO administered. Patient continues to report severe throat tightness and shortness of breath.\n\n\"My throat still feels tight, and it's hard to catch my breath,\" she rasps. Skin rash is worsening.";
-      setPatientStatus('unstable');
-      setPaperclipAlert(true);
-      setMentorToast({
-        visible: true,
-        text: "This medication is not typically used for this presentation. What is the primary goal of treatment in this situation?"
-      });
-      setVitals(v => ({ ...v, hr: 132, bp: '84/50', spo2: 90 }));
+      systemReply = "Paratsetamol berildi. Biroq bemorning tomoq qisishi va nafas siqilishi kuchaymoqda!\n\n\"Nafas olishim yanada qiyinlashmoqda, tomog'im bo'g'ilyapti...\" - deb arang shivirladi. Yurak urishi tezlashdi va qon bosimi tushib ketmoqda.";
+      setPatientStatus('critical');
+      setVitals({ hr: 142, temp: 36.9, bp: '78/48', rr: 30, spo2: 88 });
     } else if (isEpi) {
       evaluation = {
         type: 'correct',
-        badge: '↑ Toʻgʻri tanlov'
+        badge: '↑ Ajoyib klinik qaror'
       };
-      systemReply = "Epinephrine (Adrenaline) 0.5 mg administered IM into anterolateral thigh. Within 2 minutes, bronchospasm decreases, respiratory effort eases, and blood pressure begins to climb.";
+      systemReply = "Epinefrin (Adrenalin) 0.5 mg zudlik bilan sonning old-yon qismiga mushak ichiga (IM) kiritildi!\n\n2 daqiqa ichida bronxospazm pasaydi, laringo-edema kamaydi. Bemor erkin nafas ola boshladi, qon bosimi ko'tarildi.";
       setPatientStatus('stable');
-      setActiveStage('intervention');
-      setPaperclipAlert(false);
-      setMentorToast({
-        visible: true,
-        text: "Ajoyib qaror! Epinefrin anafilaktik shokda birinchi navbatdagi hayotni saqlovchi dori vositasidir."
-      });
-      setVitals(v => ({ ...v, hr: 110, bp: '105/68', spo2: 96, rr: 20 }));
+      setVitals({ hr: 98, temp: 36.8, bp: '115/75', rr: 18, spo2: 98 });
     } else if (isOxygen) {
       evaluation = {
         type: 'correct',
-        badge: '↑ Toʻgʻri tanlov'
+        badge: '↑ Toʻgʻri chora'
       };
-      systemReply = "High-flow O2 (15 L/min) administered via non-rebreather mask. SpO2 improves from 92% to 98%.";
-      setVitals(v => ({ ...v, spo2: 98, rr: 22 }));
+      systemReply = "Rezervuar niqob orqali 15 L/min yuqori oqimli O2 kislorod ingalyatsiyasi ulandi. SpO2 ko'rsatkichi 92% dan 97% gacha yaxshilandi.";
+      setVitals(v => ({ ...v, spo2: 97, rr: 20 }));
+    } else if (isSaline) {
+      evaluation = {
+        type: 'correct',
+        badge: '↑ Toʻgʻri chora'
+      };
+      systemReply = "Vena ichiga 1000 ml 0.9% NaCl fiziologik eritmasi tezkor oqim bilan yuborildi. Qon bosimi barqarorlashmoqda.";
+      setVitals(v => ({ ...v, bp: '105/65', hr: 110 }));
     } else {
       evaluation = {
         type: 'neutral',
-        badge: 'Amaliyot bajarildi'
+        badge: 'Buyruq qabul qilindi'
       };
-      systemReply = `Tekshiruv/muolaja amalga oshirildi: ${userText}. Bemor monitor nazoratida ushlab turilibdi.`;
+      systemReply = `Buyruq bajarildi: "${userText}". Bemor ICU monitor nazoratida ushlab turilibdi.`;
     }
 
     const replyMsg = {
@@ -220,331 +161,141 @@ export default function CaseSimulationRoom({
   return (
     <div style={{
       width: '100%',
-      minHeight: '100%',
-      background: '#F8FAFC',
+      minHeight: '100vh',
+      background: '#0B1320',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '12px 16px 90px 16px',
+      padding: '12px 16px 80px 16px',
       boxSizing: 'border-box',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
       position: 'relative',
     }}>
       <div style={{
         width: '100%',
-        maxWidth: 480,
+        maxWidth: 580,
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         gap: 12,
       }}>
 
-        {/* 1. TOP HEADER BAR: Back + Case Title & Subtitle + Hint Lightbulb */}
+        {/* 1. TOP HEADER BAR: Back + Case Info + Finish button */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '4px 0',
+          gap: 10,
         }}>
           {/* Back button */}
           <button
             id="btn-exit-simulation"
             onClick={onExitSimulation}
             style={{
-              width: 44,
-              height: 44,
+              width: 42,
+              height: 42,
               borderRadius: '50%',
-              background: '#FFFFFF',
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 2px 0 #E2E8F0',
+              background: '#131E30',
+              border: '1.5px solid #20334E',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#0F172A',
+              color: '#94A3B8',
+              flexShrink: 0,
             }}
           >
-            <ChevronLeft size={24} strokeWidth={2.4} />
+            <ChevronLeft size={22} strokeWidth={2.5} />
           </button>
 
           {/* Center Info: Title + Timer + Questions count */}
-          <div style={{ textAlign: 'center', flex: 1, padding: '0 8px' }}>
+          <div style={{ textAlign: 'center', flex: 1, overflow: 'hidden' }}>
             <h2 style={{
-              fontSize: '16px',
+              fontSize: '15px',
               fontWeight: 800,
-              color: '#0F172A',
-              margin: '0 0 3px 0',
+              color: '#FFFFFF',
+              margin: '0 0 2px 0',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}>
-              {caseItem?.title || 'Emergency Medicine Case #013'}
+              {caseItem?.title || 'Klinik Simulyatsiya Keysi'}
             </h2>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
-              fontSize: '12px',
-              fontWeight: 600,
+              fontSize: '11px',
+              fontWeight: 700,
               color: '#64748B',
             }}>
               <span>⏱ {formatTimer(secondsElapsed)}</span>
-              <span>❓ {questionsCount} questions</span>
+              <span>💬 {questionsCount} ta harakat</span>
             </div>
           </div>
 
-          {/* Lightbulb Clinical Hint Button */}
-          <button
-            id="btn-clinical-hint"
-            onClick={() => setHintModalOpen(true)}
-            title="Clinical Hint"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              background: '#FFFFFF',
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 2px 0 #E2E8F0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#F59E0B',
-            }}
-          >
-            <Lightbulb size={22} fill="#FDE047" color="#D97706" />
-          </button>
-        </div>
+          {/* Clinical Hint & Finish Case Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <button
+              id="btn-clinical-hint"
+              onClick={() => setHintModalOpen(true)}
+              title="Klinik maslahat"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                background: '#131E30',
+                border: '1.5px solid #20334E',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#F59E0B',
+              }}
+            >
+              <Lightbulb size={18} fill="#FDE047" color="#D97706" />
+            </button>
 
-        {/* 2. PHASE TABS BAR: Clinical Decision, Intervention, Monitoring, Discharge */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 6,
-          alignItems: 'center',
-          padding: '4px 0',
-        }}>
-          {[
-            { id: 'decision', label: 'Clinical Decision' },
-            { id: 'intervention', label: 'Intervention' },
-            { id: 'monitoring', label: 'Monitoring' },
-            { id: 'discharge', label: 'Discharge' }
-          ].map((phase, idx) => {
-            const isActive = activeStage === phase.id;
-            return (
-              <div
-                key={phase.id}
-                onClick={() => {
-                  if (phase.id === 'discharge') handleFinishSimulation();
-                  else setActiveStage(phase.id);
-                }}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                }}
-              >
-                {/* Top blue line */}
-                <div style={{
-                  height: 4,
-                  borderRadius: 99,
-                  background: isActive ? '#0284C7' : '#E2E8F0',
-                  boxShadow: isActive ? '0 0 8px rgba(2, 132, 199, 0.4)' : 'none',
-                }} />
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: isActive ? 800 : 600,
-                  color: isActive ? '#0284C7' : '#94A3B8',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}>
-                  {phase.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 3. PATIENT STATUS BANNER: STABLE vs UNSTABLE with Vitals */}
-        <div style={{
-          background: patientStatus === 'stable' ? '#0284C7' : '#EA580C',
-          borderRadius: 22,
-          padding: '12px 16px',
-          color: '#FFFFFF',
-          boxShadow: patientStatus === 'stable'
-            ? '0 6px 18px rgba(2, 132, 199, 0.25)'
-            : '0 6px 18px rgba(234, 88, 12, 0.25)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          transition: 'background 0.3s ease',
-        }}>
-          <div style={{
-            fontSize: '13px',
-            fontWeight: 900,
-            letterSpacing: '0.8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: '#FFFFFF',
-              boxShadow: '0 0 6px #FFFFFF',
-            }} />
-            <span>PATIENT STATUS: {patientStatus.toUpperCase()}</span>
-          </div>
-
-          {/* 5 Vitals Badges */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 6,
-          }}>
-            <span style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '3px 8px', borderRadius: 8, fontSize: '11px', fontWeight: 700 }}>
-              ❤️ {vitals.hr} bpm
-            </span>
-            <span style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '3px 8px', borderRadius: 8, fontSize: '11px', fontWeight: 700 }}>
-              🌡️ {vitals.temp}°C
-            </span>
-            <span style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '3px 8px', borderRadius: 8, fontSize: '11px', fontWeight: 700 }}>
-              🩺 {vitals.bp}
-            </span>
-            <span style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '3px 8px', borderRadius: 8, fontSize: '11px', fontWeight: 700 }}>
-              🫁 {vitals.rr}/min
-            </span>
-            <span style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '3px 8px', borderRadius: 8, fontSize: '11px', fontWeight: 700 }}>
-              🧬 {vitals.spo2}%
-            </span>
-          </div>
-        </div>
-
-        {/* 4. AI MENTOR TOAST: "HOCAN DİYOR Kİ" */}
-        {mentorToast.visible && (
-          <div style={{
-            background: 'linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%)',
-            border: '1.5px solid rgba(129, 140, 248, 0.3)',
-            borderRadius: 22,
-            padding: '14px 16px',
-            color: '#FFFFFF',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 12,
-            position: 'relative',
-            animation: 'fadeIn 0.25s ease-out',
-          }}>
-            {/* Mentor Photo Avatar */}
-            <div style={{
-              width: 52,
-              height: 52,
-              borderRadius: 14,
-              overflow: 'hidden',
-              flexShrink: 0,
-              border: '2px solid #818CF8',
-              boxShadow: '0 0 12px rgba(129, 140, 248, 0.4)',
-            }}>
-              <img
-                src="/doctor_mentor.jpg"
-                alt="Mentor"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontSize: '11px',
-                fontWeight: 900,
-                letterSpacing: '0.8px',
-                color: '#818CF8',
-                marginBottom: 3,
+            <button
+              id="btn-finish-case"
+              onClick={handleFinishSimulation}
+              title="Keysni yakunlash"
+              style={{
+                padding: '8px 14px',
+                borderRadius: 99,
+                background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                border: '1px solid #B91C1C',
+                color: '#FFFFFF',
+                fontSize: '12px',
+                fontWeight: 800,
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
-              }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#818CF8' }} />
-                <span>HOCAN DİYOR Kİ</span>
-              </div>
-              <p style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: '#E2E8F0',
-                margin: 0,
-                lineHeight: 1.45,
-              }}>
-                {mentorToast.text}
-              </p>
-            </div>
-
-            {/* Close toast button */}
-            <button
-              onClick={() => setMentorToast({ ...mentorToast, visible: false })}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#94A3B8',
-                cursor: 'pointer',
-                padding: 2,
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
               }}
             >
-              <X size={16} />
+              <Flag size={13} />
+              <span>Yakunlash</span>
             </button>
           </div>
-        )}
+        </div>
 
-        {/* 5. MAIN CHAT & CLINICAL ACTION AREA */}
+        {/* 2. REAL HOSPITAL ICU / CARDIAC MONITOR APPARATUS */}
+        <HospitalMonitor vitals={vitals} status={patientStatus} />
+
+        {/* 3. CLINICAL CONVERSATION & CASE TIMELINE */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
-          minHeight: 260,
-          maxHeight: '44vh',
+          gap: 12,
+          minHeight: 280,
+          maxHeight: '46vh',
           overflowY: 'auto',
-          padding: '6px 2px',
+          padding: '8px 4px',
         }}>
-          {/* Start banner card: Doctor get ready! */}
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 24,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
-            padding: '24px 20px',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 8,
-          }}>
-            <div style={{
-              width: 58,
-              height: 58,
-              borderRadius: '50%',
-              background: '#DCFCE7',
-              border: '2.5px solid #86EFAC',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#16A34A',
-              boxShadow: '0 0 16px rgba(34, 197, 94, 0.3)',
-            }}>
-              <CheckCircle2 size={32} strokeWidth={2.5} />
-            </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: 0 }}>
-              Doctor, get ready!
-            </h3>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8', margin: 0 }}>
-              Case is about to begin...
-            </p>
-          </div>
-
           {/* Messages list */}
           {messages.map((msg) => {
             if (msg.sender === 'user') {
@@ -562,23 +313,14 @@ export default function CaseSimulationRoom({
                   <div style={{
                     background: '#2563EB',
                     color: '#FFFFFF',
-                    borderRadius: '20px 20px 4px 20px',
-                    padding: '12px 18px',
+                    borderRadius: '18px 18px 4px 18px',
+                    padding: '12px 16px',
                     fontSize: '14px',
-                    fontWeight: 700,
-                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                    fontWeight: 600,
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+                    lineHeight: 1.45,
                   }}>
                     {msg.text}
-                  </div>
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: '#FDE047',
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                  }}>
-                    <img src="/student_avatar.jpg" alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 </div>
               );
@@ -599,17 +341,14 @@ export default function CaseSimulationRoom({
                 {/* Decision evaluation badge if present */}
                 {msg.evaluation && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden' }}>
-                      <img src="/doctor_mentor.jpg" alt="Mentor" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
                     <span style={{
-                      background: msg.evaluation.type === 'wrong' ? '#FEE2E2' : '#DCFCE7',
-                      color: msg.evaluation.type === 'wrong' ? '#EF4444' : '#16A34A',
-                      fontSize: '12px',
+                      background: msg.evaluation.type === 'wrong' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                      color: msg.evaluation.type === 'wrong' ? '#F87171' : '#4ADE80',
+                      fontSize: '11px',
                       fontWeight: 800,
-                      padding: '2px 8px',
-                      borderRadius: 8,
-                      border: msg.evaluation.type === 'wrong' ? '1px solid #FECACA' : '1px solid #86EFAC',
+                      padding: '3px 10px',
+                      borderRadius: 99,
+                      border: msg.evaluation.type === 'wrong' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
                     }}>
                       {msg.evaluation.badge}
                     </span>
@@ -617,15 +356,15 @@ export default function CaseSimulationRoom({
                 )}
 
                 <div style={{
-                  background: '#FFFFFF',
-                  borderRadius: '4px 22px 22px 22px',
-                  border: '2px solid #E2E8F0',
-                  boxShadow: '0 3px 0 #E2E8F0',
-                  padding: '16px 18px',
-                  color: '#1E293B',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  lineHeight: 1.5,
+                  background: '#131E30',
+                  borderRadius: '4px 18px 18px 18px',
+                  border: '1px solid #20334E',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                  padding: '14px 18px',
+                  color: '#E2E8F0',
+                  fontSize: '13.5px',
+                  fontWeight: 500,
+                  lineHeight: 1.55,
                   whiteSpace: 'pre-line',
                 }}>
                   {msg.text}
@@ -636,213 +375,7 @@ export default function CaseSimulationRoom({
           <div ref={chatBottomRef} />
         </div>
 
-        {/* 6. ACTION CATEGORY OPTIONS TRAY (When category pill is clicked) */}
-        {actionCategory && (
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 22,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-            padding: '14px 16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            animation: 'fadeIn 0.2s ease-out',
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingBottom: 6,
-              borderBottom: '1px solid #F1F5F9',
-            }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase' }}>
-                Select {actionCategory}
-              </span>
-              <button
-                onClick={() => setActionCategory(null)}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
-              {(categoryOptions[actionCategory] || []).map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => handlePerformAction(opt.label)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    padding: '8px 12px',
-                    borderRadius: 12,
-                    background: '#F8FAFC',
-                    border: '1px solid #E2E8F0',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#EFF6FF'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
-                >
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
-                    {opt.label}
-                  </span>
-                  <span style={{ fontSize: '11px', color: '#64748B', marginTop: 1 }}>
-                    {opt.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 7. FOUR CLAYMORPHIC ACTION PILLS: Examination, Tests, Consultation, Treatment */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 8,
-        }}>
-          {/* Examination */}
-          <button
-            id="btn-action-exam"
-            onClick={() => setActionCategory(actionCategory === 'exam' ? null : 'exam')}
-            style={{
-              padding: '12px 6px',
-              borderRadius: 18,
-              background: '#F5F3FF',
-              border: actionCategory === 'exam' ? '2px solid #8B5CF6' : '1.5px solid #DDD6FE',
-              boxShadow: actionCategory === 'exam' ? '0 4px 12px rgba(139, 92, 246, 0.3)' : '0 2px 0 #DDD6FE',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              background: '#8B5CF6',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Stethoscope size={18} />
-            </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#6D28D9' }}>
-              Examination
-            </span>
-          </button>
-
-          {/* Tests */}
-          <button
-            id="btn-action-tests"
-            onClick={() => setActionCategory(actionCategory === 'tests' ? null : 'tests')}
-            style={{
-              padding: '12px 6px',
-              borderRadius: 18,
-              background: '#F0F9FF',
-              border: actionCategory === 'tests' ? '2px solid #0EA5E9' : '1.5px solid #BAE6FD',
-              boxShadow: actionCategory === 'tests' ? '0 4px 12px rgba(14, 165, 233, 0.3)' : '0 2px 0 #BAE6FD',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              background: '#0EA5E9',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <FlaskConical size={18} />
-            </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#0369A1' }}>
-              Tests
-            </span>
-          </button>
-
-          {/* Consultation */}
-          <button
-            id="btn-action-consultation"
-            onClick={() => setActionCategory(actionCategory === 'consultation' ? null : 'consultation')}
-            style={{
-              padding: '12px 6px',
-              borderRadius: 18,
-              background: '#F0FDF4',
-              border: actionCategory === 'consultation' ? '2px solid #10B981' : '1.5px solid #A7F3D0',
-              boxShadow: actionCategory === 'consultation' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : '0 2px 0 #A7F3D0',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              background: '#10B981',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Users size={18} />
-            </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#047857' }}>
-              Consultation
-            </span>
-          </button>
-
-          {/* Treatment */}
-          <button
-            id="btn-action-treatment"
-            onClick={() => setActionCategory(actionCategory === 'treatment' ? null : 'treatment')}
-            style={{
-              padding: '12px 6px',
-              borderRadius: 18,
-              background: '#FFF7ED',
-              border: actionCategory === 'treatment' ? '2px solid #F97316' : '1.5px solid #FED7AA',
-              boxShadow: actionCategory === 'treatment' ? '0 4px 12px rgba(249, 115, 22, 0.3)' : '0 2px 0 #FED7AA',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              background: '#F97316',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <BriefcaseMedical size={18} />
-            </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#C2410C' }}>
-              Treatment
-            </span>
-          </button>
-        </div>
-
-        {/* 8. BOTTOM INPUT BAR: Text field + Send green circle */}
+        {/* 4. DOCTOR'S CLINICAL ORDER INPUT BAR */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -853,23 +386,23 @@ export default function CaseSimulationRoom({
             alignItems: 'center',
             gap: 10,
             width: '100%',
+            marginTop: 4,
           }}
         >
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type your response here..."
+            placeholder="Tibbiy buyruq yoki dori vositasini yozing..."
             style={{
               flex: 1,
-              padding: '16px 20px',
+              padding: '14px 18px',
               borderRadius: 99,
-              background: '#FFFFFF',
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 3px 0 #E2E8F0',
+              background: '#131E30',
+              border: '1.5px solid #20334E',
               fontSize: '14px',
-              fontWeight: 600,
-              color: '#0F172A',
+              fontWeight: 500,
+              color: '#FFFFFF',
               outline: 'none',
               boxSizing: 'border-box',
             }}
@@ -879,12 +412,12 @@ export default function CaseSimulationRoom({
             type="submit"
             id="btn-send-action"
             style={{
-              width: 50,
-              height: 50,
+              width: 48,
+              height: 48,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-              border: '2px solid #15803D',
-              boxShadow: '0 4px 0 #15803D, 0 6px 16px rgba(34, 197, 94, 0.4)',
+              background: 'linear-gradient(135deg, #0284C7 0%, #2563EB 100%)',
+              border: 'none',
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -893,119 +426,69 @@ export default function CaseSimulationRoom({
               flexShrink: 0,
             }}
           >
-            <ArrowRight size={22} strokeWidth={2.6} />
+            <ArrowRight size={20} strokeWidth={2.6} />
           </button>
         </form>
 
-        {/* 9. LEFT FLOATING PAPERCLIP TAB (Medical Records / Attachments) */}
+        {/* Quick action helper chips for convenience */}
         <div style={{
-          position: 'fixed',
-          left: 0,
-          top: '45%',
-          transform: 'translateY(-50%)',
-          zIndex: 80,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          paddingTop: 4,
         }}>
-          <button
-            onClick={() => setRecordsDrawerOpen(true)}
-            title="Attached Medical Records"
-            style={{
-              width: 48,
-              height: 64,
-              borderRadius: '0 20px 20px 0',
-              background: paperclipAlert ? '#EF4444' : '#2563EB',
-              border: 'none',
-              boxShadow: paperclipAlert ? '0 0 18px rgba(239, 68, 68, 0.5)' : '0 0 18px rgba(37, 99, 235, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <Paperclip size={24} strokeWidth={2.4} />
-          </button>
+          {[
+            "Epinefrin 0.5 mg IM",
+            "Yuqori oqimli O2 kislorod",
+            "0.9% NaCl 1000 ml IV",
+            "Paratsetamol 500 mg"
+          ].map((quickText, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handlePerformAction(quickText)}
+              style={{
+                background: '#131E30',
+                border: '1px solid #20334E',
+                borderRadius: 99,
+                padding: '6px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#94A3B8',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#38BDF8';
+                e.currentTarget.style.borderColor = '#0284C7';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#94A3B8';
+                e.currentTarget.style.borderColor = '#20334E';
+              }}
+            >
+              + {quickText}
+            </button>
+          ))}
         </div>
 
       </div>
 
-      {/* 10. CLINICAL HINT MODAL */}
+      {/* 5. CLINICAL HINT MODAL */}
       <ClinicalHintModal
         isOpen={hintModalOpen}
         onClose={() => setHintModalOpen(false)}
-        hintText="Consider what immediate, life-saving interventions are critical in a rapidly deteriorating patient with suspected anaphylaxis. Epinephrine is the primary drug of choice."
+        hintText="Anafilaktik shok holatida zudlik bilan hayotni saqlovchi dori vositasini o'ylang. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon tomoniga mushak ichiga kiritilishi birinchi darajali oltin standart hisoblanadi."
       />
 
-      {/* 11. MEDICAL RECORDS / ATTACHMENTS DRAWER */}
-      {recordsDrawerOpen && (
-        <div
-          onClick={() => setRecordsDrawerOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.55)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 120,
-            display: 'flex',
-            justifyContent: 'flex-start',
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: 360,
-              height: '100%',
-              background: '#FFFFFF',
-              padding: '24px 20px',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-              boxShadow: '10px 0 30px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                Patient Attachments 📎
-              </h3>
-              <button
-                onClick={() => setRecordsDrawerOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-              {/* Record 1 */}
-              <div style={{ padding: 14, borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>12-Lead ECG</div>
-                <div style={{ fontSize: '12px', color: '#64748B', marginTop: 3 }}>Sinus tachycardia at 128 bpm. No acute ST-elevation or ischemic changes.</div>
-              </div>
-
-              {/* Record 2 */}
-              <div style={{ padding: 14, borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>Known Allergies</div>
-                <div style={{ fontSize: '12px', color: '#EF4444', fontWeight: 700, marginTop: 3 }}>Peanut / Tree Nuts (severe)</div>
-              </div>
-
-              {/* Record 3 */}
-              <div style={{ padding: 14, borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>Laboratory Status</div>
-                <div style={{ fontSize: '12px', color: '#64748B', marginTop: 3 }}>Serum tryptase & CBC samples sent to stat laboratory.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 12. CASE COMPLETED DEBRIEFING SCREEN */}
+      {/* 6. CASE COMPLETED DEBRIEFING SCREEN */}
       {isFinished && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(15, 23, 42, 0.75)',
+          background: 'rgba(11, 19, 32, 0.85)',
           backdropFilter: 'blur(8px)',
           zIndex: 130,
           display: 'flex',
@@ -1016,10 +499,10 @@ export default function CaseSimulationRoom({
           <div style={{
             width: '100%',
             maxWidth: 440,
-            background: '#FFFFFF',
-            borderRadius: 32,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+            background: '#131E30',
+            borderRadius: 30,
+            border: '2px solid #20334E',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
             padding: '28px 24px',
             display: 'flex',
             flexDirection: 'column',
@@ -1044,11 +527,11 @@ export default function CaseSimulationRoom({
             </div>
 
             <div>
-              <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0' }}>
-                Case Successfully Completed!
+              <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#FFFFFF', margin: '0 0 4px 0' }}>
+                Keys Muvaffaqiyatli Yakunlandi!
               </h2>
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', margin: 0 }}>
-                {caseItem?.title || 'Emergency Medicine Case #013'}
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8', margin: 0 }}>
+                {caseItem?.title || 'Klinik Keys'}
               </p>
             </div>
 
@@ -1059,32 +542,32 @@ export default function CaseSimulationRoom({
               gap: 10,
               width: '100%',
             }}>
-              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748B' }}>SCORE</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#16A34A' }}>{finalScore}%</div>
+              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#0B1320', border: '1px solid #20334E' }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748B' }}>NATIJA</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#4ADE80' }}>{finalScore}%</div>
               </div>
-              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748B' }}>EARNED XP</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#D97706' }}>+250</div>
+              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#0B1320', border: '1px solid #20334E' }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748B' }}>XP</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#FBBF24' }}>+250</div>
               </div>
-              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748B' }}>TIME</div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563EB' }}>{formatTimer(secondsElapsed)}</div>
+              <div style={{ padding: '12px 8px', borderRadius: 16, background: '#0B1320', border: '1px solid #20334E' }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748B' }}>VAQT</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#38BDF8' }}>{formatTimer(secondsElapsed)}</div>
               </div>
             </div>
 
             {/* Key Clinical Learning Point */}
             <div style={{
-              background: '#F0FDF4',
-              border: '1.5px solid #86EFAC',
+              background: 'rgba(34, 197, 94, 0.1)',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
               borderRadius: 18,
               padding: '14px 16px',
               textAlign: 'left',
-              fontSize: '13px',
-              color: '#166534',
+              fontSize: '12.5px',
+              color: '#86EFAC',
               lineHeight: 1.5,
             }}>
-              <strong>Clinical Pearls:</strong> Anafilaktik shok holatida har daqiqa g'animat. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon qismiga mushak ichiga kiritilishi shart.
+              <strong>Klinik Xulosa:</strong> Anafilaktik shok holatida har daqiqa g'animat. Epinefrin (Adrenalin) kechiktirilmasdan sonning old-yon qismiga mushak ichiga kiritilishi shart.
             </div>
 
             {/* Actions */}
@@ -1094,15 +577,16 @@ export default function CaseSimulationRoom({
                   setIsFinished(false);
                   setMessages([messages[0]]);
                   setVitals({ hr: 129, temp: 36.8, bp: '88/54', rr: 26, spo2: 92 });
+                  setPatientStatus('unstable');
                 }}
                 style={{
-                  padding: '14px',
+                  padding: '12px',
                   borderRadius: 16,
-                  background: '#F1F5F9',
-                  border: '1.5px solid #CBD5E1',
-                  color: '#475569',
+                  background: '#1E293B',
+                  border: '1px solid #334155',
+                  color: '#CBD5E1',
                   fontWeight: 800,
-                  fontSize: '14px',
+                  fontSize: '13px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -1110,22 +594,22 @@ export default function CaseSimulationRoom({
                   gap: 6,
                 }}
               >
-                <RotateCcw size={16} />
+                <RotateCcw size={15} />
                 <span>Qaytadan</span>
               </button>
 
               <button
                 onClick={onExitSimulation}
                 style={{
-                  padding: '14px',
+                  padding: '12px',
                   borderRadius: 16,
                   background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                  border: '2px solid #15803D',
+                  border: 'none',
                   color: '#FFFFFF',
                   fontWeight: 800,
-                  fontSize: '14px',
+                  fontSize: '13px',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(34, 197, 94, 0.4)',
+                  boxShadow: '0 4px 14px rgba(34, 197, 94, 0.4)',
                 }}
               >
                 Davom etish
