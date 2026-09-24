@@ -24,7 +24,17 @@ import {
   Check,
   X,
   MessageCircle,
-  AlertCircle
+  AlertCircle,
+  Coins,
+  ShieldAlert,
+  Smartphone,
+  Activity as ActivityIcon,
+  Bell,
+  CreditCard,
+  Info,
+  LogOut,
+  CalendarDays,
+  Bookmark
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
 
@@ -382,303 +392,109 @@ export default function ProfileView({
               </div>
             </div>
 
-            {/* Three Stat Cards Grid */}
+            {/* Info / Coins / Limits Top Info */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              display: 'flex',
               gap: 12,
               marginTop: 16,
               width: '100%',
             }}>
-              {/* Card 1: Total XP */}
               <div style={{
+                flex: 1,
                 background: '#FFFFFF',
                 borderRadius: 22,
                 border: '2px solid #E2E8F0',
-                boxShadow: '0 4px 0 #E2E8F0',
-                padding: '16px 8px',
+                padding: '16px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
-                gap: 8,
+                gap: 14,
+                boxShadow: '0 4px 0 #E2E8F0'
               }}>
-                {/* Yellow Trophy Diamond */}
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: 'linear-gradient(135deg, #FEF08A, #FDE047)',
-                  border: '1.5px solid #FACC15',
-                  transform: 'rotate(45deg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 4,
-                }}>
-                  <div style={{ transform: 'rotate(-45deg)' }}>
-                    <Trophy size={16} color="#B45309" strokeWidth={2.4} />
-                  </div>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FEF9C3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Coins size={24} color="#CA8A04" strokeWidth={2.4} />
                 </div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>
-                  {totalXP}
-                </div>
-                <div style={{
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  color: '#64748B',
-                  letterSpacing: '0.6px',
-                }}>
-                  {t('profile.totalXp')}
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>Tangalar</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>{user?.coins || 0}</div>
                 </div>
               </div>
 
-              {/* Card 2: Completed */}
               <div style={{
+                flex: 1,
                 background: '#FFFFFF',
                 borderRadius: 22,
                 border: '2px solid #E2E8F0',
-                boxShadow: '0 4px 0 #E2E8F0',
-                padding: '16px 8px',
+                padding: '16px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
-                gap: 8,
+                gap: 14,
+                boxShadow: '0 4px 0 #E2E8F0'
               }}>
-                {/* Yellow Document Diamond */}
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: 'linear-gradient(135deg, #FEF08A, #FDE047)',
-                  border: '1.5px solid #FACC15',
-                  transform: 'rotate(45deg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 4,
-                }}>
-                  <div style={{ transform: 'rotate(-45deg)' }}>
-                    <FileText size={16} color="#B45309" strokeWidth={2.4} />
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShieldAlert size={24} color="#2563EB" strokeWidth={2.4} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>Limit</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>
+                    {user?.limit_used || 0}/{user?.limit_total || 3}
                   </div>
-                </div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>
-                  {completedCount}
-                </div>
-                <div style={{
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  color: '#64748B',
-                  letterSpacing: '0.6px',
-                }}>
-                  {t('profile.completed')}
-                </div>
-              </div>
-
-              {/* Card 3: Ongoing */}
-              <div style={{
-                background: '#FFFFFF',
-                borderRadius: 22,
-                border: '2px solid #E2E8F0',
-                boxShadow: '0 4px 0 #E2E8F0',
-                padding: '16px 8px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                gap: 8,
-              }}>
-                {/* Blue Clock Diamond */}
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: 'linear-gradient(135deg, #BAE6FD, #38BDF8)',
-                  border: '1.5px solid #0EA5E9',
-                  transform: 'rotate(45deg)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 4,
-                }}>
-                  <div style={{ transform: 'rotate(-45deg)' }}>
-                    <Clock size={16} color="#0369A1" strokeWidth={2.4} />
-                  </div>
-                </div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>
-                  {ongoingCount}
-                </div>
-                <div style={{
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  color: '#64748B',
-                  letterSpacing: '0.6px',
-                }}>
-                  {t('profile.ongoing')}
                 </div>
               </div>
             </div>
 
-            {/* Segmented Tab Switcher (Completed / Ongoing) */}
+            {/* Menu List */}
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 22,
+              borderRadius: 24,
               border: '2px solid #E2E8F0',
               boxShadow: '0 4px 0 #E2E8F0',
-              padding: '6px',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-              marginTop: 18,
-              width: '100%',
-              boxSizing: 'border-box',
-            }}>
-              {/* Tab: Completed */}
-              <button
-                id="tab-completed"
-                onClick={() => setActiveTab('completed')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  padding: '12px 16px',
-                  borderRadius: 16,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  transition: 'all 0.2s ease',
-                  background: activeTab === 'completed'
-                    ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
-                    : 'transparent',
-                  color: activeTab === 'completed' ? '#FFFFFF' : '#64748B',
-                  boxShadow: activeTab === 'completed'
-                    ? '0 4px 12px rgba(34, 197, 94, 0.35)'
-                    : 'none',
-                }}
-              >
-                <CheckCircle2 size={18} strokeWidth={2.5} color={activeTab === 'completed' ? '#FFFFFF' : '#94A3B8'} />
-                <span>{t('profile.completedTab')}</span>
-              </button>
-
-              {/* Tab: Ongoing */}
-              <button
-                id="tab-ongoing"
-                onClick={() => setActiveTab('ongoing')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  padding: '12px 16px',
-                  borderRadius: 16,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  transition: 'all 0.2s ease',
-                  background: activeTab === 'ongoing'
-                    ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
-                    : 'transparent',
-                  color: activeTab === 'ongoing' ? '#FFFFFF' : '#64748B',
-                  boxShadow: activeTab === 'ongoing'
-                    ? '0 4px 12px rgba(34, 197, 94, 0.35)'
-                    : 'none',
-                }}
-              >
-                <Clock size={18} strokeWidth={2.5} color={activeTab === 'ongoing' ? '#FFFFFF' : '#94A3B8'} />
-                <span>{t('profile.ongoingTab')}</span>
-              </button>
-            </div>
-
-            {/* Cases Area / Empty State */}
-            <div style={{
+              overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '48px 20px 32px 20px',
-              minHeight: 220,
-              textAlign: 'center',
+              marginTop: 20,
+              marginBottom: 24,
             }}>
-              {/* Medical Clipboard Illustration with Pen & Pink Cross */}
-              <div style={{
-                position: 'relative',
-                width: 96,
-                height: 104,
-                marginBottom: 16,
-              }}>
-                <svg width="96" height="104" viewBox="0 0 96 104" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Clipboard Wooden/Gray Back */}
-                  <rect x="12" y="16" width="68" height="84" rx="14" fill="#3B82F6" opacity="0.12" />
-                  <rect x="14" y="18" width="64" height="80" rx="12" fill="#FFFFFF" stroke="#3B82F6" strokeWidth="2.5" />
-
-                  {/* Gold Clip on Top */}
-                  <rect x="30" y="8" width="32" height="18" rx="6" fill="#F59E0B" />
-                  <rect x="34" y="12" width="24" height="8" rx="4" fill="#FDE68A" />
-
-                  {/* Document Lines */}
-                  <rect x="24" y="44" width="44" height="4" rx="2" fill="#E2E8F0" />
-                  <rect x="24" y="54" width="36" height="4" rx="2" fill="#E2E8F0" />
-                  <rect x="24" y="64" width="40" height="4" rx="2" fill="#E2E8F0" />
-                  <rect x="24" y="74" width="28" height="4" rx="2" fill="#E2E8F0" />
-
-                  {/* Patient Avatar icon on document */}
-                  <circle cx="46" cy="34" r="7" fill="#10B981" opacity="0.2" />
-                  <circle cx="46" cy="33" r="3.5" fill="#10B981" />
-                  <path d="M41 39C41 36.8 43.2 35 46 35C48.8 35 51 36.8 51 39" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" />
-
-                  {/* Medical Blue Pen on the right */}
-                  <g transform="translate(68, 12) rotate(25)">
-                    <rect x="0" y="0" width="8" height="36" rx="4" fill="#2563EB" />
-                    <path d="M0 36L4 44L8 36H0Z" fill="#1D4ED8" />
-                    <circle cx="4" cy="44" r="1.5" fill="#0F172A" />
-                    <rect x="1" y="4" width="6" height="4" rx="1" fill="#93C5FD" />
-                  </g>
-
-                  {/* Pink Cross Badge floating at bottom right */}
-                  <g transform="translate(54, 62)">
-                    <circle cx="16" cy="16" r="16" fill="#EC4899" />
-                    <circle cx="16" cy="16" r="13" fill="#F43F5E" />
-                    <rect x="13.5" y="8" width="5" height="16" rx="2.5" fill="#FFFFFF" />
-                    <rect x="8" y="13.5" width="16" height="5" rx="2.5" fill="#FFFFFF" />
-                  </g>
-                </svg>
-              </div>
-
-              {/* Empty State Text */}
-              <p style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                color: '#94A3B8',
-                margin: 0,
-              }}>
-                {activeTab === 'completed' ? t('profile.noCompleted') : 'No ongoing cases yet'}
-              </p>
-
-              {/* Quick action button to explore cases */}
-              <button
-                onClick={() => onNavigate && onNavigate('cases')}
-                style={{
-                  marginTop: 14,
-                  padding: '8px 18px',
-                  borderRadius: 14,
-                  background: '#F1F5F9',
-                  border: '1px solid #E2E8F0',
-                  color: '#475569',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <span>{t('profile.browseCases')}</span>
-                <ChevronRight size={14} />
-              </button>
+              <SettingsListItem
+                icon={<Bookmark size={20} color="#0F172A" strokeWidth={2} />}
+                label="Saqlangan keyslar"
+                onClick={() => onNavigate && onNavigate('favorites')}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<ActivityIcon size={20} color="#0F172A" strokeWidth={2} />}
+                label="Faollik"
+                onClick={() => onNavigate && onNavigate('activity')}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<Trophy size={20} color="#0F172A" strokeWidth={2} />}
+                label="Reyting"
+                onClick={() => onNavigate && onNavigate('leaderboard')}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<CalendarDays size={20} color="#0F172A" strokeWidth={2} />}
+                label="O'quv rejasi"
+                onClick={() => onNavigate && onNavigate('study_plan')}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<Bell size={20} color="#0F172A" strokeWidth={2} />}
+                label="Bildirishnomalar"
+                onClick={() => onNavigate && onNavigate('notifications')}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<CreditCard size={20} color="#0F172A" strokeWidth={2} />}
+                label="Tariflar"
+                onClick={() => onOpenStore && onOpenStore()}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<Tag size={20} color="#0F172A" strokeWidth={2} />}
+                label="Promokod"
+                onClick={() => setModalType('coupon')}
+              />
             </div>
           </div>
         )}
@@ -789,7 +605,7 @@ export default function ProfileView({
               <ChevronRight size={22} color="#FFFFFF" strokeWidth={2.4} />
             </div>
 
-            {/* Card Group 1: General (Feedback, Rate, Share, Terms, Privacy, Coupon) */}
+            {/* Settings Menu List */}
             <div style={{
               background: '#FFFFFF',
               borderRadius: 24,
@@ -799,55 +615,28 @@ export default function ProfileView({
               display: 'flex',
               flexDirection: 'column',
             }}>
-              {/* Feedback */}
               <SettingsListItem
-                icon={<Mail size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.feedback')}
-                onClick={() => setModalType('feedback')}
+                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
+                label="Ma'lumot"
+                onClick={() => {
+                  setTempUsername(user?.name || '');
+                  setModalType('username');
+                }}
               />
               <Divider />
-
-              {/* Rate Us */}
               <SettingsListItem
-                icon={<Heart size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.rateUs')}
-                onClick={() => setModalType('rate')}
+                icon={<Smartphone size={20} color="#0F172A" strokeWidth={2} />}
+                label="Qurilmalar"
+                onClick={() => showToast('Qurilmalar')}
               />
               <Divider />
-
-              {/* Share with Friends */}
               <SettingsListItem
-                icon={<Share2 size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.shareWithFriends')}
-                onClick={handleShare}
-              />
-              <Divider />
-
-              {/* Terms of Use */}
-              <SettingsListItem
-                icon={<FileText size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.termsOfUse')}
-                onClick={() => setModalType('terms')}
-              />
-              <Divider />
-
-              {/* Privacy Policy */}
-              <SettingsListItem
-                icon={<Shield size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.privacyPolicy')}
-                onClick={() => setModalType('privacy')}
-              />
-              <Divider />
-
-              {/* Coupon Code */}
-              <SettingsListItem
-                icon={<Tag size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.couponCode')}
-                onClick={() => setModalType('coupon')}
+                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
+                label="Ilova haqida"
+                onClick={() => showToast('Ilova haqida')}
               />
             </div>
 
-            {/* Card Group 2: Language Selection */}
             <div style={{
               background: '#FFFFFF',
               borderRadius: 24,
@@ -863,90 +652,7 @@ export default function ProfileView({
                 subtitle={getLanguageLabel()}
                 onClick={() => setModalType('language')}
               />
-            </div>
-
-            {/* Card Group 3: Account (Change Username, Restore, User ID, Delete) */}
-            <div style={{
-              background: '#FFFFFF',
-              borderRadius: 24,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
-              {/* Change Username */}
-              <SettingsListItem
-                icon={<User size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.changeUsername')}
-                subtitle={user?.name || 'John'}
-                onClick={() => {
-                  setTempUsername(user?.name || 'John');
-                  setModalType('username');
-                }}
-              />
               <Divider />
-
-              {/* Restore Purchase */}
-              <SettingsListItem
-                icon={<RotateCcw size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.restorePurchase')}
-                onClick={() => showToast('Purchases restored successfully!')}
-              />
-              <Divider />
-
-              {/* User ID with Copy */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 20px',
-                gap: 12,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 24, display: 'flex', justifyContent: 'center' }}>
-                    <User size={20} color="#0F172A" strokeWidth={2} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>
-                      {t('settings.userId')}
-                    </div>
-                    <div style={{
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      color: '#94A3B8',
-                      fontFamily: 'monospace',
-                      marginTop: 2,
-                    }}>
-                      {userIdString.slice(0, 22)}...
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  id="btn-copy-user-id"
-                  onClick={handleCopyUserId}
-                  title="Copy User ID"
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    background: copiedId ? '#DCFCE7' : '#F1F5F9',
-                    border: '1px solid #E2E8F0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: copiedId ? '#16A34A' : '#64748B',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {copiedId ? <Check size={18} strokeWidth={2.5} /> : <Copy size={18} />}
-                </button>
-              </div>
-              <Divider />
-
-              {/* Delete Account */}
               <SettingsListItem
                 icon={<Trash2 size={20} color="#EF4444" strokeWidth={2} />}
                 label={t('settings.deleteAccount')}
@@ -967,15 +673,17 @@ export default function ProfileView({
                   border: '1.5px solid #FCA5A5',
                   color: '#DC2626',
                   fontSize: '14px',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
+                  marginBottom: 16,
                 }}
               >
-                {t('settings.logOut')}
+                <LogOut size={18} />
+                Chiqish
               </button>
             )}
 

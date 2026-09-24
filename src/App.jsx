@@ -19,6 +19,11 @@ import QuickGuideModal from './components/QuickGuideModal';
 import CaseDetailModal from './components/CaseDetailModal';
 import AuthModal from './components/AuthModal';
 import HomeView from './components/HomeView';
+import FavoritesView from './components/FavoritesView.jsx';
+import ActivityView from './components/ActivityView.jsx';
+import NotificationsView from './components/NotificationsView.jsx';
+import StudyPlanView from './components/StudyPlanView.jsx';
+
 import { useTranslation } from './i18n.jsx';
 
 export default function App() {
@@ -382,6 +387,26 @@ export default function App() {
             }}
             onBack={() => setCurrentView('roadmap')}
           />
+        )}
+
+        {/* --- New Profile Inner Views --- */}
+        {currentView === 'favorites' && (
+          <FavoritesView 
+            onBack={() => setCurrentView('profile')}
+            onSelectCase={(c) => {
+              setSelectedDetailCase(c);
+              setCurrentView('case-details');
+            }}
+          />
+        )}
+        {currentView === 'activity' && (
+          <ActivityView onBack={() => setCurrentView('profile')} />
+        )}
+        {currentView === 'notifications' && (
+          <NotificationsView onBack={() => setCurrentView('profile')} />
+        )}
+        {currentView === 'study_plan' && (
+          <StudyPlanView onBack={() => setCurrentView('profile')} />
         )}
       </main>
 
