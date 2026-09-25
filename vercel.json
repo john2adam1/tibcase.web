@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/mobile/:path*",
+      "destination": "https://dev-medic.axadjonovsardorbek.uz/mobile/:path*"
+    },
+    {
+      "source": "/web/:path*",
+      "destination": "https://dev-medic.axadjonovsardorbek.uz/web/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://dev-medic.axadjonovsardorbek.uz/auth/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://dev-medic.axadjonovsardorbek.uz/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
