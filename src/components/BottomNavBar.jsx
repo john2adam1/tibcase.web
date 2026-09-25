@@ -1,9 +1,8 @@
 import React from 'react';
 import {
-  Building2,
-  HeartPulse,
-  Stethoscope,
-  Award,
+  Home,
+  LayoutGrid,
+  TrendingUp,
   User
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
@@ -15,10 +14,10 @@ export default function BottomNavBar({
   const { t } = useTranslation();
 
   const tabs = [
-    { id: 'cases', label: t('nav.home', 'Home'), icon: Building2 },
-    { id: 'clinics', label: t('nav.category', 'Category'), icon: Stethoscope },
-    { id: 'leaderboard', label: t('nav.ranking', 'Ranking'), icon: Award },
-    { id: 'profile', label: t('nav.profile', 'Profile'), icon: User },
+    { id: 'cases', label: t('nav.home', 'Asosiy'), icon: Home },
+    { id: 'clinics', label: t('nav.category', 'Barcha kurslar'), icon: LayoutGrid },
+    { id: 'leaderboard', label: t('nav.ranking', 'Reyting'), icon: TrendingUp },
+    { id: 'profile', label: t('nav.profile', 'Profil'), icon: User },
   ];
 
   return (
@@ -27,19 +26,20 @@ export default function BottomNavBar({
       bottom: 0,
       left: 0,
       right: 0,
-      height: 74,
+      height: 70,
       background: '#FFFFFF',
       borderTop: '1.5px solid #E2E8F0',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 50,
-      boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.04)',
+      boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.05)',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
       <div style={{
         width: '100%',
-        maxWidth: 480,
+        maxWidth: 520,
         height: '100%',
         display: 'flex',
         alignItems: 'center',
@@ -47,62 +47,60 @@ export default function BottomNavBar({
         padding: '0 8px',
       }}>
         {tabs.map((tab) => {
-          const isActive = currentView === tab.id;
+          const isActive = currentView === tab.id || (tab.id === 'cases' && currentView === 'home');
           const Icon = tab.icon;
 
           return (
             <button
               key={tab.id}
-              id={`nav-item-${tab.id}`}
+              id={`mobile-nav-${tab.id}`}
               onClick={() => onSelectView(tab.id)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 4,
+                gap: 3,
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '4px 8px',
+                padding: '4px 6px',
                 transition: 'all 0.15s ease',
                 flex: 1,
               }}
             >
-              {/* If active, wrap icon in circular green pill */}
               {isActive ? (
                 <div style={{
-                  width: 42,
-                  height: 42,
+                  width: 38,
+                  height: 38,
                   borderRadius: '50%',
-                  background: '#DCFCE7',
-                  border: '2px solid #86EFAC',
+                  background: '#FEE2E2',
+                  border: '1.5px solid #FECACA',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 12px rgba(34, 197, 94, 0.3)',
+                  boxShadow: '0 0 12px rgba(220, 38, 38, 0.25)',
                   transition: 'transform 0.15s ease',
-                  transform: 'scale(1.05)',
+                  transform: 'scale(1.04)',
                 }}>
-                  <Icon size={20} color="#16A34A" strokeWidth={2.4} />
+                  <Icon size={19} color="#DC2626" strokeWidth={2.4} />
                 </div>
               ) : (
                 <div style={{
-                  width: 42,
-                  height: 42,
+                  width: 38,
+                  height: 38,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                  <Icon size={22} color="#94A3B8" strokeWidth={2} />
+                  <Icon size={20} color="#94A3B8" strokeWidth={2} />
                 </div>
               )}
 
-              {/* Label */}
               <span style={{
                 fontSize: '11px',
                 fontWeight: isActive ? 800 : 600,
-                color: isActive ? '#16A34A' : '#94A3B8',
+                color: isActive ? '#DC2626' : '#94A3B8',
                 letterSpacing: '-0.01em',
               }}>
                 {tab.label}
@@ -114,3 +112,4 @@ export default function BottomNavBar({
     </nav>
   );
 }
+

@@ -132,6 +132,60 @@ async function request(path, options = {}) {
 }
 
 // ============================================================
+// Fallback clinical categories for offline/guest/session-expired state
+// ============================================================
+export const DEFAULT_FALLBACK_CATEGORIES = [
+  {
+    id: 'cat_emergency',
+    name: 'Shoshilinch Tibbiy Yordam',
+    audience: 'Shifokorlar va Talabalar',
+    cases_count: 14,
+    order_num: 1,
+    icon_url: '',
+  },
+  {
+    id: 'cat_cardiology',
+    name: 'Kardiologiya va EKG',
+    audience: 'Kardiologlar va Shifokorlar',
+    cases_count: 18,
+    order_num: 2,
+    icon_url: '',
+  },
+  {
+    id: 'cat_internal',
+    name: 'Ichki Kasalliklar (Terapiya)',
+    audience: 'Terapevtlar',
+    cases_count: 12,
+    order_num: 3,
+    icon_url: '',
+  },
+  {
+    id: 'cat_pediatrics',
+    name: 'Pediatriya va Neonatologiya',
+    audience: 'Pediatrlar',
+    cases_count: 10,
+    order_num: 4,
+    icon_url: '',
+  },
+  {
+    id: 'cat_neurology',
+    name: 'Nevrologiya va Neyrotravma',
+    audience: 'Nevrologlar',
+    cases_count: 8,
+    order_num: 5,
+    icon_url: '',
+  },
+  {
+    id: 'cat_surgery',
+    name: 'Shoshilinch Jarrohlik',
+    audience: 'Jarrohlar',
+    cases_count: 11,
+    order_num: 6,
+    icon_url: '',
+  }
+];
+
+// ============================================================
 // API Endpoints (all from API_MOBILE.md)
 // ============================================================
 export const api = {
@@ -258,10 +312,14 @@ export const api = {
   getCategories: async () => {
     try {
       const res = await request('/mobile/category?limit=100');
-      return res.categories || res.data || [];
+      const list = res.categories || res.data || [];
+      if (Array.isArray(list) && list.length > 0) {
+        return list;
+      }
+      return DEFAULT_FALLBACK_CATEGORIES;
     } catch (err) {
-      console.warn('Error fetching categories:', err.message);
-      return [];
+      console.warn('Categories API fetch error, using clinical fallback data:', err.message);
+      return DEFAULT_FALLBACK_CATEGORIES;
     }
   },
 

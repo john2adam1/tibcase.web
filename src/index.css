@@ -125,7 +125,119 @@ input, select, textarea {
   to { transform: translateX(0); }
 }
 
-/* Responsive visibility */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* =========================================================
+   RESPONSIVE LAYOUT (Desktop >= 1024px, Tablet 768-1023px, Mobile < 768px)
+   ========================================================= */
+
+/* Desktop view (>= 1024px) */
+@media (min-width: 1024px) {
+  .desktop-sidebar-wrapper {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    z-index: 45;
+  }
+
+  .tablet-mobile-header {
+    display: none !important;
+  }
+
+  .bottom-nav-mobile {
+    display: none !important;
+  }
+
+  .app-workspace-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  .app-main-content-wrapper {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #F8FAFC;
+    padding: 32px 36px 60px 36px;
+    box-sizing: border-box;
+  }
+}
+
+/* Tablet view (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .desktop-sidebar-wrapper {
+    display: none !important;
+  }
+
+  .tablet-mobile-header {
+    display: flex !important;
+  }
+
+  .sidebar-close-btn {
+    display: flex !important;
+  }
+
+  .bottom-nav-mobile {
+    display: none !important;
+  }
+
+  .app-main-content-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    background: #F8FAFC;
+    padding: 24px 24px 60px 24px;
+    box-sizing: border-box;
+  }
+}
+
+/* Mobile view (< 768px) & Telegram Mini App */
+@media (max-width: 767.98px) {
+  .desktop-sidebar-wrapper {
+    display: none !important;
+  }
+
+  .tablet-mobile-header {
+    display: flex !important;
+  }
+
+  .sidebar-close-btn {
+    display: flex !important;
+  }
+
+  .bottom-nav-mobile {
+    display: flex !important;
+  }
+
+  .app-main-content-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    background: #F8FAFC;
+    padding: 16px 14px 90px 14px;
+    box-sizing: border-box;
+  }
+
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+/* Common utility classes */
 @media (max-width: 768px) {
   .desktop-only {
     display: none !important;
@@ -137,3 +249,4 @@ input, select, textarea {
     display: none !important;
   }
 }
+

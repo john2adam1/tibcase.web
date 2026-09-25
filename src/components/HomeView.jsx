@@ -11,12 +11,17 @@ import {
   Play
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
+import DashboardHero from './DashboardHero.jsx';
 
 export default function HomeView({
   user,
   categories = [],
+  banners = [],
+  userLimit,
   onStartSimulation,
-  onOpenClinics
+  onOpenClinics,
+  onOpenStore,
+  onOpenLeaderboard,
 }) {
   const { t, lang } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,67 +57,31 @@ export default function HomeView({
   return (
     <div style={{
       width: '100%',
-      minHeight: '85vh',
-      background: '#F8FAFC',
+      maxWidth: 1120,
+      margin: '0 auto',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      padding: '32px 16px 100px 16px',
-      boxSizing: 'border-box',
+      gap: 32,
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
+      {/* 1. Dashboard Hero strictly with Real API Data */}
+      <DashboardHero
+        user={user}
+        categories={categories}
+        banners={banners}
+        userLimit={userLimit}
+        onOpenClinics={onOpenClinics}
+        onOpenStore={onOpenStore}
+        onOpenLeaderboard={onOpenLeaderboard}
+      />
+
+      {/* 2. Interactive AI Clinical Simulator Launcher */}
       <div style={{
         width: '100%',
-        maxWidth: 620,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        gap: 24,
+        gap: 20,
       }}>
-
-        {/* AI Chatbot-Style Header Welcome */}
-        <div style={{
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 10,
-        }}>
-          {/* Glowing Green Stethoscope Avatar Badge */}
-          <div style={{
-            width: 68,
-            height: 68,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-            boxShadow: '0 8px 24px rgba(34, 197, 94, 0.35)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-          }}>
-            <Stethoscope size={34} strokeWidth={2.4} />
-          </div>
-
-          <h1 style={{
-            fontSize: '26px',
-            fontWeight: 900,
-            color: '#0F172A',
-            margin: '6px 0 0 0',
-            letterSpacing: '-0.5px',
-          }}>
-            {t('home.greeting')}, Dr. {user?.name?.split(' ')[0] || 'Akmal'}! 👋
-          </h1>
-          <p style={{
-            fontSize: '14.5px',
-            color: '#64748B',
-            margin: 0,
-            maxWidth: 440,
-            lineHeight: 1.5,
-          }}>
-            {t('home.welcomeSubtitle')}
-          </p>
-        </div>
-
         {/* Main Central Interactive Card (AI Assistant / Simulation Trigger) */}
         <div style={{
           width: '100%',

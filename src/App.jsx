@@ -23,6 +23,8 @@ import ActivityView from './components/ActivityView.jsx';
 import NotificationsView from './components/NotificationsView.jsx';
 import StudyPlanView from './components/StudyPlanView.jsx';
 import AiReportsView from './components/AiReportsView.jsx';
+import Sidebar from './components/Sidebar.jsx';
+import TabletHeader from './components/TabletHeader.jsx';
 
 import { Crown, Coins, Lock, ShieldAlert, Sparkles, ChevronRight, X } from 'lucide-react';
 import { useTranslation } from './i18n.jsx';
@@ -37,6 +39,20 @@ export default function App() {
 
   const [currentView, setCurrentView] = useState('cases'); // 'cases' | 'simulation' | 'store' | 'leaderboard'
   const [activeMode, setActiveMode] = useState('clinical'); // 'clinical' | 'citizen'
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Initialize Telegram Web App SDK
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      try {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+      } catch (err) {
+        console.warn('Telegram WebApp initialization error:', err);
+      }
+    }
+  }, []);
 
   // Data states
   const [user, setUser] = useState(null);
@@ -337,33 +353,41 @@ export default function App() {
 
   // 2. AUTHENTICATED WORKSPACE (When logged in)
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Internal Workspace Header */}
-      <AppNavbar
+    <div className="app-workspace-layout" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+      {/* 1. Desktop Persistent Sidebar (>= 1024px) & Tablet/Mobile Drawer (< 1024px) */}
+      <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
-        user={user}
-        userLimit={userLimit}
-        activeCase={activeCase}
         onOpenProfile={() => setCurrentView('profile')}
         onLogout={handleLogout}
-        lang={lang}
-        onLangChange={handleLangChange}
-        activeMode={activeMode}
-        setActiveMode={setActiveMode}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Internal Views */}
-      <main style={{ flex: 1 }}>
-        {/* Clean AI Chatbot-Style Home View */}
-        {currentView === 'cases' && (
-          <HomeView
-            user={user}
-            categories={categories}
-            onStartSimulation={handleStartSimulationFromHome}
-            onOpenClinics={() => setCurrentView('clinics')}
-          />
-        )}
+      {/* 2. Main Content Wrapper */}
+      <div className="app-main-content-wrapper">
+        {/* Tablet & Mobile Header (Visible on screens < 1024px) */}
+        <TabletHeader
+          onToggleSidebar={() => setSidebarOpen(true)}
+          onOpenNotifications={() => setCurrentView('notifications')}
+          unreadCount={1}
+        />
+
+        {/* Internal Views */}
+        <main style={{ flex: 1, width: '100%' }}>
+          {/* Dashboard Home View with Greeting, Hero Banner Slider, and 3 Stat Cards */}
+          {currentView === 'cases' && (
+            <HomeView
+              user={user}
+              categories={categories}
+              banners={banners}
+              userLimit={userLimit}
+              onStartSimulation={handleStartSimulationFromHome}
+              onOpenClinics={() => setCurrentView('clinics')}
+              onOpenStore={() => setCurrentView('store')}
+              onOpenLeaderboard={() => setCurrentView('leaderboard')}
+            />
+          )}
 
         {/* Live Interactive Case Simulation Room with Real Hospital Monitor */}
         {currentView === 'simulation' && (
@@ -462,6 +486,25 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Workspace Footer */}
+      <footer style={{
+        marginTop: 40,
+        padding: '24px 0 10px 0',
+        borderTop: '1.5px solid #E2E8F0',
+        background: 'transparent',
+        textAlign: 'center',
+        fontSize: '0.85rem',
+        color: '#64748B',
+      }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>© 2026 <strong>TibCase AI</strong>. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.</div>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <span style={{ color: '#16A34A', fontWeight: 700 }}>AHA & ESC Standartlari</span>
+          </div>
+        </div>
+      </footer>
+    </div>
 
       {/* Modals */}
 
@@ -899,24 +942,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Workspace Footer */}
-      <footer style={{
-        padding: '20px 24px',
-        borderTop: '1.5px solid #E2E8F0',
-        background: '#FFFFFF',
-        textAlign: 'center',
-        fontSize: '0.85rem',
-        color: '#64748B',
-      }}>
-        <div style={{ maxWidth: 1380, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <div>© 2026 <strong>TibCase AI</strong>. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.</div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <span style={{ color: '#16A34A', fontWeight: 700 }}>AHA & ESC Standartlari</span>
-          </div>
-        </div>
-      </footer>
-
-      {/* Bottom Navigation Bar matching Figma design */}
+      {/* Bottom Navigation Bar matching Figma mobile design */}
       <BottomNavBar
         currentView={currentView}
         onSelectView={(view) => setCurrentView(view)}

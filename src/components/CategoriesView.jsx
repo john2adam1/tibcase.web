@@ -82,23 +82,23 @@ export default function CategoriesView({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '16px 16px 100px 16px',
-      background: '#F8FAFC',
+      padding: '8px 0 100px 0',
+      background: 'transparent',
       boxSizing: 'border-box',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
       <div style={{
         width: '100%',
-        maxWidth: 480,
+        maxWidth: 1100,
         display: 'flex',
         flexDirection: 'column',
-        gap: 16,
+        gap: 20,
       }}>
         {/* Top Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          position: 'relative',
+          gap: 16,
           padding: '8px 4px 12px 4px',
         }}>
           {onBack && (
@@ -106,53 +106,60 @@ export default function CategoriesView({
               onClick={onBack}
               title={t('cat.back')}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
+                width: 42,
+                height: 42,
+                borderRadius: 14,
                 background: '#FFFFFF',
                 border: '1.5px solid #E2E8F0',
-                boxShadow: '0 2px 0 #E2E8F0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
                 color: '#0F172A',
+                transition: 'all 0.15s ease',
               }}
             >
               <ChevronLeft size={24} strokeWidth={2.4} />
             </button>
           )}
 
-          <h1 style={{
-            flex: 1,
-            fontSize: '24px',
-            fontWeight: 800,
-            color: '#0F172A',
-            letterSpacing: '-0.02em',
-            margin: 0,
-            textAlign: 'center',
-            paddingRight: onBack ? 40 : 0,
-          }}>
-            {t('cat.title')}
-          </h1>
+          <div>
+            <h1 style={{
+              fontSize: '26px',
+              fontWeight: 900,
+              color: '#0F172A',
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}>
+              {t('cat.title', "Klinik Bo'limlar")}
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: '#64748B',
+              margin: '3px 0 0 0',
+            }}>
+              O'zingiz qiziqqan yo'nalishni tanlang va interaktiv keyslarni yechishni boshlang
+            </p>
+          </div>
         </div>
 
         {/* Loading State */}
         {loading && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 14,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 16,
             width: '100%',
           }}>
-            {[1, 2].map((i) => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
                 style={{
                   background: '#FFFFFF',
                   borderRadius: 24,
-                  border: '2px solid #E2E8F0',
-                  padding: '24px 16px',
+                  border: '1.5px solid #E2E8F0',
+                  padding: '24px 20px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 12,
@@ -167,36 +174,12 @@ export default function CategoriesView({
           </div>
         )}
 
-        {/* Empty state: If no categories returned from API */}
-        {!loading && categories.length === 0 && (
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 24,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
-            padding: '40px 20px',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 12,
-          }}>
-            <Inbox size={48} color="#94A3B8" />
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-              Kategoriyalar topilmadi
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-              Serverda hozircha hech qanday bo'lim mavjud emas.
-            </p>
-          </div>
-        )}
-
-        {/* Categories 2-Column Grid */}
+        {/* Categories Grid */}
         {!loading && categories.length > 0 && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 14,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 18,
             width: '100%',
           }}>
             {categories.map((cat) => {
