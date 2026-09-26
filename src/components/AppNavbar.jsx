@@ -47,7 +47,6 @@ export default function AppNavbar({
   const navItems = [
     { id: 'cases', label: t('nav.home'), subtitle: 'Klinik keyslar katalogi', icon: Building2 },
     { id: 'clinics', label: t('nav.category'), subtitle: "Bo'limlar & Kategoriyalar", icon: Stethoscope },
-    { id: 'leaderboard', label: t('nav.ranking'), subtitle: 'Peshqadamlar reytingi', icon: Award },
     { id: 'profile', label: t('nav.profile'), subtitle: 'Mening profilim & Sozlamalar', icon: User },
   ];
 

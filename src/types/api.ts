@@ -34,6 +34,9 @@ export interface AuthTokensRes {
   role: string;
 }
 
+/** Swagger definition: models.TokenRes */
+export type TokenRes = AuthTokensRes;
+
 export interface UserProfile {
   id: string;
   name: string;

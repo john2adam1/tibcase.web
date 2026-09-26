@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { api, getLang, setLang, setToken, setRefreshToken, setStoredUser } from './api';
+import {
+  api,
+  getLang,
+  setLang,
+  getToken,
+  getRefreshToken,
+  getStoredUser,
+  setToken,
+  setRefreshToken,
+  setStoredUser,
+  setOnUnauthorized
+} from './api';
 import LandingPage from './components/LandingPage';
 import AppNavbar from './components/AppNavbar';
 import CasesCatalog from './components/CasesCatalog';
@@ -17,6 +28,7 @@ import CaseDetailsView from './components/CaseDetailsView';
 import PreparingCaseLoader from './components/PreparingCaseLoader';
 import QuickGuideModal from './components/QuickGuideModal';
 import AuthModal from './components/AuthModal';
+import LogoutConfirmModal from './components/LogoutConfirmModal';
 import HomeView from './components/HomeView';
 import FavoritesView from './components/FavoritesView.jsx';
 import ActivityView from './components/ActivityView.jsx';
@@ -32,9 +44,15 @@ import { useTranslation } from './i18n.jsx';
 export default function App() {
   const { lang, setLang, t } = useTranslation();
 
-  // Authentication status: default to false so visitor sees clean Landing Page first
+  // Authentication status: safely check both localStorage flag AND actual token availability
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('tibcase_authenticated') === 'true';
+    const hasFlag = localStorage.getItem('tibcase_authenticated') === 'true';
+    const hasToken = Boolean(getToken() || getRefreshToken());
+    if (hasFlag && !hasToken) {
+      localStorage.removeItem('tibcase_authenticated');
+      return false;
+    }
+    return hasFlag && hasToken;
   });
 
   const [currentView, setCurrentView] = useState('cases'); // 'cases' | 'simulation' | 'store' | 'leaderboard'
@@ -54,8 +72,26 @@ export default function App() {
     }
   }, []);
 
-  // Data states
-  const [user, setUser] = useState(null);
+  // Listen for unauthorized/expired session events from api client
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      console.warn('Session expired or invalidated -> resetting authentication state');
+      setIsAuthenticated(false);
+      localStorage.removeItem('tibcase_authenticated');
+      setToken(null);
+      setRefreshToken(null);
+      setStoredUser(null);
+      setUser(null);
+      setActiveCase(null);
+      setProfileModalOpen(false);
+      setLogoutConfirmOpen(false);
+    });
+  }, []);
+
+  // Data states (initialize user from stored user to prevent empty flickering)
+  const [user, setUser] = useState(() => {
+    return getStoredUser();
+  });
   const [categories, setCategories] = useState([]);
   const [cases, setCases] = useState([]);
   const [tariffs, setTariffs] = useState([]);
@@ -81,6 +117,7 @@ export default function App() {
   // Modals
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
   const [storeInitialTab, setStoreInitialTab] = useState('all');
   const [toast, setToast] = useState(null);
@@ -100,23 +137,50 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadPublicData() {
-      // In API_MOBILE.md, endpoints like banner, contact, partner, about, faq require Bearer token.
-      // If user is not authenticated yet, do not spam requests that return 401 Unauthorized.
+    async function loadAllData() {
+      // Only fetch protected endpoints if authenticated
       if (!isAuthenticated) return;
 
       try {
-        const [tariffsData, partnersData, faqsData, aboutsData, contactsData, bannersData] =
-          await Promise.all([
-            api.getTariffs().catch(() => []),
-            api.getPartners().catch(() => []),
-            api.getFaqs().catch(() => []),
-            api.getAbout().catch(() => []),
-            api.getContacts().catch(() => []),
-            api.getBanners().catch(() => []),
-          ]);
+        const [
+          profileData,
+          catsData,
+          casesData,
+          limitData,
+          tariffsData,
+          partnersData,
+          faqsData,
+          aboutsData,
+          contactsData,
+          bannersData
+        ] = await Promise.all([
+          api.getUserProfile().catch(() => null),
+          api.getCategories().catch(() => []),
+          api.getCases().catch(() => []),
+          api.getUserLimit().catch(() => null),
+          api.getTariffs().catch(() => []),
+          api.getPartners().catch(() => []),
+          api.getFaqs().catch(() => []),
+          api.getAbout().catch(() => []),
+          api.getContacts().catch(() => []),
+          api.getBanners().catch(() => []),
+        ]);
 
         if (isMounted) {
+          if (profileData) {
+            setUser(profileData);
+            setStoredUser(profileData);
+          } else {
+            // If profile failed and tokens are missing, reset auth
+            if (!getToken() && !getRefreshToken()) {
+              setIsAuthenticated(false);
+              localStorage.removeItem('tibcase_authenticated');
+              return;
+            }
+          }
+          if (catsData && catsData.length) setCategories(catsData);
+          if (casesData && casesData.length) setCases(casesData);
+          if (limitData) setUserLimit(limitData);
           if (tariffsData && tariffsData.length) setTariffs(tariffsData);
           if (partnersData && partnersData.length) setPartners(partnersData);
           if (faqsData && faqsData.length) setFaqs(faqsData);
@@ -125,35 +189,11 @@ export default function App() {
           if (bannersData && bannersData.length) setBanners(bannersData);
         }
       } catch (err) {
-        console.warn('Public data load handled:', err.message);
+        console.warn('Data load handled:', err.message);
       }
     }
 
-    async function loadAuthenticatedData() {
-      // Only fetch protected endpoints when user is authenticated
-      if (!isAuthenticated) return;
-
-      try {
-        const [profileData, catsData, casesData, limitData] = await Promise.all([
-          api.getUserProfile().catch(() => null),
-          api.getCategories().catch(() => []),
-          api.getCases().catch(() => []),
-          api.getUserLimit().catch(() => null),
-        ]);
-
-        if (isMounted) {
-          if (profileData) setUser(profileData);
-          if (catsData) setCategories(catsData);
-          if (casesData) setCases(casesData);
-          if (limitData) setUserLimit(limitData);
-        }
-      } catch (err) {
-        console.warn('Authenticated data load handled:', err.message);
-      }
-    }
-
-    loadPublicData();
-    loadAuthenticatedData();
+    loadAllData();
 
     return () => { isMounted = false; };
   }, [lang, isAuthenticated]);
@@ -178,6 +218,10 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    setLogoutConfirmOpen(true);
+  };
+
+  const handleConfirmLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('tibcase_authenticated');
     setToken(null);
@@ -186,6 +230,7 @@ export default function App() {
     setUser(null);
     setActiveCase(null);
     setProfileModalOpen(false);
+    setLogoutConfirmOpen(false);
     showToast(t('settings.logOut') + ' ✓');
   };
 
@@ -484,7 +529,7 @@ export default function App() {
 
         {/* Leaderboard View */}
         {currentView === 'leaderboard' && (
-          <Leaderboard user={user} />
+          <Leaderboard user={user} onBack={() => setCurrentView('profile')} />
         )}
 
         {/* Profile & Settings View (Figma mobile design) */}
@@ -622,6 +667,14 @@ export default function App() {
           abouts={abouts}
         />
       )}
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmModal
+        isOpen={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        onConfirm={handleConfirmLogout}
+        user={user}
+      />
 
       {/* Toast Notification */}
       {/* Preparing Case Loading Screen (Screenshot 4) */}

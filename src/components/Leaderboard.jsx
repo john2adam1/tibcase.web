@@ -7,12 +7,13 @@ import {
   Sparkles,
   Trophy,
   User,
-  Zap
+  Zap,
+  ArrowLeft
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
 
-export default function Leaderboard({ user }) {
+export default function Leaderboard({ user, onBack }) {
   const { t } = useTranslation();
   const [filterType, setFilterType] = useState('total');
   const [leaderboard, setLeaderboard] = useState(null);
@@ -61,8 +62,43 @@ export default function Leaderboard({ user }) {
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
       <div style={{ maxWidth: 780, margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        {/* Header with Back button */}
+        <div style={{ position: 'relative', textAlign: 'center', marginBottom: 28 }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 14,
+                background: '#FFFFFF',
+                border: '1.5px solid #E2E8F0',
+                color: '#475569',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#F1F5F9';
+                e.currentTarget.style.color = '#0F172A';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.color = '#475569';
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>{t('cat.back', 'Orqaga')}</span>
+            </button>
+          )}
+
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',

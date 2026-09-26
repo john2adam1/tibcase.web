@@ -143,8 +143,11 @@ export const translations = {
     'auth.confirmError': 'Tasdiqlash kodini kiritishda xatolik',
     'auth.changeNumber': "O'zgartirish",
     'auth.googleLogin': 'Google orqali kirish',
-    'auth.googleSigningIn': 'Google orqali tekshirilmoqda...',
     'auth.orDivider': 'yoki',
+    'auth.logoutConfirmTitle': 'Tizimdan chiqishni tasdiqlang',
+    'auth.logoutConfirmDesc': 'Haqiqatan ham o\'z hisobingizdan chiqmoqchimisiz? Qayta kirish uchun yangi tasdiqlash kodi talab qilinadi.',
+    'auth.logoutConfirmBtn': 'Ha, tizimdan chiqish',
+    'auth.logoutCancelBtn': 'Bekor qilish',
 
     // Settings items
     'settings.getPremium': 'Premium olish',
@@ -324,8 +327,11 @@ export const translations = {
     'auth.confirmError': 'Ошибка при подтверждении кода',
     'auth.changeNumber': 'Изменить',
     'auth.googleLogin': 'Войти через Google',
-    'auth.googleSigningIn': 'Вход через Google...',
     'auth.orDivider': 'или',
+    'auth.logoutConfirmTitle': 'Подтверждение выхода',
+    'auth.logoutConfirmDesc': 'Вы действительно хотите выйти из своего аккаунта? Для повторного входа потребуется код подтверждения.',
+    'auth.logoutConfirmBtn': 'Да, выйти из аккаунта',
+    'auth.logoutCancelBtn': 'Отмена',
 
     // Settings items
     'settings.getPremium': 'Получить Premium',
@@ -505,8 +511,11 @@ export const translations = {
     'auth.confirmError': 'Failed to verify code',
     'auth.changeNumber': 'Change',
     'auth.googleLogin': 'Continue with Google',
-    'auth.googleSigningIn': 'Signing in with Google...',
     'auth.orDivider': 'or',
+    'auth.logoutConfirmTitle': 'Confirm Log Out',
+    'auth.logoutConfirmDesc': 'Are you sure you want to log out of your account? You will need a new verification code to sign in again.',
+    'auth.logoutConfirmBtn': 'Yes, Log Out',
+    'auth.logoutCancelBtn': 'Cancel',
 
     // Settings items
     'settings.getPremium': 'Get Premium',

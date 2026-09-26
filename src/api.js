@@ -51,30 +51,63 @@ export const setLang = (lang) => {
 };
 
 // ============================================================
-// Token refresh
+// Token refresh & Unauthorized event handler
 // ============================================================
-async function refreshTokens() {
-  const refresh = getRefreshToken();
-  if (!refresh) throw new Error('No refresh token');
-  
-  const res = await fetch('/auth/token/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refresh }),
-  });
+let refreshPromise = null;
+let onUnauthorizedCallback = null;
 
-  if (!res.ok) {
-    // Clear dead session
+export const setOnUnauthorized = (cb) => {
+  onUnauthorizedCallback = cb;
+};
+
+async function refreshTokens() {
+  // If a refresh is already in flight, all concurrent callers share the EXACT same promise
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  const refresh = getRefreshToken();
+  if (!refresh) {
     setToken(null);
     setRefreshToken(null);
     setStoredUser(null);
-    throw new Error('Token refresh failed');
+    if (onUnauthorizedCallback) onUnauthorizedCallback();
+    throw new Error('No refresh token available');
   }
-  const data = await res.json();
-  
-  if (data.access_token) setToken(data.access_token);
-  if (data.refresh_token) setRefreshToken(data.refresh_token);
-  return data;
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch('/auth/token/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+
+      if (!res.ok) {
+        // Refresh token itself is dead/expired -> kill session and force login
+        setToken(null);
+        setRefreshToken(null);
+        setStoredUser(null);
+        if (onUnauthorizedCallback) onUnauthorizedCallback();
+        throw new Error('Token refresh rejected');
+      }
+
+      const data = await res.json();
+      if (data.access_token) setToken(data.access_token);
+      if (data.refresh_token) setRefreshToken(data.refresh_token);
+      return data;
+    } catch (err) {
+      setToken(null);
+      setRefreshToken(null);
+      setStoredUser(null);
+      if (onUnauthorizedCallback) onUnauthorizedCallback();
+      throw err;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 // ============================================================
@@ -104,14 +137,15 @@ async function request(path, options = {}) {
     let res = await fetch(path, { ...options, headers });
 
     // Auto-refresh on 401 if refresh token is present
-    if (res.status === 401 && getRefreshToken()) {
+    if (res.status === 401 && getRefreshToken() && path !== '/auth/token/refresh') {
       try {
         await refreshTokens();
-        // Retry with new token
+        // Retry original request with newly acquired token
         headers['Authorization'] = `Bearer ${getToken()}`;
         res = await fetch(path, { ...options, headers });
-      } catch {
-        console.warn('Session expired or invalidated');
+      } catch (refreshErr) {
+        console.warn(`Session refresh failed for [${path}]:`, refreshErr.message);
+        throw refreshErr;
       }
     }
 
@@ -119,12 +153,20 @@ async function request(path, options = {}) {
     if (contentType.includes('application/json')) {
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 401 && !getRefreshToken()) {
+          if (onUnauthorizedCallback) onUnauthorizedCallback();
+        }
         throw new Error(data?.message || data?.error?.message || data?.error || `Xatolik: ${res.status}`);
       }
       return data;
     } else {
       const text = await res.text();
-      if (!res.ok) throw new Error(text || `Xatolik: ${res.status}`);
+      if (!res.ok) {
+        if (res.status === 401 && !getRefreshToken()) {
+          if (onUnauthorizedCallback) onUnauthorizedCallback();
+        }
+        throw new Error(text || `Xatolik: ${res.status}`);
+      }
       return text;
     }
   } catch (err) {

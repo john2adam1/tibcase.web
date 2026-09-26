@@ -44,7 +44,6 @@ export default function Navbar({
     { id: 'cases', label: 'Klinik Keyslar', icon: BookOpen },
     { id: 'simulation', label: 'Simulyatsiya', icon: Stethoscope, badge: activeCase ? 'Jonli' : null },
     { id: 'store', label: 'Tariflar & Tangalar', icon: Coins },
-    { id: 'leaderboard', label: 'Reyting', icon: Award },
   ];
 
   return (

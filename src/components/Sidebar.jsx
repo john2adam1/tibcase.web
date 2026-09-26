@@ -33,11 +33,6 @@ export default function Sidebar({
       icon: LayoutGrid
     },
     {
-      id: 'leaderboard',
-      label: t('nav.ranking', 'Reyting'),
-      icon: TrendingUp
-    },
-    {
       id: 'profile',
       label: t('nav.profile', 'Profil'),
       icon: User

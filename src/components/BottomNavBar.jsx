@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Home,
   LayoutGrid,
-  TrendingUp,
   User
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
@@ -15,8 +14,7 @@ export default function BottomNavBar({
 
   const tabs = [
     { id: 'cases', label: t('nav.home', 'Asosiy'), icon: Home },
-    { id: 'clinics', label: t('nav.category', 'Barcha kurslar'), icon: LayoutGrid },
-    { id: 'leaderboard', label: t('nav.ranking', 'Reyting'), icon: TrendingUp },
+    { id: 'clinics', label: t('nav.category', "Bo'limlar"), icon: LayoutGrid },
     { id: 'profile', label: t('nav.profile', 'Profil'), icon: User },
   ];
 
