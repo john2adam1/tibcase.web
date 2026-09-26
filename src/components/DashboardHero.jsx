@@ -77,6 +77,7 @@ export default function DashboardHero({
       {/* 2. Real Banner Carousel (ONLY rendered if API returns banners) */}
       {activeBanner && (
         <div
+          className="dashboard-banner-container"
           style={{
             position: 'relative',
             width: '100%',
@@ -114,15 +115,18 @@ export default function DashboardHero({
           />
 
           {/* Banner Content from API */}
-          <div style={{
-            position: 'relative',
-            zIndex: 2,
-            padding: '28px 32px 14px 32px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            maxWidth: 600,
-          }}>
+          <div
+            className="dashboard-banner-content"
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              padding: '28px 32px 14px 32px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              maxWidth: 600,
+            }}
+          >
             <h2 style={{
               fontSize: 'clamp(20px, 3.5vw, 28px)',
               fontWeight: 900,
@@ -174,15 +178,18 @@ export default function DashboardHero({
 
           {/* Banner Controls & Dots (only if more than 1 banner) */}
           {banners.length > 1 && (
-            <div style={{
-              position: 'relative',
-              zIndex: 2,
-              padding: '12px 32px 20px 32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 6,
-            }}>
+            <div
+              className="dashboard-banner-controls"
+              style={{
+                position: 'relative',
+                zIndex: 2,
+                padding: '12px 32px 20px 32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: 6,
+              }}
+            >
               {banners.map((_, idx) => (
                 <button
                   key={idx}

@@ -117,12 +117,15 @@ export default function LandingPage({
       </header>
 
       {/* Hero Section */}
-      <section style={{
-        maxWidth: 1100,
-        margin: '0 auto',
-        padding: '80px 24px 70px',
-        textAlign: 'center',
-      }}>
+      <section
+        className="landing-hero-section"
+        style={{
+          maxWidth: 1100,
+          margin: '0 auto',
+          padding: '80px 24px 70px',
+          textAlign: 'center',
+        }}
+      >
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -143,7 +146,7 @@ export default function LandingPage({
         </div>
 
         <h1 style={{
-          fontSize: 'clamp(2.4rem, 4.8vw, 3.8rem)',
+          fontSize: 'clamp(1.85rem, 5vw, 3.4rem)',
           lineHeight: 1.15,
           fontWeight: 900,
           letterSpacing: '-0.03em',
@@ -219,14 +222,19 @@ export default function LandingPage({
           gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
           gap: 24,
         }}>
-          <div style={{
-            background: '#FFFFFF',
-            padding: 32,
-            borderRadius: 28,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
-            transition: 'transform 0.2s ease',
-          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div
+            className="landing-feature-card"
+            style={{
+              background: '#FFFFFF',
+              padding: 32,
+              borderRadius: 28,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              transition: 'transform 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
             <div style={{
               width: 56,
               height: 56,
@@ -246,14 +254,19 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div style={{
-            background: '#FFFFFF',
-            padding: 32,
-            borderRadius: 28,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
-            transition: 'transform 0.2s ease',
-          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div
+            className="landing-feature-card"
+            style={{
+              background: '#FFFFFF',
+              padding: 32,
+              borderRadius: 28,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              transition: 'transform 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
             <div style={{
               width: 56,
               height: 56,
@@ -273,14 +286,19 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div style={{
-            background: '#FFFFFF',
-            padding: 32,
-            borderRadius: 28,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
-            transition: 'transform 0.2s ease',
-          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div
+            className="landing-feature-card"
+            style={{
+              background: '#FFFFFF',
+              padding: 32,
+              borderRadius: 28,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              transition: 'transform 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
             <div style={{
               width: 56,
               height: 56,
@@ -300,14 +318,19 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div style={{
-            background: '#FFFFFF',
-            padding: 32,
-            borderRadius: 28,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
-            transition: 'transform 0.2s ease',
-          }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div
+            className="landing-feature-card"
+            style={{
+              background: '#FFFFFF',
+              padding: 32,
+              borderRadius: 28,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              transition: 'transform 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
             <div style={{
               width: 56,
               height: 56,

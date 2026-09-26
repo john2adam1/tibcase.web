@@ -26,7 +26,7 @@ export default function BottomNavBar({
       bottom: 0,
       left: 0,
       right: 0,
-      height: 70,
+      minHeight: 64,
       background: '#FFFFFF',
       borderTop: '1.5px solid #E2E8F0',
       display: 'flex',
@@ -35,7 +35,9 @@ export default function BottomNavBar({
       zIndex: 50,
       boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.05)',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
+      paddingTop: 6,
+      boxSizing: 'border-box',
     }}>
       <div style={{
         width: '100%',

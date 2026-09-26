@@ -82,6 +82,7 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
+  const [storeInitialTab, setStoreInitialTab] = useState('all');
   const [toast, setToast] = useState(null);
 
   const showToast = (message) => {
@@ -99,29 +100,44 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadInitialData() {
+    async function loadPublicData() {
+      // In API_MOBILE.md, endpoints like banner, contact, partner, about, faq require Bearer token.
+      // If user is not authenticated yet, do not spam requests that return 401 Unauthorized.
+      if (!isAuthenticated) return;
+
       try {
-        const [
-          profileData,
-          catsData,
-          casesData,
-          tariffsData,
-          partnersData,
-          faqsData,
-          aboutsData,
-          contactsData,
-          bannersData,
-          limitData,
-        ] = await Promise.all([
+        const [tariffsData, partnersData, faqsData, aboutsData, contactsData, bannersData] =
+          await Promise.all([
+            api.getTariffs().catch(() => []),
+            api.getPartners().catch(() => []),
+            api.getFaqs().catch(() => []),
+            api.getAbout().catch(() => []),
+            api.getContacts().catch(() => []),
+            api.getBanners().catch(() => []),
+          ]);
+
+        if (isMounted) {
+          if (tariffsData && tariffsData.length) setTariffs(tariffsData);
+          if (partnersData && partnersData.length) setPartners(partnersData);
+          if (faqsData && faqsData.length) setFaqs(faqsData);
+          if (aboutsData && aboutsData.length) setAbouts(aboutsData);
+          if (contactsData && contactsData.length) setContacts(contactsData);
+          if (bannersData && bannersData.length) setBanners(bannersData);
+        }
+      } catch (err) {
+        console.warn('Public data load handled:', err.message);
+      }
+    }
+
+    async function loadAuthenticatedData() {
+      // Only fetch protected endpoints when user is authenticated
+      if (!isAuthenticated) return;
+
+      try {
+        const [profileData, catsData, casesData, limitData] = await Promise.all([
           api.getUserProfile().catch(() => null),
           api.getCategories().catch(() => []),
           api.getCases().catch(() => []),
-          api.getTariffs().catch(() => []),
-          api.getPartners().catch(() => []),
-          api.getFaqs().catch(() => []),
-          api.getAbout().catch(() => []),
-          api.getContacts().catch(() => []),
-          api.getBanners().catch(() => []),
           api.getUserLimit().catch(() => null),
         ]);
 
@@ -129,23 +145,18 @@ export default function App() {
           if (profileData) setUser(profileData);
           if (catsData) setCategories(catsData);
           if (casesData) setCases(casesData);
-          if (tariffsData) setTariffs(tariffsData);
-          if (partnersData) setPartners(partnersData);
-          if (faqsData) setFaqs(faqsData);
-          if (aboutsData) setAbouts(aboutsData);
-          if (contactsData) setContacts(contactsData);
-          if (bannersData) setBanners(bannersData);
           if (limitData) setUserLimit(limitData);
         }
       } catch (err) {
-        console.warn('Initial load handled:', err.message);
+        console.warn('Authenticated data load handled:', err.message);
       }
     }
 
-    loadInitialData();
+    loadPublicData();
+    loadAuthenticatedData();
 
     return () => { isMounted = false; };
-  }, [lang]);
+  }, [lang, isAuthenticated]);
 
   // Auth Handlers
   const handleLoginSuccess = async (loggedInUser) => {
@@ -270,36 +281,96 @@ export default function App() {
   };
 
   const handleFinishSimulation = async (result) => {
-    try {
-      showToast("AI Debriefing hisoboti tayyorlanmoqda...");
-      const debrief = await api.getDebrief(activeCase?.sessionId || 'sim-1');
-      setDebriefData(debrief);
+    const sessionId = activeCase?.sessionId || 'sim-1';
 
-      if (user) {
+    try {
+      showToast("Simulyatsiya yakunlanmoqda...");
+
+      // 1. Sessiyani backendda yakunlash (PUT /mobile/simulation/{id}/finish)
+      let finishResult = null;
+      try {
+        finishResult = await api.finishSimulation(sessionId, 'completed');
+      } catch (err) {
+        console.warn('finishSimulation API error (continuing):', err.message);
+      }
+
+      // 2. AI Debriefing hisobotini olish
+      showToast("AI Debriefing hisoboti tayyorlanmoqda...");
+      let debrief = null;
+      try {
+        debrief = await api.getDebrief(sessionId);
+      } catch (err) {
+        console.warn('getDebrief API error:', err.message);
+      }
+
+      // 3. Backenddan kelgan haqiqiy XP va Coins qiymatlarini aniqlash
+      const earnedXp = debrief?.xp_earned ?? finishResult?.xp_earned ?? result?.xp ?? 0;
+      const earnedCoins = debrief?.coins_earned ?? finishResult?.coins_earned ?? result?.coins ?? 0;
+
+      // 4. Debrief data ni set qilish
+      if (debrief) {
+        setDebriefData(debrief);
+      } else {
+        // Backend javob bermagan bo'lsa, lokal natijalar ishlatiladi
+        setDebriefData({
+          final_score: finishResult?.final_score ?? result?.score ?? 0,
+          xp_earned: earnedXp,
+          coins_earned: earnedCoins,
+          correct_steps: [
+            "Bemorga zudlik bilan O2 kislorod ingalyatsiyasi boshlandi",
+            "12 tarmoqli EKG olindi va ST ko'tarilishi aniqlandi",
+            "Aspirin 300 mg chaynab yutish uchun berildi"
+          ],
+          incorrect_steps: [
+            "Gipotenziyada Nitroglikerin berish xavfi inobatga olinishi lozim edi"
+          ],
+          weak_topics: ["Miokard infarktida gipotenziya protokoli"],
+          guideline_notes: "AHA va ESC 2023 ko'rsatmalariga muvofiq STEMI da zudlik bilan perkutan koronar aralashuv (ChKB) tayyorgarligi ko'rilishi lozim."
+        });
+      }
+
+      // 5. User profilini lokal yangilash (tezkor ko'rsatish uchun)
+      if (user && (earnedXp > 0 || earnedCoins > 0)) {
         setUser(prev => ({
           ...prev,
-          xp: (prev.xp || 100) + (result.xp || 60),
-          coins: (prev.coins || 15) + (result.coins || 2)
+          xp: (prev?.xp || 0) + earnedXp,
+          coins: (prev?.coins || 0) + earnedCoins
         }));
       }
-    } catch {
+
+      // 6. Backenddan yangi profil olish (haqiqiy qiymatlarni sinxronlash)
+      try {
+        const freshProfile = await api.getUserProfile();
+        if (freshProfile) {
+          setUser(freshProfile);
+          setStoredUser(freshProfile);
+        }
+      } catch {
+        // Lokal yangilangan qiymatlarni localStorage ga saqlash
+        if (user) {
+          setStoredUser({
+            ...user,
+            xp: (user?.xp || 0) + earnedXp,
+            coins: (user?.coins || 0) + earnedCoins
+          });
+        }
+      }
+
+    } catch (err) {
+      console.error('handleFinishSimulation error:', err);
+      // Fallback — backend ishlamasa ham UX buzilmasin
       setDebriefData({
-        final_score: result.score || 94,
-        xp_earned: 60,
-        coins_earned: 2,
-        correct_steps: [
-          "Bemorga zudlik bilan O2 kislorod ingalyatsiyasi boshlandi",
-          "12 tarmoqli EKG olindi va ST ko'tarilishi aniqlandi",
-          "Aspirin 300 mg chaynab yutish uchun berildi"
-        ],
-        incorrect_steps: [
-          "Gipotenziyada Nitroglikerin berish xavfi inobatga olinishi lozim edi"
-        ],
-        weak_topics: ["Miokard infarktida gipotenziya protokoli"],
-        guideline_notes: "AHA va ESC 2023 ko'rsatmalariga muvofiq STEMI da zudlik bilan perkutan koronar aralashuv (ChKB) tayyorgarligi ko'rilishi lozim."
+        final_score: result?.score ?? 0,
+        xp_earned: result?.xp ?? 0,
+        coins_earned: result?.coins ?? 0,
+        correct_steps: [],
+        incorrect_steps: [],
+        weak_topics: [],
+        guideline_notes: ""
       });
     }
   };
+
 
   const handleToggleFavorite = async (caseId) => {
     try {
@@ -365,13 +436,15 @@ export default function App() {
       />
 
       {/* 2. Main Content Wrapper */}
-      <div className="app-main-content-wrapper">
-        {/* Tablet & Mobile Header (Visible on screens < 1024px) */}
-        <TabletHeader
-          onToggleSidebar={() => setSidebarOpen(true)}
-          onOpenNotifications={() => setCurrentView('notifications')}
-          unreadCount={1}
-        />
+      <div className={`app-main-content-wrapper ${currentView === 'simulation' ? 'simulation-mode' : ''}`}>
+        {/* Tablet & Mobile Header (Visible on screens < 1024px, hidden during simulation for maximum screen real estate) */}
+        {currentView !== 'simulation' && (
+          <TabletHeader
+            onToggleSidebar={() => setSidebarOpen(true)}
+            onOpenNotifications={() => setCurrentView('notifications')}
+            unreadCount={1}
+          />
+        )}
 
         {/* Internal Views */}
         <main style={{ flex: 1, width: '100%' }}>
@@ -405,6 +478,7 @@ export default function App() {
             user={user}
             onUserUpdate={setUser}
             onBack={() => setCurrentView('profile')}
+            initialTab={storeInitialTab}
           />
         )}
 
@@ -418,7 +492,10 @@ export default function App() {
           <ProfileView
             user={user}
             onUserUpdate={setUser}
-            onOpenStore={() => setCurrentView('store')}
+            onOpenStore={(tab) => {
+              setStoreInitialTab(tab || 'all');
+              setCurrentView('store');
+            }}
             onNavigate={(view) => setCurrentView(view)}
             lang={lang}
             onLangChange={handleLangChange}
@@ -511,9 +588,18 @@ export default function App() {
       {debriefData && (
         <DebriefModal
           debriefData={debriefData}
-          onClose={() => {
+          onClose={async () => {
             setDebriefData(null);
             setCurrentView('cases');
+            // Profil va limitni backend dan yangilash
+            try {
+              const [freshProfile, freshLimit] = await Promise.all([
+                api.getUserProfile().catch(() => null),
+                api.getUserLimit().catch(() => null),
+              ]);
+              if (freshProfile) { setUser(freshProfile); setStoredUser(freshProfile); }
+              if (freshLimit) setUserLimit(freshLimit);
+            } catch { /* lokal qiymatlar saqlanadi */ }
           }}
           onRetryCase={() => {
             setDebriefData(null);
@@ -942,11 +1028,13 @@ export default function App() {
         </div>
       )}
 
-      {/* Bottom Navigation Bar matching Figma mobile design */}
-      <BottomNavBar
-        currentView={currentView}
-        onSelectView={(view) => setCurrentView(view)}
-      />
+      {/* Bottom Navigation Bar matching Figma mobile design (hidden during simulation) */}
+      {currentView !== 'simulation' && (
+        <BottomNavBar
+          currentView={currentView}
+          onSelectView={(view) => setCurrentView(view)}
+        />
+      )}
     </div>
   );
 }

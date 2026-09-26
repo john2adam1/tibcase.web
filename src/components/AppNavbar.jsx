@@ -158,7 +158,7 @@ export default function AppNavbar({
                 title={t('nav.coins')}
               >
                 <Coins size={15} color="#D97706" />
-                <span>{user?.coins ?? 15}</span>
+                <span>{user?.coins ?? 0}</span>
               </div>
 
               <div style={{ width: 1, height: 14, background: '#CBD5E1' }} />
@@ -175,7 +175,7 @@ export default function AppNavbar({
                 title={t('nav.streak')}
               >
                 <Flame size={15} color="#EA580C" />
-                <span>{user?.streak_count ?? 5}</span>
+                <span>{user?.streak_count ?? 0}</span>
               </div>
 
               <div style={{ width: 1, height: 14, background: '#CBD5E1' }} />

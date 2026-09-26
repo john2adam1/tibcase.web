@@ -10,6 +10,7 @@ import {
   Flag
 } from 'lucide-react';
 import HospitalMonitor from './HospitalMonitor';
+import PatientAvatar from './PatientAvatar';
 import ClinicalHintModal from './ClinicalHintModal';
 import { useTranslation } from '../i18n.jsx';
 
@@ -20,8 +21,15 @@ export default function CaseSimulationRoom({
 }) {
   const { t, lang } = useTranslation();
 
-  // Patient Status: 'stable' | 'unstable' | 'critical'
+  // Patient Status: 'stable' | 'unstable' | 'critical' | 'improving' | 'deteriorating'
   const [patientStatus, setPatientStatus] = useState('unstable');
+
+  // health_percent — backenddan keladi (POST /mobile/simulation/start → health_percent)
+  // va POST /mobile/simulation/{id}/event → health_percent yangilanadi
+  const [healthPercent, setHealthPercent] = useState(72);
+
+  // Avatar animatsiyasini har xabar yuborganda trigger qilish
+  const [avatarAnimate, setAvatarAnimate] = useState(false);
 
   // Real-time Vitals connected directly to the Hospital ICU Monitor
   const [vitals, setVitals] = useState({
@@ -85,6 +93,10 @@ export default function CaseSimulationRoom({
   const handlePerformAction = (actionText) => {
     if (!actionText || !actionText.trim()) return;
 
+    // Avatar animatsiyasini trigger qil
+    setAvatarAnimate(true);
+    setTimeout(() => setAvatarAnimate(false), 100);
+
     const userText = actionText.trim();
     setInputText('');
     setQuestionsCount(prev => prev + 1);
@@ -117,6 +129,7 @@ export default function CaseSimulationRoom({
           ? "Paracetamol administered. Throat tightness and respiratory distress are worsening rapidly!\n\n\"I can't catch my breath, my throat is closing up...\" she gasps. Blood pressure is dropping."
           : "Paratsetamol berildi. Biroq bemorning tomoq qisishi va nafas siqilishi kuchaymoqda!\n\n\"Nafas olishim yanada qiyinlashmoqda, tomog'im bo'g'ilyapti...\" - deb arang shivirladi. Yurak urishi tezlashdi va qon bosimi tushib ketmoqda.");
       setPatientStatus('critical');
+      setHealthPercent(prev => Math.max(0, prev - 22));
       setVitals({ hr: 142, temp: 36.9, bp: '78/48', rr: 30, spo2: 88 });
     } else if (isEpi) {
       evaluation = {
@@ -128,8 +141,10 @@ export default function CaseSimulationRoom({
         : (lang === 'en'
           ? "Epinephrine 0.5 mg administered IM into the anterolateral thigh!\n\nWithin 2 minutes, bronchospasm relieves and stridor improves. Blood pressure climbs toward normal."
           : "Epinefrin (Adrenalin) 0.5 mg zudlik bilan sonning old-yon qismiga mushak ichiga (IM) kiritildi!\n\n2 daqiqa ichida bronxospazm pasaydi, laringo-edema kamaydi. Bemor erkin nafas ola boshladi, qon bosimi ko'tarildi.");
-      setPatientStatus('stable');
+      setPatientStatus('improving');
+      setHealthPercent(prev => Math.min(100, prev + 25));
       setVitals({ hr: 98, temp: 36.8, bp: '115/75', rr: 18, spo2: 98 });
+      setTimeout(() => setPatientStatus('stable'), 2500);
     } else if (isOxygen) {
       evaluation = {
         type: 'correct',
@@ -140,6 +155,7 @@ export default function CaseSimulationRoom({
         : (lang === 'en'
           ? "High-flow O2 at 15 L/min started via non-rebreather mask. SpO2 improved from 92% to 97%."
           : "Rezervuar niqob orqali 15 L/min yuqori oqimli O2 kislorod ingalyatsiyasi ulandi. SpO2 ko'rsatkichi 92% dan 97% gacha yaxshilandi.");
+      setHealthPercent(prev => Math.min(100, prev + 8));
       setVitals(v => ({ ...v, spo2: 97, rr: 20 }));
     } else if (isSaline) {
       evaluation = {
@@ -151,6 +167,7 @@ export default function CaseSimulationRoom({
         : (lang === 'en'
           ? "1000 mL 0.9% Normal Saline bolus started. Hemodynamics stabilizing."
           : "Vena ichiga 1000 ml 0.9% NaCl fiziologik eritmasi tezkor oqim bilan yuborildi. Qon bosimi barqarorlashmoqda.");
+      setHealthPercent(prev => Math.min(100, prev + 6));
       setVitals(v => ({ ...v, bp: '105/65', hr: 110 }));
     } else {
       evaluation = {
@@ -312,10 +329,17 @@ export default function CaseSimulationRoom({
           </div>
         </div>
 
-        {/* 2. REAL HOSPITAL ICU / CARDIAC MONITOR APPARATUS */}
-        <HospitalMonitor vitals={vitals} status={patientStatus} />
+        {/* 2. PATIENT AVATAR — bemor holati, ECG animatsiya va vitals */}
+        <PatientAvatar
+          healthPercent={healthPercent}
+          visualState={patientStatus}
+          patientAge={caseItem?.patient_age || 45}
+          patientGender={caseItem?.patient_gender || 'male'}
+          vitals={vitals}
+          animateChange={avatarAnimate}
+        />
 
-        {/* 3. CLINICAL CONVERSATION & CASE TIMELINE */}
+        {/* 4. CLINICAL CONVERSATION & CASE TIMELINE */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -461,14 +485,17 @@ export default function CaseSimulationRoom({
         </form>
 
         {/* Quick action helper chips for convenience */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          paddingTop: 4,
-        }}>
+        <div
+          className="mobile-quick-actions no-scrollbar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            paddingTop: 4,
+          }}
+        >
           {[
             lang === 'ru' ? "Эпинефрин 0.5 мг в/м" : (lang === 'en' ? "Epinephrine 0.5 mg IM" : "Epinefrin 0.5 mg IM"),
             lang === 'ru' ? "Кислород 15 л/мин" : (lang === 'en' ? "High-flow O2 (15 L/min)" : "Yuqori oqimli O2 kislorod"),
@@ -528,20 +555,23 @@ export default function CaseSimulationRoom({
           justifyContent: 'center',
           padding: 16,
         }}>
-          <div style={{
-            width: '100%',
-            maxWidth: 440,
-            background: '#FFFFFF',
-            borderRadius: 30,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
-            padding: '28px 24px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-            gap: 16,
-          }}>
+          <div
+            className="responsive-modal-card"
+            style={{
+              width: '100%',
+              maxWidth: 440,
+              background: '#FFFFFF',
+              borderRadius: 30,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+              padding: '28px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 16,
+            }}
+          >
             {/* Trophy Gold Badge */}
             <div style={{
               width: 72,
@@ -608,6 +638,7 @@ export default function CaseSimulationRoom({
                   setIsFinished(false);
                   setMessages([messages[0]]);
                   setVitals({ hr: 129, temp: 36.8, bp: '88/54', rr: 26, spo2: 92 });
+                  setHealthPercent(72);
                   setPatientStatus('unstable');
                 }}
                 style={{

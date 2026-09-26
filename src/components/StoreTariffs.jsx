@@ -21,82 +21,21 @@ import {
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
 
-// Standard fallback tariffs matching API_MOBILE.md schema
-const defaultTariffs = [
-  {
-    id: 'tariff-1m',
-    name: "1 oylik Standart Obuna",
-    kind: 'subscription',
-    duration: 1,
-    coins: 0,
-    price: 49000,
-    is_popular: false,
-    description: "1 oy davomida barcha klinik keyslarga cheksiz kirish va to'liq AI debriefing hisobotlari.",
-  },
-  {
-    id: 'tariff-3m',
-    name: "3 oylik Professional Obuna",
-    kind: 'subscription',
-    duration: 3,
-    coins: 50,
-    price: 129000,
-    is_popular: true,
-    description: "3 oy cheksiz keyslar + 50 ta bonus tanga + barcha klinik bo'limlar va reyting imtiyozlari.",
-  },
-  {
-    id: 'tariff-12m',
-    name: "12 oylik Yillik VIP Obuna",
-    kind: 'subscription',
-    duration: 12,
-    coins: 200,
-    price: 399000,
-    is_popular: false,
-    description: "1 yil to'liq cheksiz kirish + 200 ta bonus tanga + yangi keyslarni birinchilardan bo'lib yechish.",
-  },
-  {
-    id: 'tariff-coins-50',
-    name: "50 ta Tanga Paketi",
-    kind: 'coin_package',
-    duration: 0,
-    coins: 50,
-    price: 19000,
-    is_popular: false,
-    description: "Bepul limit tugaganida 10 tagacha klinik keyslarni ochish uchun qulay tangalar to'plami.",
-  },
-  {
-    id: 'tariff-coins-150',
-    name: "150 ta Tanga Paketi (Super)",
-    kind: 'coin_package',
-    duration: 0,
-    coins: 150,
-    price: 49000,
-    is_popular: false,
-    description: "30 ta keys uchun yetarli tangalar + maxsus keyslarni faollashtirish imkoniyati.",
-  },
-  {
-    id: 'tariff-coins-500',
-    name: "500 ta Tanga Paketi (Maksimal)",
-    kind: 'coin_package',
-    duration: 0,
-    coins: 500,
-    price: 129000,
-    is_popular: false,
-    description: "100+ keyslar uchun ulkan tanga zaxirasi eng yaxshi narxda.",
-  }
-];
-
 export default function StoreTariffs({
   tariffs: initialTariffs = [],
   user,
   onUserUpdate,
   onBack,
+  initialTab = 'all',
 }) {
   const { t } = useTranslation();
-  const [tariffsList, setTariffsList] = useState(
-    initialTariffs && initialTariffs.length > 0 ? initialTariffs : defaultTariffs
-  );
+  const [tariffsList, setTariffsList] = useState(initialTariffs || []);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'subscription' | 'coins'
+  const [activeTab, setActiveTab] = useState(initialTab || 'all'); // 'all' | 'subscription' | 'coins'
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
 
   const [promocode, setPromocode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
@@ -114,17 +53,15 @@ export default function StoreTariffs({
       .then((data) => {
         if (!isMounted) return;
         const list = Array.isArray(data) ? data : (data?.tariffs || data?.data || []);
-        if (list && list.length > 0) {
+        if (Array.isArray(list)) {
           setTariffsList(list);
-        } else if (!initialTariffs || initialTariffs.length === 0) {
-          setTariffsList(defaultTariffs);
         } else {
-          setTariffsList(initialTariffs);
+          setTariffsList([]);
         }
       })
       .catch(() => {
         if (isMounted) {
-          setTariffsList(initialTariffs && initialTariffs.length > 0 ? initialTariffs : defaultTariffs);
+          setTariffsList(initialTariffs || []);
         }
       })
       .finally(() => {
@@ -290,10 +227,11 @@ export default function StoreTariffs({
           {/* User Current Balance Card */}
           <div style={{
             display: 'inline-flex',
+            flexWrap: 'wrap',
             alignItems: 'center',
-            gap: 16,
+            gap: 12,
             marginTop: 16,
-            padding: '10px 20px',
+            padding: '10px 16px',
             borderRadius: 20,
             background: '#FFFFFF',
             border: '2px solid #E2E8F0',
@@ -327,7 +265,7 @@ export default function StoreTariffs({
             justifyContent: 'space-between',
             gap: 14,
           }}>
-            <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                 <Gift size={20} color="#D97706" />
                 <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0F172A', margin: 0 }}>
@@ -339,7 +277,7 @@ export default function StoreTariffs({
               </p>
             </div>
 
-            <form onSubmit={handleRedeemPromo} style={{ display: 'flex', gap: 10, flex: 1, minWidth: 260, maxWidth: 420 }}>
+            <form onSubmit={handleRedeemPromo} style={{ display: 'flex', gap: 10, flex: 1, minWidth: 220, maxWidth: 420, width: '100%' }}>
               <input
                 type="text"
                 placeholder="Masalan: TIB2026"
@@ -449,7 +387,27 @@ export default function StoreTariffs({
         )}
 
         {/* Tariffs Cards Grid */}
-        {!loading && (
+        {!loading && displayedTariffs.length === 0 && (
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: 24,
+            border: '2px solid #E2E8F0',
+            padding: '50px 20px',
+            textAlign: 'center',
+            color: '#64748B',
+            marginBottom: 30,
+          }}>
+            <Coins size={36} style={{ marginBottom: 12, opacity: 0.5 }} />
+            <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+              Tariflar mavjud emas
+            </h3>
+            <p style={{ fontSize: '13px', margin: 0 }}>
+              Hozirda sotuvda tarif paketlari mavjud emas.
+            </p>
+          </div>
+        )}
+
+        {!loading && displayedTariffs.length > 0 && (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -457,8 +415,8 @@ export default function StoreTariffs({
             marginBottom: 40,
           }}>
             {displayedTariffs.map((tariff) => {
-              const isCoinPkg = tariff.kind === 'coin_package' || (!tariff.duration && tariff.coins > 0);
-              const isPopular = tariff.is_popular;
+              const isCoinPkg = tariff.kind === 'coin_package' || (!tariff.duration && (tariff.coins ?? 0) > 0);
+              const isPopular = false;
 
               return (
                 <div

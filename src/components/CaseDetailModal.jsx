@@ -61,9 +61,11 @@ export default function CaseDetailModal({
 
         {/* Category & Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span className="badge badge-cyan">
-            {caseItem.category_name || "Kardiologiya"}
-          </span>
+          {caseItem.category_name && (
+            <span className="badge badge-cyan">
+              {caseItem.category_name}
+            </span>
+          )}
           <span style={{
             fontSize: '0.75rem',
             padding: '3px 10px',

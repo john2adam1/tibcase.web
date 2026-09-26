@@ -23,13 +23,13 @@ export default function DebriefModal({
 }) {
   if (!debriefData) return null;
 
-  const score = debriefData.final_score ?? 88;
-  const xp = debriefData.xp_earned ?? 60;
-  const coins = debriefData.coins_earned ?? 2;
+  const score = debriefData.final_score ?? 0;
+  const xp = debriefData.xp_earned ?? 0;
+  const coins = debriefData.coins_earned ?? 0;
   const isSuccess = score >= 75;
 
   const handleShare = async () => {
-    const text = `TibCase simulyatorida "${debriefData.case_title || 'Klinik keys'}"ni ${score}% aniqlik bilan yechdim va +${xp} XP to'pladim!`;
+    const text = `TibCase simulyatorida klinik keysni ${score}% aniqlik bilan yechdim va +${xp} XP to'pladim!`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -64,6 +64,7 @@ export default function DebriefModal({
       }}
     >
       <div
+        className="responsive-modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
@@ -151,11 +152,14 @@ export default function DebriefModal({
         </div>
 
         {/* 3 Metric Claymorphic Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12,
-        }}>
+        <div
+          className="debrief-stats-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 12,
+          }}
+        >
           {/* Score Card */}
           <div style={{
             background: isSuccess ? '#F0FDF4' : '#FEF3C7',

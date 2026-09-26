@@ -1,12 +1,8 @@
-// TibCase Web API Client — Full integration based on API_MOBILE.md
-
-const DEFAULT_DEV_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDU3Nzk2MDYsImlhdCI6MTc5MDIyNzYwNiwicm9sZSI6ImFkbWluIiwic2Vzc2lvbl9pZCI6IjE3OTAyMjc2MDYzODc0NTg1NzkiLCJ1c2VyX2lkIjoiZDZmMThkOTEtMGMxYi00ZGI3LThiYjEtZmE4ZDc2YmU4ZGU4In0.fEVjg3LBfm9hUC4HJ8qN_Mx-vzlluKSRpoI3lanB8uk";
-
 // ============================================================
 // Token & Language helpers
 // ============================================================
 export const getToken = () => {
-  return localStorage.getItem('tibcase_token') || DEFAULT_DEV_TOKEN;
+  return localStorage.getItem('tibcase_token') || '';
 };
 
 export const setToken = (token) => {
@@ -67,7 +63,13 @@ async function refreshTokens() {
     body: JSON.stringify({ refresh_token: refresh }),
   });
 
-  if (!res.ok) throw new Error('Token refresh failed');
+  if (!res.ok) {
+    // Clear dead session
+    setToken(null);
+    setRefreshToken(null);
+    setStoredUser(null);
+    throw new Error('Token refresh failed');
+  }
   const data = await res.json();
   
   if (data.access_token) setToken(data.access_token);
@@ -101,15 +103,15 @@ async function request(path, options = {}) {
   try {
     let res = await fetch(path, { ...options, headers });
 
-    // Auto-refresh on 401
-    if (res.status === 401) {
+    // Auto-refresh on 401 if refresh token is present
+    if (res.status === 401 && getRefreshToken()) {
       try {
         await refreshTokens();
         // Retry with new token
         headers['Authorization'] = `Bearer ${getToken()}`;
         res = await fetch(path, { ...options, headers });
       } catch {
-        console.warn('Token refresh failed, returning 401 response');
+        console.warn('Session expired or invalidated');
       }
     }
 
@@ -130,60 +132,6 @@ async function request(path, options = {}) {
     throw err;
   }
 }
-
-// ============================================================
-// Fallback clinical categories for offline/guest/session-expired state
-// ============================================================
-export const DEFAULT_FALLBACK_CATEGORIES = [
-  {
-    id: 'cat_emergency',
-    name: 'Shoshilinch Tibbiy Yordam',
-    audience: 'Shifokorlar va Talabalar',
-    cases_count: 14,
-    order_num: 1,
-    icon_url: '',
-  },
-  {
-    id: 'cat_cardiology',
-    name: 'Kardiologiya va EKG',
-    audience: 'Kardiologlar va Shifokorlar',
-    cases_count: 18,
-    order_num: 2,
-    icon_url: '',
-  },
-  {
-    id: 'cat_internal',
-    name: 'Ichki Kasalliklar (Terapiya)',
-    audience: 'Terapevtlar',
-    cases_count: 12,
-    order_num: 3,
-    icon_url: '',
-  },
-  {
-    id: 'cat_pediatrics',
-    name: 'Pediatriya va Neonatologiya',
-    audience: 'Pediatrlar',
-    cases_count: 10,
-    order_num: 4,
-    icon_url: '',
-  },
-  {
-    id: 'cat_neurology',
-    name: 'Nevrologiya va Neyrotravma',
-    audience: 'Nevrologlar',
-    cases_count: 8,
-    order_num: 5,
-    icon_url: '',
-  },
-  {
-    id: 'cat_surgery',
-    name: 'Shoshilinch Jarrohlik',
-    audience: 'Jarrohlar',
-    cases_count: 11,
-    order_num: 6,
-    icon_url: '',
-  }
-];
 
 // ============================================================
 // API Endpoints (all from API_MOBILE.md)
@@ -208,16 +156,16 @@ export const api = {
     });
   },
 
-  /** Send OTP code */
-  sendOtp: async (identifier, type = 'phone') => {
+  /** Send OTP code (type must be 'email' or 'telegram') */
+  sendOtp: async (identifier, type = 'email') => {
     return await request('/mobile/auth/user/otp/send', {
       method: 'POST',
       body: { identifier, type },
     });
   },
 
-  /** Confirm OTP code */
-  confirmOtp: async (identifier, confirmationCode, referralCode = '', type = 'phone') => {
+  /** Confirm OTP code (type must be 'email' or 'telegram') */
+  confirmOtp: async (identifier, confirmationCode, referralCode = '', type = 'email') => {
     return await request('/mobile/auth/user/otp/confirm', {
       method: 'POST',
       body: { confirmation_code: confirmationCode, identifier, referral_code: referralCode, type },
@@ -311,15 +259,12 @@ export const api = {
   /** Get all categories */
   getCategories: async () => {
     try {
-      const res = await request('/mobile/category?limit=100');
-      const list = res.categories || res.data || [];
-      if (Array.isArray(list) && list.length > 0) {
-        return list;
-      }
-      return DEFAULT_FALLBACK_CATEGORIES;
+      const res = await request('/mobile/category');
+      const list = res?.categories || res?.data || (Array.isArray(res) ? res : []);
+      return Array.isArray(list) ? list : [];
     } catch (err) {
-      console.warn('Categories API fetch error, using clinical fallback data:', err.message);
-      return DEFAULT_FALLBACK_CATEGORIES;
+      console.warn('Categories API fetch error:', err.message);
+      return [];
     }
   },
 

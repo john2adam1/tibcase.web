@@ -5,7 +5,7 @@ import { useTranslation } from '../i18n.jsx';
 export default function TabletHeader({
   onToggleSidebar,
   onOpenNotifications,
-  unreadCount = 1,
+  unreadCount = 0,
 }) {
   const { t } = useTranslation();
 

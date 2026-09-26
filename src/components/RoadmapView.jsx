@@ -178,52 +178,74 @@ export default function RoadmapView({
           </div>
         </div>
 
-        {/* Section Card (Orange claymorphic card) */}
-        <div style={{
-          background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-          borderRadius: 28,
-          boxShadow: '0 8px 0 #C2410C, 0 16px 28px rgba(234, 88, 12, 0.25)',
-          padding: '22px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 32,
-          color: '#FFFFFF',
-        }}>
-          <div>
-            <div style={{
-              fontSize: '12px',
-              fontWeight: 800,
-              letterSpacing: '1px',
-              color: '#FED7AA',
-              textTransform: 'uppercase',
-              marginBottom: 4,
-            }}>
-              1. SECTION
-            </div>
-            <div style={{
-              fontSize: '22px',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-            }}>
-              {topics[0]?.name?.toUpperCase() || 'FUNDAMENTALS'}
-            </div>
-          </div>
-
+        {/* Section Card — faqat API dan ma'lumot kelgandan keyin ko'rsatiladi */}
+        {!loading && topics.length > 0 && (
           <div style={{
-            width: 48,
-            height: 48,
-            borderRadius: 16,
-            background: 'rgba(255, 255, 255, 0.25)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+            borderRadius: 28,
+            boxShadow: '0 8px 0 #C2410C, 0 16px 28px rgba(234, 88, 12, 0.25)',
+            padding: '22px 24px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 32,
+            color: '#FFFFFF',
           }}>
-            <BookOpen size={24} color="#FFFFFF" strokeWidth={2.4} />
+            <div>
+              <div style={{
+                fontSize: '12px',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                color: '#FED7AA',
+                textTransform: 'uppercase',
+                marginBottom: 4,
+              }}>
+                {topics.length}. SECTION
+              </div>
+              <div style={{
+                fontSize: '22px',
+                fontWeight: 900,
+                letterSpacing: '-0.02em',
+              }}>
+                {topics[0].name?.toUpperCase()}
+              </div>
+            </div>
+
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: 16,
+              background: 'rgba(255, 255, 255, 0.25)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <BookOpen size={24} color="#FFFFFF" strokeWidth={2.4} />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Loading paytida skeleton card */}
+        {loading && (
+          <div style={{
+            background: 'linear-gradient(135deg, #FB923C 0%, #F97316 100%)',
+            borderRadius: 28,
+            boxShadow: '0 8px 0 #C2410C',
+            padding: '22px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 32,
+            opacity: 0.5,
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ width: 80, height: 12, background: 'rgba(255,255,255,0.4)', borderRadius: 6 }} />
+              <div style={{ width: 140, height: 22, background: 'rgba(255,255,255,0.4)', borderRadius: 6 }} />
+            </div>
+          </div>
+        )}
 
         {/* Loading state */}
         {loading && (

@@ -10,8 +10,7 @@ import {
   FileText,
   Activity,
   Heart,
-  Thermometer,
-  Wind
+  User
 } from 'lucide-react';
 
 export default function CaseDetailsView({
@@ -21,23 +20,21 @@ export default function CaseDetailsView({
 }) {
   const [anamnesisExpanded, setAnamnesisExpanded] = useState(true);
 
-  const displayTitle = caseItem?.title || 'Shoshilinch kardiologiya / Oʻtkir koronar sindrom';
-  const displayCategory = caseItem?.category_name?.toUpperCase() || caseItem?.category || 'KARDIOLOGIYA';
-  const displayUrgency = caseItem?.urgency || (caseItem?.difficulty === 'hard' ? 'CRITICAL' : 'URGENT');
-  const displayCode = caseItem?.case_id_code || `#CASE_${String(caseItem?.id || '013').slice(0, 8).toUpperCase()}`;
-  const displayDifficulty = caseItem?.difficulty ? (caseItem.difficulty.charAt(0).toUpperCase() + caseItem.difficulty.slice(1)) : 'Easy';
-  const displayDuration = caseItem?.expected_duration_minutes ? `${caseItem.expected_duration_minutes} min` : (caseItem?.duration || '10 min');
-  const displayGender = caseItem?.patient_gender === 'female' ? 'Female' : 'Male';
-  const displayAge = caseItem?.patient_age ? `${caseItem.patient_age} years old` : '45 years old';
-  const displayAnamnesis = caseItem?.chief_complaint || caseItem?.anamnesis || 'Bemor shikoyatlari va kasallik anamnezi.';
+  if (!caseItem) return null;
 
-  const vitals = caseItem?.vitals || {
-    bp: '88/54',
-    hr: '128 bpm',
-    rr: '26 /dk',
-    spo2: '92 %',
-    temp: '36.8 °C'
-  };
+  const displayTitle = caseItem.title || '';
+  const displayCategory = caseItem.category_name || '';
+  const displayDifficulty = caseItem.difficulty
+    ? (caseItem.difficulty.charAt(0).toUpperCase() + caseItem.difficulty.slice(1))
+    : null;
+  const displayDuration = caseItem.expected_duration_minutes
+    ? `${caseItem.expected_duration_minutes} min`
+    : null;
+  const displayGender = caseItem.patient_gender
+    ? (caseItem.patient_gender === 'female' ? 'Ayol' : 'Erkak')
+    : null;
+  const displayAge = caseItem.patient_age ? `${caseItem.patient_age} yosh` : null;
+  const displayAnamnesis = caseItem.chief_complaint || caseItem.subtitle || '';
 
   return (
     <div style={{
@@ -66,25 +63,27 @@ export default function CaseDetailsView({
           position: 'relative',
           padding: '8px 4px',
         }}>
-          <button
-            onClick={onBack}
-            title="Orqaga"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              background: '#FFFFFF',
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 2px 0 #E2E8F0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#0F172A',
-            }}
-          >
-            <ChevronLeft size={24} strokeWidth={2.4} />
-          </button>
+          {onBack && (
+            <button
+              onClick={onBack}
+              title="Orqaga"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                background: '#FFFFFF',
+                border: '2px solid #E2E8F0',
+                boxShadow: '0 2px 0 #E2E8F0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#0F172A',
+              }}
+            >
+              <ChevronLeft size={24} strokeWidth={2.4} />
+            </button>
+          )}
 
           <h1 style={{
             flex: 1,
@@ -93,340 +92,254 @@ export default function CaseDetailsView({
             color: '#0F172A',
             margin: 0,
             textAlign: 'center',
-            paddingRight: 44,
+            paddingRight: onBack ? 44 : 0,
           }}>
-            Case Details
+            Klinik Keys Tafsilotlari
           </h1>
         </div>
 
-        {/* Badges: Category & Urgency */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-          <span style={{
-            background: '#FFEDD5',
-            border: '1.5px solid #FED7AA',
-            color: '#EA580C',
-            fontSize: '11px',
-            fontWeight: 800,
-            letterSpacing: '0.5px',
-            padding: '4px 10px',
-            borderRadius: 8,
-          }}>
-            {displayCategory}
-          </span>
-          <span style={{
-            background: '#FEE2E2',
-            border: '1.5px solid #FECACA',
-            color: '#EF4444',
-            fontSize: '11px',
-            fontWeight: 800,
-            letterSpacing: '0.5px',
-            padding: '4px 10px',
-            borderRadius: 8,
-          }}>
-            {displayUrgency}
-          </span>
+        {/* Badges: Category & Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {displayCategory && (
+            <span style={{
+              background: '#FFEDD5',
+              border: '1.5px solid #FED7AA',
+              color: '#EA580C',
+              fontSize: '11px',
+              fontWeight: 800,
+              letterSpacing: '0.5px',
+              padding: '4px 10px',
+              borderRadius: 8,
+              textTransform: 'uppercase',
+            }}>
+              {displayCategory}
+            </span>
+          )}
+          {caseItem.status && (
+            <span style={{
+              background: '#F1F5F9',
+              border: '1.5px solid #E2E8F0',
+              color: '#475569',
+              fontSize: '11px',
+              fontWeight: 800,
+              letterSpacing: '0.5px',
+              padding: '4px 10px',
+              borderRadius: 8,
+              textTransform: 'uppercase',
+            }}>
+              {caseItem.status}
+            </span>
+          )}
         </div>
 
-        {/* Case Title and Code */}
+        {/* Case Title and ID */}
         <div>
           <h2 style={{
-            fontSize: '24px',
+            fontSize: '22px',
             fontWeight: 900,
             color: '#0F172A',
             letterSpacing: '-0.02em',
             margin: '0 0 6px 0',
-            lineHeight: 1.25,
+            lineHeight: 1.3,
           }}>
             {displayTitle}
           </h2>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8' }}>
-            Case ID: {displayCode}
-          </div>
-        </div>
-
-        {/* 3 Stat Cards Grid: Difficulty, Duration, Reward */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12,
-        }}>
-          {/* Difficulty */}
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 20,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
-            padding: '16px 8px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-            gap: 6,
-          }}>
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: '#FFEDD5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#EA580C',
-            }}>
-              <BarChart2 size={18} strokeWidth={2.4} />
-            </div>
-            <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
-              DIFFICULTY
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
-              {displayDifficulty}
-            </div>
-          </div>
-
-          {/* Duration */}
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 20,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
-            padding: '16px 8px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-            gap: 6,
-          }}>
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: '#DBEAFE',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#2563EB',
-            }}>
-              <Clock size={18} strokeWidth={2.4} />
-            </div>
-            <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
-              DURATION
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
-              {displayDuration}
-            </div>
-          </div>
-
-          {/* Reward */}
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 20,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
-            padding: '16px 8px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-            gap: 6,
-          }}>
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: '#DCFCE7',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#16A34A',
-            }}>
-              <Award size={18} strokeWidth={2.4} />
-            </div>
-            <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
-              REWARD
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#16A34A' }}>
-              +250 XP
-            </div>
-          </div>
-        </div>
-
-        {/* Patient Info Card (Female, 26 years old + Vitals) */}
-        <div style={{
-          background: '#FFFFFF',
-          borderRadius: 24,
-          border: '2px solid #E2E8F0',
-          boxShadow: '0 4px 0 #E2E8F0',
-          padding: '18px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-        }}>
-          <h3 style={{
-            fontSize: '17px',
-            fontWeight: 800,
-            color: '#0F172A',
-            margin: 0,
-            textAlign: 'center',
-          }}>
-            {displayGender}, {displayAge}
-          </h3>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            {/* Patient Avatar with glowing ring */}
-            <div style={{
-              position: 'relative',
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              background: '#FEF08A',
-              border: '2.5px solid #FACC15',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              fontSize: '28px',
-            }}>
-              <span>{displayGender.includes('Female') ? '👧' : '👨'}</span>
-              {/* Online Green Badge */}
-              <div style={{
-                position: 'absolute',
-                bottom: 2,
-                right: 2,
-                width: 14,
-                height: 14,
-                borderRadius: '50%',
-                background: '#22C55E',
-                border: '2.5px solid #FFFFFF',
-              }} />
-            </div>
-
-            {/* 5 Vitals Badges Grid */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              flex: 1,
-            }}>
-              {/* BP */}
-              <span style={{
-                background: '#DBEAFE',
-                color: '#1D4ED8',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '5px 10px',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-              }}>
-                🩺 {vitals.bp}
-              </span>
-
-              {/* HR */}
-              <span style={{
-                background: '#FEE2E2',
-                color: '#B91C1C',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '5px 10px',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-              }}>
-                ❤️ {vitals.hr}
-              </span>
-
-              {/* RR */}
-              <span style={{
-                background: '#CCFBF1',
-                color: '#0F766E',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '5px 10px',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-              }}>
-                🫁 {vitals.rr}
-              </span>
-
-              {/* SpO2 */}
-              <span style={{
-                background: '#EDE9FE',
-                color: '#6D28D9',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '5px 10px',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-              }}>
-                🧬 {vitals.spo2}
-              </span>
-
-              {/* Temp */}
-              <span style={{
-                background: '#FFEDD5',
-                color: '#C2410C',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '5px 10px',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-              }}>
-                🌡️ {vitals.temp}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Anamnesis (Complaint History) Card */}
-        <div style={{
-          background: '#FFFFFF',
-          borderRadius: 24,
-          border: '2px solid #E2E8F0',
-          boxShadow: '0 4px 0 #E2E8F0',
-          padding: '18px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}>
-          <div
-            onClick={() => setAnamnesisExpanded(!anamnesisExpanded)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FileText size={18} color="#64748B" />
-              <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
-                Anamnesis (Complaint History)
-              </span>
-            </div>
-            {anamnesisExpanded ? <ChevronUp size={20} color="#64748B" /> : <ChevronDown size={20} color="#64748B" />}
-          </div>
-
-          {anamnesisExpanded && (
-            <div style={{
-              borderLeft: '3.5px solid #22C55E',
-              paddingLeft: 12,
-              fontSize: '13px',
-              fontWeight: 500,
-              lineHeight: 1.6,
-              color: '#334155',
-            }}>
-              {displayAnamnesis}
+          {caseItem.id && (
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8' }}>
+              Case ID: #{String(caseItem.id).slice(0, 8)}
             </div>
           )}
         </div>
+
+        {/* Stat Cards Grid: Difficulty, Duration, Topic */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gap: 12,
+        }}>
+          {displayDifficulty && (
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: 20,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 4px 0 #E2E8F0',
+              padding: '16px 8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 6,
+            }}>
+              <div style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: '#FFEDD5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#EA580C',
+              }}>
+                <BarChart2 size={18} strokeWidth={2.4} />
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
+                QIYINCHILIK
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                {displayDifficulty}
+              </div>
+            </div>
+          )}
+
+          {displayDuration && (
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: 20,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 4px 0 #E2E8F0',
+              padding: '16px 8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 6,
+            }}>
+              <div style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: '#DBEAFE',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#2563EB',
+              }}>
+                <Clock size={18} strokeWidth={2.4} />
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
+                DAVOMIYLIK
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                {displayDuration}
+              </div>
+            </div>
+          )}
+
+          {caseItem.topic_name && (
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: 20,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 4px 0 #E2E8F0',
+              padding: '16px 8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 6,
+            }}>
+              <div style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: '#DCFCE7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#16A34A',
+              }}>
+                <Award size={18} strokeWidth={2.4} />
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
+                MAVZU
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#16A34A' }}>
+                {caseItem.topic_name}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Patient Demographics (Rendered only if gender or age exists in API) */}
+        {(displayGender || displayAge) && (
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: 24,
+            border: '2px solid #E2E8F0',
+            boxShadow: '0 4px 0 #E2E8F0',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+          }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: '#F1F5F9',
+              border: '2px solid #CBD5E1',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#475569',
+            }}>
+              <User size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                Bemor demografiyasi
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+                {[displayGender, displayAge].filter(Boolean).join(', ')}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Anamnesis / Chief Complaint Card */}
+        {displayAnamnesis && (
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: 24,
+            border: '2px solid #E2E8F0',
+            boxShadow: '0 4px 0 #E2E8F0',
+            padding: '18px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}>
+            <div
+              onClick={() => setAnamnesisExpanded(!anamnesisExpanded)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FileText size={18} color="#64748B" />
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                  Bemor Shikoyati (Anamnez)
+                </span>
+              </div>
+              {anamnesisExpanded ? <ChevronUp size={20} color="#64748B" /> : <ChevronDown size={20} color="#64748B" />}
+            </div>
+
+            {anamnesisExpanded && (
+              <div style={{
+                borderLeft: '3.5px solid #22C55E',
+                paddingLeft: 12,
+                fontSize: '13px',
+                fontWeight: 500,
+                lineHeight: 1.6,
+                color: '#334155',
+              }}>
+                {displayAnamnesis}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Start Case Button */}
         <button
@@ -450,14 +363,6 @@ export default function CaseDetailsView({
             marginTop: 8,
             transition: 'all 0.15s ease',
           }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = 'translateY(2px)';
-            e.currentTarget.style.boxShadow = '0 3px 0 #15803D';
-          }}
-          onMouseUp={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 5px 0 #15803D, 0 10px 24px rgba(34, 197, 94, 0.4)';
-          }}
         >
           <div style={{
             width: 24,
@@ -470,7 +375,7 @@ export default function CaseDetailsView({
           }}>
             <Play size={12} fill="#16A34A" color="#16A34A" style={{ marginLeft: 2 }} />
           </div>
-          <span>Start Case</span>
+          <span>Simulyatsiyani Boshlash</span>
         </button>
       </div>
     </div>

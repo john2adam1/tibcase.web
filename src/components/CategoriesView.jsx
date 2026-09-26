@@ -146,12 +146,15 @@ export default function CategoriesView({
 
         {/* Loading State */}
         {loading && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 16,
-            width: '100%',
-          }}>
+          <div
+            className="categories-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: 16,
+              width: '100%',
+            }}
+          >
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
@@ -176,12 +179,15 @@ export default function CategoriesView({
 
         {/* Categories Grid */}
         {!loading && categories.length > 0 && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 18,
-            width: '100%',
-          }}>
+          <div
+            className="categories-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: 18,
+              width: '100%',
+            }}
+          >
             {categories.map((cat) => {
               const meta = getCategoryMeta(cat);
               const title = formatTitle(cat.name);

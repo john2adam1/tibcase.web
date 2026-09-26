@@ -575,17 +575,32 @@ export default function ProfileView({
               marginTop: 16,
               width: '100%',
             }}>
-              <div style={{
-                flex: 1,
-                background: '#FFFFFF',
-                borderRadius: 22,
-                border: '2px solid #E2E8F0',
-                padding: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                boxShadow: '0 4px 0 #E2E8F0'
-              }}>
+              {/* Tangalar card — clickable to buy coins */}
+              <div
+                onClick={() => onOpenStore && onOpenStore('coins')}
+                title="Tanga xarid qilish"
+                style={{
+                  flex: 1,
+                  background: '#FFFFFF',
+                  borderRadius: 22,
+                  border: '2px solid #E2E8F0',
+                  padding: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  boxShadow: '0 4px 0 #E2E8F0',
+                  cursor: 'pointer',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 0 #E2E8F0, 0 10px 20px rgba(245, 158, 11, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 0 #E2E8F0';
+                }}
+              >
                 <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FEF9C3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Coins size={24} color="#CA8A04" strokeWidth={2.4} />
                 </div>
@@ -618,6 +633,89 @@ export default function ProfileView({
               </div>
             </div>
 
+            {/* Dedicated "Tanga sotib olish" Container */}
+            <div
+              id="btn-buy-coins-profile"
+              onClick={() => onOpenStore && onOpenStore('coins')}
+              style={{
+                marginTop: 14,
+                width: '100%',
+                background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+                borderRadius: 22,
+                border: '2px solid #FDE68A',
+                boxShadow: '0 4px 0 #F59E0B, 0 10px 20px rgba(245, 158, 11, 0.12)',
+                padding: '16px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxSizing: 'border-box',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 0 #F59E0B, 0 14px 28px rgba(245, 158, 11, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 0 #F59E0B, 0 10px 20px rgba(245, 158, 11, 0.12)';
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 15,
+                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  boxShadow: '0 4px 12px rgba(217, 119, 6, 0.35)',
+                  fontSize: '22px',
+                  flexShrink: 0,
+                }}>
+                  🪙
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: '15.5px', fontWeight: 900, color: '#92400E' }}>
+                      Tanga sotib olish
+                    </span>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      background: '#FDE68A',
+                      color: '#B45309',
+                      padding: '2px 8px',
+                      borderRadius: 99,
+                      border: '1px solid #FCD34D',
+                    }}>
+                      Ommabop
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600, marginTop: 2 }}>
+                    Klinik keyslar va simulyatsiyalar uchun tanga paketlari
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                width: 34,
+                height: 34,
+                borderRadius: 12,
+                background: '#FFFFFF',
+                border: '1.5px solid #FDE68A',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#D97706',
+                flexShrink: 0,
+              }}>
+                <ChevronRight size={19} strokeWidth={2.5} />
+              </div>
+            </div>
+
             {/* Menu List */}
             <div style={{
               background: '#FFFFFF',
@@ -627,7 +725,7 @@ export default function ProfileView({
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              marginTop: 20,
+              marginTop: 18,
               marginBottom: 24,
             }}>
               <SettingsListItem
@@ -668,9 +766,15 @@ export default function ProfileView({
               />
               <Divider />
               <SettingsListItem
+                icon={<Coins size={20} color="#D97706" strokeWidth={2} />}
+                label="Tanga sotib olish"
+                onClick={() => onOpenStore && onOpenStore('coins')}
+              />
+              <Divider />
+              <SettingsListItem
                 icon={<CreditCard size={20} color="#0F172A" strokeWidth={2} />}
-                label="Tariflar"
-                onClick={() => onOpenStore && onOpenStore()}
+                label="Tariflar va Obunalar"
+                onClick={() => onOpenStore && onOpenStore('subscription')}
               />
               <Divider />
               <SettingsListItem

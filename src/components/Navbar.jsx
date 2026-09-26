@@ -203,7 +203,7 @@ export default function Navbar({
               title="Tangalar balansi"
             >
               <Coins size={16} color="#fbbf24" />
-              <span>{user?.coins ?? 15}</span>
+              <span>{user?.coins ?? 0}</span>
             </div>
 
             <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)' }} />
@@ -221,7 +221,7 @@ export default function Navbar({
               title="Kunlik ketma-ketlik (Streak)"
             >
               <Flame size={16} color="#f97316" />
-              <span>{user?.streak_count ?? 5}</span>
+              <span>{user?.streak_count ?? 0}</span>
             </div>
 
             <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)' }} />

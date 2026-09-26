@@ -23,5 +23,9 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
+
+# Google & OAuth secrets
+client_secret*.json
+*.pem
+*.key

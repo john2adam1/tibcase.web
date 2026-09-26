@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
 import {
   Activity,
   ArrowRight,
   CheckCircle2,
   Lock,
   Mail,
-  Phone,
+  Send,
   Sparkles,
   UserCheck,
   X,
@@ -21,25 +22,85 @@ export default function AuthModal({
 }) {
   const { t } = useTranslation();
   const [step, setStep] = useState('input'); // 'input' | 'otp'
+  const [authMethod, setAuthMethod] = useState('email'); // 'email' | 'telegram'
   const [identifier, setIdentifier] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
 
+  // Resolve type: strictly 'email' or 'telegram'
+  const resolveAuthType = () => {
+    const raw = identifier.trim();
+    if (authMethod === 'email' || (raw.includes('@') && raw.includes('.'))) {
+      return 'email';
+    }
+    return 'telegram';
+  };
+
+  // Google Login response handler (@react-oauth/google)
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const idToken = credentialResponse?.credential;
+    if (!idToken) return;
+
+    setGoogleLoading(true);
+    setErrorMsg('');
+
+    try {
+      // POST /mobile/auth/google
+      const res = await api.loginWithGoogle(idToken, referralCode.trim());
+
+      if (res?.access_token) {
+        setToken(res.access_token);
+      }
+      if (res?.refresh_token) {
+        setRefreshToken(res.refresh_token);
+      }
+
+      // Fetch user profile from API
+      try {
+        const profile = await api.getUserProfile();
+        setStoredUser(profile);
+        onLoginSuccess(profile);
+      } catch {
+        const basicUser = {
+          id: res?.id || '',
+          name: 'Google User',
+          phone_number: '',
+          role: res?.role || 'user',
+        };
+        setStoredUser(basicUser);
+        onLoginSuccess(basicUser);
+      }
+
+      onClose();
+    } catch (err) {
+      setErrorMsg(err.message || t('auth.confirmError'));
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setErrorMsg("Google orqali kirishda xatolik yuz berdi. Qayta urinib ko'ring.");
+  };
+
   const handleSendCode = async (e) => {
     e.preventDefault();
-    if (!identifier.trim()) return;
+    const cleanIdentifier = identifier.trim();
+    if (!cleanIdentifier) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
+      const type = resolveAuthType(); // strictly 'email' or 'telegram'
       // First check if user exists
-      await api.checkUser(identifier.trim());
+      await api.checkUser(cleanIdentifier);
       // Then send OTP
-      await api.sendOtp(identifier.trim(), identifier.includes('@') ? 'email' : 'phone');
+      await api.sendOtp(cleanIdentifier, type);
       setStep('otp');
     } catch (err) {
       setErrorMsg(err.message || t('auth.sendError'));
@@ -50,12 +111,16 @@ export default function AuthModal({
 
   const handleConfirmCode = async (e) => {
     e.preventDefault();
+    const cleanIdentifier = identifier.trim();
+    const cleanCode = code.trim();
+    if (!cleanCode) return;
+
     setLoading(true);
     setErrorMsg('');
 
     try {
-      const type = identifier.includes('@') ? 'email' : 'phone';
-      const res = await api.confirmOtp(identifier.trim(), code.trim(), referralCode.trim(), type);
+      const type = resolveAuthType(); // strictly 'email' or 'telegram'
+      const res = await api.confirmOtp(cleanIdentifier, cleanCode, referralCode.trim(), type);
 
       // Store tokens
       if (res?.access_token) {
@@ -71,11 +136,10 @@ export default function AuthModal({
         setStoredUser(profile);
         onLoginSuccess(profile);
       } catch {
-        // If profile fetch fails, use basic info from the response
         const basicUser = {
           id: res?.id || '',
           name: '',
-          phone_number: identifier,
+          phone_number: cleanIdentifier,
           role: res?.role || 'user',
         };
         setStoredUser(basicUser);
@@ -89,11 +153,11 @@ export default function AuthModal({
     }
   };
 
-  // White claymorphic card style
+  // Card & styles
   const cardStyle = {
     width: '100%',
     maxWidth: 440,
-    padding: 32,
+    padding: 30,
     position: 'relative',
     background: '#FFFFFF',
     borderRadius: 28,
@@ -103,7 +167,7 @@ export default function AuthModal({
 
   const inputStyle = {
     width: '100%',
-    padding: '14px 16px',
+    padding: '13px 16px',
     borderRadius: 16,
     background: '#F8FAFC',
     border: '2px solid #E2E8F0',
@@ -125,15 +189,50 @@ export default function AuthModal({
     color: '#FFFFFF',
     fontSize: '0.95rem',
     fontWeight: 700,
-    cursor: loading ? 'not-allowed' : 'pointer',
+    cursor: (loading || googleLoading) ? 'not-allowed' : 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)',
-    opacity: loading ? 0.7 : 1,
+    opacity: (loading || googleLoading) ? 0.7 : 1,
     transition: 'all 0.2s ease',
     fontFamily: "'Plus Jakarta Sans', sans-serif",
+  };
+
+  const activeTabStyle = {
+    flex: 1,
+    padding: '8px 12px',
+    borderRadius: 12,
+    background: '#FFFFFF',
+    border: 'none',
+    color: '#0F172A',
+    fontWeight: 700,
+    fontSize: '0.84rem',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.06)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    transition: 'all 0.15s ease',
+  };
+
+  const inactiveTabStyle = {
+    flex: 1,
+    padding: '8px 12px',
+    borderRadius: 12,
+    background: 'transparent',
+    border: 'none',
+    color: '#64748B',
+    fontWeight: 600,
+    fontSize: '0.84rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    transition: 'all 0.15s ease',
   };
 
   return (
@@ -176,23 +275,23 @@ export default function AuthModal({
         </button>
 
         {/* Brand Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
           <div style={{
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             borderRadius: 18,
             background: 'linear-gradient(135deg, #22C55E, #16A34A)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px',
+            margin: '0 auto 12px',
             boxShadow: '0 6px 20px rgba(34, 197, 94, 0.35)',
           }}>
-            <Activity size={28} color="#fff" />
+            <Activity size={26} color="#fff" />
           </div>
 
           <h3 style={{
-            fontSize: '1.4rem',
+            fontSize: '1.35rem',
             fontWeight: 800,
             color: '#0F172A',
             marginBottom: 4,
@@ -202,7 +301,7 @@ export default function AuthModal({
           </h3>
           <p style={{
             color: '#64748B',
-            fontSize: '0.88rem',
+            fontSize: '0.85rem',
             fontWeight: 500,
             margin: 0,
           }}>
@@ -227,62 +326,129 @@ export default function AuthModal({
         )}
 
         {step === 'input' ? (
-          <form onSubmit={handleSendCode} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.8rem',
-                color: '#64748B',
-                marginBottom: 8,
-                fontWeight: 700,
-              }}>
-                {t('auth.phoneLabel')}
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Phone size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* 1. Official Google Sign-In via @react-oauth/google */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  shape="pill"
+                  width="380"
+                  text="continue_with"
+                />
+              </div>
+              {googleLoading && (
+                <div style={{ fontSize: '13px', color: '#16A34A', fontWeight: 700, marginTop: 6 }}>
+                  {t('auth.googleSigningIn')}
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              margin: '2px 0',
+            }}>
+              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+                {t('auth.orDivider')}
+              </span>
+              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+            </div>
+
+            {/* Method Toggle: Email vs Telegram */}
+            <div style={{
+              background: '#F1F5F9',
+              borderRadius: 14,
+              padding: 4,
+              display: 'flex',
+              gap: 4,
+            }}>
+              <button
+                type="button"
+                onClick={() => setAuthMethod('email')}
+                style={authMethod === 'email' ? activeTabStyle : inactiveTabStyle}
+              >
+                <Mail size={15} color={authMethod === 'email' ? '#16A34A' : '#64748B'} />
+                <span>{t('auth.methodEmail')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMethod('telegram')}
+                style={authMethod === 'telegram' ? activeTabStyle : inactiveTabStyle}
+              >
+                <Send size={15} color={authMethod === 'telegram' ? '#0284C7' : '#64748B'} />
+                <span>{t('auth.methodTelegram')}</span>
+              </button>
+            </div>
+
+            {/* 2. Identifier Form */}
+            <form onSubmit={handleSendCode} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.8rem',
+                  color: '#64748B',
+                  marginBottom: 6,
+                  fontWeight: 700,
+                }}>
+                  {authMethod === 'email' ? t('auth.emailLabel') : t('auth.telegramLabel')}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  {authMethod === 'email' ? (
+                    <Mail size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                  ) : (
+                    <Send size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                  )}
+                  <input
+                    type={authMethod === 'email' ? 'email' : 'text'}
+                    placeholder={authMethod === 'email' ? t('auth.emailPlaceholder') : t('auth.telegramPlaceholder')}
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    style={{ ...inputStyle, paddingLeft: 42 }}
+                    onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
+                  />
+                </div>
+              </div>
+
+              {/* Referral code (optional) */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.8rem',
+                  color: '#64748B',
+                  marginBottom: 6,
+                  fontWeight: 700,
+                }}>
+                  {t('auth.referralLabel')}
+                </label>
                 <input
                   type="text"
-                  placeholder="+998 90 123 45 67"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  style={{ ...inputStyle, paddingLeft: 42 }}
+                  placeholder={t('auth.referralPlaceholder')}
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  style={inputStyle}
                   onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
                   onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
                 />
               </div>
-            </div>
 
-            {/* Referral code (optional) */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.8rem',
-                color: '#64748B',
-                marginBottom: 8,
-                fontWeight: 700,
-              }}>
-                {t('auth.referralLabel')}
-              </label>
-              <input
-                type="text"
-                placeholder={t('auth.referralPlaceholder')}
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value)}
-                style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !identifier.trim()}
-              style={btnPrimaryStyle}
-            >
-              <span>{loading ? t('auth.sending') : t('auth.sendCode')}</span>
-              <ArrowRight size={16} />
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading || googleLoading || !identifier.trim()}
+                style={btnPrimaryStyle}
+              >
+                <span>{loading ? t('auth.sending') : t('auth.sendCode')}</span>
+                <ArrowRight size={16} />
+              </button>
+            </form>
+          </div>
         ) : (
           <form onSubmit={handleConfirmCode} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
@@ -318,7 +484,7 @@ export default function AuthModal({
                 fontWeight: 500,
                 textAlign: 'center',
               }}>
-                {t('auth.otpSentTo')} <strong style={{ color: '#0F172A' }}>{identifier}</strong>
+                {t('auth.otpSentTo')} <strong style={{ color: '#0F172A' }}>{identifier}</strong> ({resolveAuthType()})
               </p>
             </div>
 
@@ -331,7 +497,7 @@ export default function AuthModal({
               <CheckCircle2 size={16} />
             </button>
 
-            {/* Resend / Change number */}
+            {/* Resend / Change identifier */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
               <button
                 type="button"

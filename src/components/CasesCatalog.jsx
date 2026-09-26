@@ -305,18 +305,20 @@ export default function CasesCatalog({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                   }}>
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      background: 'rgba(6, 182, 212, 0.25)',
-                      backdropFilter: 'blur(8px)',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(6, 182, 212, 0.4)',
-                    }}>
-                      {item.category_name || "Kardiologiya"}
-                    </span>
+                    {item.category_name && (
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        background: 'rgba(6, 182, 212, 0.25)',
+                        backdropFilter: 'blur(8px)',
+                        color: '#38bdf8',
+                        border: '1px solid rgba(6, 182, 212, 0.4)',
+                      }}>
+                        {item.category_name}
+                      </span>
+                    )}
 
                     <button
                       onClick={(e) => {

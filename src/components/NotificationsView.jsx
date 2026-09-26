@@ -144,9 +144,11 @@ export default function NotificationsView({ onBack }) {
                 <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px 0' }}>
                   {n.title}
                 </h4>
-                <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 8px 0', lineHeight: 1.4 }}>
-                  {n.body}
-                </p>
+                {n.message && (
+                  <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 8px 0', lineHeight: 1.4 }}>
+                    {n.message}
+                  </p>
+                )}
                 <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
                   {new Date(n.created_at).toLocaleString()}
                 </div>

@@ -172,12 +172,15 @@ export default function HomeView({
         </div>
 
         {/* 3 Minimal Feature Highlights */}
-        <div style={{
-          width: '100%',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12,
-        }}>
+        <div
+          className="home-features-grid"
+          style={{
+            width: '100%',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 12,
+          }}
+        >
           {/* 1. Real ICU Monitor */}
           <div style={{
             background: '#FFFFFF',
@@ -301,6 +304,7 @@ export default function HomeView({
           }}
         >
           <div
+            className="responsive-modal-card"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
