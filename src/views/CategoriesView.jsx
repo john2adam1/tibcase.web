@@ -139,7 +139,7 @@ export default function CategoriesView({
               color: '#64748B',
               margin: '3px 0 0 0',
             }}>
-              O'zingiz qiziqqan yo'nalishni tanlang va interaktiv keyslarni yechishni boshlang
+              {t('cat.subtitle', "O'zingiz qiziqqan yo'nalishni tanlang va interaktiv keyslarni yechishni boshlang")}
             </p>
           </div>
         </div>

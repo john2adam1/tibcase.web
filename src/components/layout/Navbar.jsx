@@ -16,7 +16,7 @@ import {
   X,
   Zap
 } from 'lucide-react';
-import { getSoundEnabled, setSoundEnabled } from '../audio';
+import { getSoundEnabled, setSoundEnabled } from '../../audio';
 
 export default function Navbar({
   currentView,

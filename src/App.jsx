@@ -11,32 +11,39 @@ import {
   setStoredUser,
   setOnUnauthorized
 } from './api';
-import LandingPage from './components/LandingPage';
-import AppNavbar from './components/AppNavbar';
-import CasesCatalog from './components/CasesCatalog';
-import SimulationRoom from './components/SimulationRoom';
-import CaseSimulationRoom from './components/CaseSimulationRoom';
-import DebriefModal from './components/DebriefModal';
-import StoreTariffs from './components/StoreTariffs';
-import Leaderboard from './components/Leaderboard';
-import ProfileModal from './components/ProfileModal';
-import ProfileView from './components/ProfileView';
-import BottomNavBar from './components/BottomNavBar';
-import CategoriesView from './components/CategoriesView';
-import RoadmapView from './components/RoadmapView';
-import CaseDetailsView from './components/CaseDetailsView';
-import PreparingCaseLoader from './components/PreparingCaseLoader';
-import QuickGuideModal from './components/QuickGuideModal';
-import AuthModal from './components/AuthModal';
-import LogoutConfirmModal from './components/LogoutConfirmModal';
-import HomeView from './components/HomeView';
-import FavoritesView from './components/FavoritesView.jsx';
-import ActivityView from './components/ActivityView.jsx';
-import NotificationsView from './components/NotificationsView.jsx';
-import StudyPlanView from './components/StudyPlanView.jsx';
-import AiReportsView from './components/AiReportsView.jsx';
-import Sidebar from './components/Sidebar.jsx';
-import TabletHeader from './components/TabletHeader.jsx';
+// Views
+import LandingPage from './views/LandingPage';
+import HomeView from './views/HomeView';
+import CasesCatalog from './views/CasesCatalog';
+import CategoriesView from './views/CategoriesView';
+import RoadmapView from './views/RoadmapView';
+import CaseDetailsView from './views/CaseDetailsView';
+import SimulationRoom from './views/SimulationRoom';
+import CaseSimulationRoom from './views/CaseSimulationRoom';
+import Leaderboard from './views/Leaderboard';
+import ProfileView from './views/ProfileView';
+import FavoritesView from './views/FavoritesView.jsx';
+import ActivityView from './views/ActivityView.jsx';
+import NotificationsView from './views/NotificationsView.jsx';
+import StudyPlanView from './views/StudyPlanView.jsx';
+import AiReportsView from './views/AiReportsView.jsx';
+import StoreTariffs from './views/StoreTariffs';
+
+// Layout
+import AppNavbar from './components/layout/AppNavbar';
+import BottomNavBar from './components/layout/BottomNavBar';
+import Sidebar from './components/layout/Sidebar.jsx';
+import TabletHeader from './components/layout/TabletHeader.jsx';
+
+// Modals
+import AuthModal from './components/modals/AuthModal';
+import LogoutConfirmModal from './components/modals/LogoutConfirmModal';
+import ProfileModal from './components/modals/ProfileModal';
+import QuickGuideModal from './components/modals/QuickGuideModal';
+import DebriefModal from './components/modals/DebriefModal';
+
+// Common UI
+import PreparingCaseLoader from './components/common/PreparingCaseLoader';
 
 import { Crown, Coins, Lock, ShieldAlert, Sparkles, ChevronRight, X } from 'lucide-react';
 import { useTranslation } from './i18n.jsx';
@@ -58,19 +65,62 @@ export default function App() {
   const [currentView, setCurrentView] = useState('cases'); // 'cases' | 'simulation' | 'store' | 'leaderboard'
   const [activeMode, setActiveMode] = useState('clinical'); // 'clinical' | 'citizen'
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [caseDetailBackView, setCaseDetailBackView] = useState('roadmap');
 
-  // Initialize Telegram Web App SDK
+  // Initialize Telegram Web App SDK & closing confirmation
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       try {
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        if (typeof tg.enableClosingConfirmation === 'function') {
+          tg.enableClosingConfirmation();
+        }
       } catch (err) {
         console.warn('Telegram WebApp initialization error:', err);
       }
     }
   }, []);
+
+  // Telegram Native BackButton integration for in-app navigation
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.Telegram?.WebApp?.BackButton) return;
+    const tg = window.Telegram.WebApp;
+
+    const handleTelegramBack = () => {
+      if (sidebarOpen) {
+        setSidebarOpen(false);
+        return;
+      }
+      if (currentView === 'case-details') {
+        setCurrentView(caseDetailBackView || 'roadmap');
+      } else if (currentView === 'roadmap') {
+        setCurrentView('clinics');
+      } else if (currentView === 'clinics') {
+        setCurrentView('cases');
+      } else if (currentView === 'simulation') {
+        setCurrentView('cases');
+      } else if (['favorites', 'activity', 'notifications', 'study_plan', 'ai_reports', 'leaderboard', 'store', 'tariffs'].includes(currentView)) {
+        setCurrentView('profile');
+      } else if (currentView === 'profile') {
+        setCurrentView('cases');
+      } else {
+        setCurrentView('cases');
+      }
+    };
+
+    if (currentView !== 'cases' || sidebarOpen) {
+      tg.BackButton.show();
+      tg.BackButton.onClick(handleTelegramBack);
+    } else {
+      tg.BackButton.hide();
+    }
+
+    return () => {
+      tg.BackButton.offClick(handleTelegramBack);
+    };
+  }, [currentView, sidebarOpen]);
 
   // Listen for unauthorized/expired session events from api client
   useEffect(() => {
@@ -418,14 +468,28 @@ export default function App() {
 
 
   const handleToggleFavorite = async (caseId) => {
+    if (!caseId) return;
     try {
-      await api.toggleFavorite(caseId);
-      setCases(prev => prev.map(c => c.id === caseId ? { ...c, is_favorite: !c.is_favorite } : c));
-      showToast("Sevimlilar ro'yxati yangilandi");
-    } catch {
-      setCases(prev => prev.map(c => c.id === caseId ? { ...c, is_favorite: !c.is_favorite } : c));
+      const res = await api.toggleFavorite(String(caseId));
+      const isFav = res?.is_favorite ?? res?.data?.is_favorite;
+      setCases(prev => prev.map(c => (String(c.id) === String(caseId) || String(c._id) === String(caseId))
+        ? { ...c, is_favorite: isFav !== undefined ? isFav : !c.is_favorite }
+        : c
+      ));
+      setSelectedDetailCase(prev => {
+        if (prev && (String(prev.id) === String(caseId) || String(prev._id) === String(caseId))) {
+          return { ...prev, is_favorite: isFav !== undefined ? isFav : !prev.is_favorite };
+        }
+        return prev;
+      });
+      showToast(isFav ? t('fav.added', "Keys saqlanganlarga qo'shildi") : t('fav.removed', "Keys saqlanganlardan olib tashlandi"));
+      return isFav;
+    } catch (err) {
+      console.error('Toggle favorite error:', err);
+      showToast(t('common.error', "Xatolik yuz berdi"));
     }
   };
+
 
   // 1. PUBLIC LANDING PAGE (If NOT authenticated)
   if (!isAuthenticated) {
@@ -565,6 +629,7 @@ export default function App() {
           <RoadmapView
             category={selectedCategory || categories[0]}
             onSelectNode={(caseItem) => {
+              setCaseDetailBackView('roadmap');
               setSelectedDetailCase(caseItem);
               setSelectedRoadmapNode(caseItem);
               setCurrentView('case-details');
@@ -578,7 +643,8 @@ export default function App() {
           <CaseDetailsView
             caseItem={selectedDetailCase || cases[0]}
             onStartCase={() => checkLimitAndStartCase(selectedDetailCase || cases[0])}
-            onBack={() => setCurrentView('roadmap')}
+            onBack={() => setCurrentView(caseDetailBackView || 'roadmap')}
+            onToggleFavorite={handleToggleFavorite}
           />
         )}
 
@@ -587,9 +653,11 @@ export default function App() {
           <FavoritesView 
             onBack={() => setCurrentView('profile')}
             onSelectCase={(c) => {
-              setSelectedDetailCase(c);
+              setCaseDetailBackView('favorites');
+              setSelectedDetailCase({ ...c, is_favorite: true });
               setCurrentView('case-details');
             }}
+            onToggleFavorite={handleToggleFavorite}
           />
         )}
         {currentView === 'activity' && (

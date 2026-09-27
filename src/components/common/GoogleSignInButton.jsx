@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-import { api, setToken, setRefreshToken, setStoredUser } from '../api';
+import { api, setToken, setRefreshToken, setStoredUser } from '../../api';
 
 /**
  * GoogleSignInButton Component

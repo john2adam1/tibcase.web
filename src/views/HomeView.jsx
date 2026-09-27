@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import {
   Sparkles,
-  Activity,
   Heart,
   ChevronRight,
   Clock,
-  CheckCircle2,
-  Stethoscope,
   X,
   Play
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
-import DashboardHero from './DashboardHero.jsx';
+import DashboardHero from '../components/features/DashboardHero.jsx';
 
 export default function HomeView({
   user,
@@ -169,120 +166,6 @@ export default function HomeView({
             <span>{t('home.startSimulation')}</span>
             <ChevronRight size={20} strokeWidth={2.6} />
           </button>
-        </div>
-
-        {/* 3 Minimal Feature Highlights */}
-        <div
-          className="home-features-grid"
-          style={{
-            width: '100%',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 12,
-          }}
-        >
-          {/* 1. Real ICU Monitor */}
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 22,
-            border: '1.5px solid #E2E8F0',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.02)',
-            padding: '16px 12px',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 6,
-          }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: '#DCFCE7',
-              color: '#16A34A',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Activity size={20} />
-            </div>
-            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A' }}>
-              {t('home.icuFeature')}
-            </span>
-            <span style={{ fontSize: '11px', color: '#64748B' }}>
-              {t('home.icuDesc')}
-            </span>
-          </div>
-
-          {/* 2. Clinical Cases */}
-          <div
-            onClick={onOpenClinics}
-            style={{
-              background: '#FFFFFF',
-              borderRadius: 22,
-              border: '1.5px solid #E2E8F0',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.02)',
-              padding: '16px 12px',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 6,
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: '#EFF6FF',
-              color: '#2563EB',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Stethoscope size={20} />
-            </div>
-            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A' }}>
-              {t('home.deptFeature')}
-            </span>
-            <span style={{ fontSize: '11px', color: '#64748B' }}>
-              {t('home.deptDesc')}
-            </span>
-          </div>
-
-          {/* 3. AHA/ESC Guidelines */}
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 22,
-            border: '1.5px solid #E2E8F0',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.02)',
-            padding: '16px 12px',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 6,
-          }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: '#FEF3C7',
-              color: '#D97706',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <CheckCircle2 size={20} />
-            </div>
-            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A' }}>
-              {t('home.protocolFeature')}
-            </span>
-            <span style={{ fontSize: '11px', color: '#64748B' }}>
-              {t('home.protocolDesc')}
-            </span>
-          </div>
         </div>
 
       </div>

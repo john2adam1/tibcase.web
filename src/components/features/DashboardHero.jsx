@@ -9,7 +9,7 @@ import {
   Sparkles,
   ExternalLink
 } from 'lucide-react';
-import { useTranslation } from '../i18n.jsx';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function DashboardHero({
   user,
@@ -62,7 +62,7 @@ export default function DashboardHero({
           letterSpacing: '-0.5px',
           lineHeight: 1.2,
         }}>
-          Assalomu alaykum{user?.name ? `, ${user.name}` : ''}!
+          {t('hero.greeting', 'Assalomu alaykum')}{user?.name ? `, ${user.name}` : ''}!
         </h1>
         <p style={{
           fontSize: '15px',
@@ -263,9 +263,9 @@ export default function DashboardHero({
         </div>
       )}
 
-      {/* 3. Real Stats Cards from API (Categories count, User Level/XP, Coins) */}
+      {/* 3. Real Stats Cards from API (Categories count, User Level/XP, Coins) - Laptop/Tablet only */}
       <div
-        className="dashboard-stats-grid"
+        className="dashboard-stats-grid desktop-only"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -318,7 +318,7 @@ export default function DashboardHero({
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
             }}>
-              KLINIK BO'LIMLAR
+              {t('hero.clinicsCount', "KLINIK BO'LIMLAR")}
             </span>
           </div>
 
@@ -337,7 +337,7 @@ export default function DashboardHero({
               fontWeight: 700,
               color: '#64748B',
             }}>
-              ta bo'lim
+              {t('hero.deptUnit', "ta bo'lim")}
             </span>
           </div>
         </div>
@@ -387,7 +387,7 @@ export default function DashboardHero({
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
             }}>
-              DARAJA VA TAJRIBA
+              {t('hero.levelXp', "DARAJA VA TAJRIBA")}
             </span>
           </div>
 
@@ -399,7 +399,7 @@ export default function DashboardHero({
               lineHeight: 1,
               letterSpacing: '-0.5px',
             }}>
-              Level {user?.level ?? 1}
+              {t('nav.level', 'Level')} {user?.level ?? 1}
             </span>
             <span style={{
               fontSize: '13px',
@@ -456,7 +456,7 @@ export default function DashboardHero({
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
             }}>
-              TIBBIY TANGALAR
+              {t('hero.coins', "TIBBIY TANGALAR")}
             </span>
           </div>
 
@@ -475,7 +475,7 @@ export default function DashboardHero({
               fontWeight: 700,
               color: '#64748B',
             }}>
-              tanga mavjud
+              {t('hero.coinsUnit', "tanga mavjud")}
             </span>
           </div>
         </div>

@@ -9,9 +9,9 @@ import {
   Send,
   Flag
 } from 'lucide-react';
-import HospitalMonitor from './HospitalMonitor';
-import PatientAvatar from './PatientAvatar';
-import ClinicalHintModal from './ClinicalHintModal';
+import HospitalMonitor from '../components/features/HospitalMonitor';
+import PatientAvatar from '../components/features/PatientAvatar';
+import ClinicalHintModal from '../components/modals/ClinicalHintModal';
 import { useTranslation } from '../i18n.jsx';
 
 export default function CaseSimulationRoom({

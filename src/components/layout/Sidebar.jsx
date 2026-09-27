@@ -9,7 +9,7 @@ import {
   Activity,
   Stethoscope
 } from 'lucide-react';
-import { useTranslation } from '../i18n.jsx';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function Sidebar({
   currentView,

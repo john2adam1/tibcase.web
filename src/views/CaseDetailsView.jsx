@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronUp,
@@ -10,17 +10,43 @@ import {
   FileText,
   Activity,
   Heart,
+  Bookmark,
   User
 } from 'lucide-react';
+import { useTranslation } from '../i18n.jsx';
 
 export default function CaseDetailsView({
   caseItem,
   onStartCase,
+  onToggleFavorite,
   onBack
 }) {
+  const { t } = useTranslation();
   const [anamnesisExpanded, setAnamnesisExpanded] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(Boolean(caseItem?.is_favorite));
+
+  useEffect(() => {
+    setIsFavorite(Boolean(caseItem?.is_favorite));
+  }, [caseItem?.is_favorite, caseItem?.id]);
 
   if (!caseItem) return null;
+
+  const handleFavoriteClick = async () => {
+    const targetId = caseItem?.id || caseItem?._id;
+    if (!targetId) return;
+    const next = !isFavorite;
+    setIsFavorite(next);
+    if (onToggleFavorite) {
+      try {
+        const res = await onToggleFavorite(targetId);
+        if (typeof res === 'boolean') {
+          setIsFavorite(res);
+        }
+      } catch {
+        setIsFavorite(!next);
+      }
+    }
+  };
 
   const displayTitle = caseItem.title || '';
   const displayCategory = caseItem.category_name || '';
@@ -31,9 +57,9 @@ export default function CaseDetailsView({
     ? `${caseItem.expected_duration_minutes} min`
     : null;
   const displayGender = caseItem.patient_gender
-    ? (caseItem.patient_gender === 'female' ? 'Ayol' : 'Erkak')
+    ? (caseItem.patient_gender === 'female' ? t('case.female', 'Ayol') : t('case.male', 'Erkak'))
     : null;
-  const displayAge = caseItem.patient_age ? `${caseItem.patient_age} yosh` : null;
+  const displayAge = caseItem.patient_age ? `${caseItem.patient_age} ${t('case.yearsOld', 'yosh')}` : null;
   const displayAnamnesis = caseItem.chief_complaint || caseItem.subtitle || '';
 
   return (
@@ -56,14 +82,15 @@ export default function CaseDetailsView({
         position: 'relative',
         gap: 16,
       }}>
-        {/* Header: Back Button + Title */}
+        {/* Header: Back Button + Title + Bookmark Button */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           position: 'relative',
           padding: '8px 4px',
         }}>
-          {onBack && (
+          {onBack ? (
             <button
               onClick={onBack}
               title="Orqaga"
@@ -79,23 +106,48 @@ export default function CaseDetailsView({
                 justifyContent: 'center',
                 cursor: 'pointer',
                 color: '#0F172A',
+                flexShrink: 0,
               }}
             >
               <ChevronLeft size={24} strokeWidth={2.4} />
             </button>
-          )}
+          ) : <div style={{ width: 44 }} />}
 
           <h1 style={{
             flex: 1,
-            fontSize: '20px',
+            fontSize: '19px',
             fontWeight: 800,
             color: '#0F172A',
             margin: 0,
             textAlign: 'center',
-            paddingRight: onBack ? 44 : 0,
+            padding: '0 8px',
           }}>
-            Klinik Keys Tafsilotlari
+            {t('case.detailsTitle', 'Klinik Keys')}
           </h1>
+
+          {/* Bookmark Button in Header */}
+          <button
+            id="btn-save-case-header"
+            onClick={handleFavoriteClick}
+            title={isFavorite ? t('case.removeSaved', "Saqlangan keyslardan o'chirish") : t('case.saveAction', "Keysni saqlab olish")}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: isFavorite ? '#FEF3C7' : '#FFFFFF',
+              border: isFavorite ? '2px solid #F59E0B' : '2px solid #E2E8F0',
+              boxShadow: isFavorite ? '0 4px 12px rgba(245, 158, 11, 0.25)' : '0 2px 0 #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: isFavorite ? '#D97706' : '#64748B',
+              flexShrink: 0,
+              transition: 'all 0.18s ease',
+            }}
+          >
+            <Bookmark size={20} fill={isFavorite ? '#D97706' : 'none'} strokeWidth={2.4} />
+          </button>
         </div>
 
         {/* Badges: Category & Status */}
@@ -183,7 +235,7 @@ export default function CaseDetailsView({
                 <BarChart2 size={18} strokeWidth={2.4} />
               </div>
               <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
-                QIYINCHILIK
+                {t('case.difficulty', 'QIYINCHILIK')}
               </div>
               <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
                 {displayDifficulty}
@@ -217,7 +269,7 @@ export default function CaseDetailsView({
                 <Clock size={18} strokeWidth={2.4} />
               </div>
               <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
-                DAVOMIYLIK
+                {t('case.duration', 'DAVOMIYLIK')}
               </div>
               <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
                 {displayDuration}
@@ -251,7 +303,7 @@ export default function CaseDetailsView({
                 <Award size={18} strokeWidth={2.4} />
               </div>
               <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
-                MAVZU
+                {t('case.topic', 'MAVZU')}
               </div>
               <div style={{ fontSize: '13px', fontWeight: 800, color: '#16A34A' }}>
                 {caseItem.topic_name}
@@ -287,7 +339,7 @@ export default function CaseDetailsView({
             </div>
             <div>
               <div style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
-                Bemor demografiyasi
+                {t('case.patientProfile', 'Bemor demografiyasi')}
               </div>
               <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
                 {[displayGender, displayAge].filter(Boolean).join(', ')}
@@ -320,7 +372,7 @@ export default function CaseDetailsView({
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FileText size={18} color="#64748B" />
                 <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
-                  Bemor Shikoyati (Anamnez)
+                  {t('case.anamnesis', 'Bemor Shikoyati (Anamnez)')}
                 </span>
               </div>
               {anamnesisExpanded ? <ChevronUp size={20} color="#64748B" /> : <ChevronDown size={20} color="#64748B" />}
@@ -375,7 +427,33 @@ export default function CaseDetailsView({
           }}>
             <Play size={12} fill="#16A34A" color="#16A34A" style={{ marginLeft: 2 }} />
           </div>
-          <span>Simulyatsiyani Boshlash</span>
+          <span>{t('case.startSimulation', 'Simulyatsiyani Boshlash')}</span>
+        </button>
+
+        {/* Bookmark / Save Action Button */}
+        <button
+          id="btn-save-case-action"
+          onClick={handleFavoriteClick}
+          style={{
+            width: '100%',
+            padding: '13px 18px',
+            borderRadius: 18,
+            background: isFavorite ? '#FEF3C7' : '#FFFFFF',
+            border: isFavorite ? '2px solid #F59E0B' : '2px solid #E2E8F0',
+            boxShadow: '0 2px 0 #E2E8F0',
+            color: isFavorite ? '#B45309' : '#334155',
+            fontSize: '15px',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Bookmark size={18} fill={isFavorite ? '#D97706' : 'none'} strokeWidth={2.4} />
+          <span>{isFavorite ? t('case.savedAction', "Saqlangan keyslarda saqlangan ✓") : t('case.saveAction', "Keysni saqlab olish")}</span>
         </button>
       </div>
     </div>

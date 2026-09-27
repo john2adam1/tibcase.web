@@ -19,8 +19,8 @@ import {
   Zap,
   Sparkles
 } from 'lucide-react';
-import { getSoundEnabled, setSoundEnabled } from '../audio';
-import { useTranslation } from '../i18n.jsx';
+import { getSoundEnabled, setSoundEnabled } from '../../audio';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function AppNavbar({
   currentView,

@@ -7,6 +7,7 @@ import {
   Clock,
   Filter,
   Heart,
+  Bookmark,
   Lock,
   Play,
   Search,
@@ -323,22 +324,23 @@ export default function CasesCatalog({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggleFavorite(item.id);
+                        if (onToggleFavorite) onToggleFavorite(item.id);
                       }}
+                      title={item.is_favorite ? "Saqlanganlardan o'chirish" : "Keysni saqlab olish"}
                       style={{
                         width: 34,
                         height: 34,
                         borderRadius: 8,
-                        background: 'rgba(15, 23, 42, 0.75)',
+                        background: item.is_favorite ? '#FEF3C7' : 'rgba(15, 23, 42, 0.75)',
                         backdropFilter: 'blur(8px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: item.is_favorite ? '#f43f5e' : 'var(--text-muted)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: item.is_favorite ? '#D97706' : 'rgba(255, 255, 255, 0.75)',
+                        border: item.is_favorite ? '1.5px solid #F59E0B' : '1px solid rgba(255, 255, 255, 0.1)',
                       }}
                     >
-                      <Heart size={16} fill={item.is_favorite ? '#f43f5e' : 'none'} />
+                      <Bookmark size={16} fill={item.is_favorite ? '#D97706' : 'none'} />
                     </button>
                   </div>
 

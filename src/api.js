@@ -360,15 +360,21 @@ export const api = {
 
   /** Get favorites list */
   getFavorites: async (limit = 50, page = 1) => {
-    const res = await request(`/mobile/favorite?limit=${limit}&page=${page}`);
-    return res.cases || res.data || [];
+    try {
+      const res = await request(`/mobile/favorite?limit=${limit}&page=${page}`);
+      const list = res?.cases || res?.data?.cases || res?.data || (Array.isArray(res) ? res : []);
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      console.warn('Favorites API fetch error:', err.message);
+      return [];
+    }
   },
 
   /** Toggle favorite */
   toggleFavorite: async (caseId) => {
     return await request('/mobile/favorite', {
       method: 'POST',
-      body: { case_id: caseId },
+      body: { case_id: String(caseId) },
     });
   },
 

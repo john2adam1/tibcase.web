@@ -8,12 +8,14 @@ import {
   Inbox
 } from 'lucide-react';
 import { api } from '../api';
+import { useTranslation } from '../i18n.jsx';
 
 export default function RoadmapView({
   category,
   onSelectNode,
   onBack
 }) {
+  const { t } = useTranslation();
   const [topics, setTopics] = useState([]);
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function RoadmapView({
         const casesInTopic = topicCases.length || 1;
         return {
           id: top.id,
-          title: top.name || `${idx + 1}-mavzu`,
+          title: top.name || `${idx + 1}-${t('roadmap.topic', 'mavzu')}`,
           casesCount: casesInTopic,
           cases: topicCases,
           isUnlocked: idx === 0, // first topic unlocked
@@ -69,7 +71,7 @@ export default function RoadmapView({
       })
     : (cases.length > 0 ? [{
         id: 'default-topic-1',
-        title: cases[0].title || '1-mavzu',
+        title: cases[0].title || `1-${t('roadmap.topic', 'mavzu')}`,
         casesCount: cases.length,
         cases: cases,
         isUnlocked: true,
@@ -200,7 +202,7 @@ export default function RoadmapView({
                 textTransform: 'uppercase',
                 marginBottom: 4,
               }}>
-                {topics.length}. SECTION
+                {topics.length}. {t('roadmap.section', 'SECTION')}
               </div>
               <div style={{
                 fontSize: '22px',
@@ -250,7 +252,7 @@ export default function RoadmapView({
         {/* Loading state */}
         {loading && (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>
-            <div style={{ fontSize: '15px', fontWeight: 700 }}>Mavzular yuklanmoqda...</div>
+            <div style={{ fontSize: '15px', fontWeight: 700 }}>{t('roadmap.loading', 'Mavzular yuklanmoqda...')}</div>
           </div>
         )}
 
@@ -270,10 +272,7 @@ export default function RoadmapView({
           }}>
             <Inbox size={44} color="#94A3B8" />
             <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
-              Ushbu bo'limda hali keyslar mavjud emas
-            </div>
-            <div style={{ fontSize: '13px', color: '#64748B' }}>
-              API orqali keyslar kiritilganda bu yerda Duolingo yo'lakchasi paydo bo'ladi.
+              {t('roadmap.emptyTitle', "Ushbu bo'limda hali keyslar mavjud emas")}
             </div>
           </div>
         )}

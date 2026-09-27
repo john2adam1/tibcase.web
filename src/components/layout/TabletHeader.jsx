@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, Bell, Activity } from 'lucide-react';
-import { useTranslation } from '../i18n.jsx';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function TabletHeader({
   onToggleSidebar,

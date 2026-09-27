@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { LogOut, X, AlertTriangle, User } from 'lucide-react';
-import { useTranslation } from '../i18n';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function LogoutConfirmModal({
   isOpen,

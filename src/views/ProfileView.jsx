@@ -376,7 +376,7 @@ export default function ProfileView({
         {/* ============================================================== */}
         {currentScreen === 'profile' && (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            
+
             {/* Header: Title + Settings Button */}
             <div style={{
               display: 'flex',
@@ -386,7 +386,7 @@ export default function ProfileView({
               padding: '8px 4px 18px 4px',
             }}>
               <div style={{ width: 44 }} /> {/* placeholder for centering */}
-              
+
               <h1 style={{
                 fontSize: '26px',
                 fontWeight: 800,
@@ -401,7 +401,14 @@ export default function ProfileView({
               {/* Gold Settings Gear Button */}
               <button
                 id="btn-settings-toggle"
-                onClick={() => setCurrentScreen('settings')}
+                onClick={() => {
+                  const el = document.getElementById('profile-settings-group');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    setCurrentScreen('settings');
+                  }
+                }}
                 title={t('profile.settings')}
                 style={{
                   width: 44,
@@ -730,7 +737,7 @@ export default function ProfileView({
             }}>
               <SettingsListItem
                 icon={<Bookmark size={20} color="#0F172A" strokeWidth={2} />}
-                label="Saqlangan keyslar"
+                label={t('fav.title', 'Saqlangan keyslar')}
                 onClick={() => onNavigate && onNavigate('favorites')}
               />
               <Divider />
@@ -783,6 +790,107 @@ export default function ProfileView({
                 onClick={() => setModalType('coupon')}
               />
             </div>
+
+            {/* Settings Group 1: Ma'lumot, Qurilmalar, Ilova haqida */}
+            <div id="profile-settings-group" style={{
+              background: '#FFFFFF',
+              borderRadius: 24,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 4px 0 #E2E8F0',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              marginBottom: 16,
+            }}>
+              <SettingsListItem
+                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
+                label={t('settings.info', "Ma'lumot")}
+                subtitle={t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
+                onClick={handleOpenProfileInfo}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<Smartphone size={20} color="#0F172A" strokeWidth={2} />}
+                label={t('settings.devices', "Qurilmalar")}
+                subtitle={t('settings.devicesDesc', "Push-token va seanslar")}
+                onClick={handleOpenDevices}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
+                label={t('settings.about', "Ilova haqida")}
+                subtitle={t('settings.aboutDesc', "Versiya, FAQ va kontaktlar")}
+                onClick={handleOpenAbout}
+              />
+            </div>
+
+            {/* Settings Group 2: Language, Delete Account */}
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: 24,
+              border: '2px solid #E2E8F0',
+              boxShadow: '0 4px 0 #E2E8F0',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              marginBottom: 16,
+            }}>
+              <SettingsListItem
+                icon={<Globe size={20} color="#0F172A" strokeWidth={2} />}
+                label={t('profile.language', "Language")}
+                subtitle={getLanguageLabel()}
+                onClick={() => setModalType('language')}
+              />
+              <Divider />
+              <SettingsListItem
+                icon={<Trash2 size={20} color="#EF4444" strokeWidth={2} />}
+                label={t('settings.deleteAccount', "Delete Account")}
+                labelColor="#EF4444"
+                onClick={() => setModalType('delete')}
+              />
+            </div>
+
+            {/* Logout button */}
+            {onLogout && (
+              <button
+                id="btn-profile-logout"
+                onClick={onLogout}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: 18,
+                  background: '#FEE2E2',
+                  border: '1.5px solid #FCA5A5',
+                  color: '#DC2626',
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  marginBottom: 16,
+                  boxShadow: '0 2px 0 #FCA5A5',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#FECACA'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
+              >
+                <LogOut size={18} />
+                {t('settings.logOut', 'Chiqish')}
+              </button>
+            )}
+
+            {/* Footer App Version */}
+            <div style={{
+              textAlign: 'center',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#94A3B8',
+              paddingBottom: 36,
+            }}>
+              Medical Case App 1.1.4
+            </div>
           </div>
         )}
 
@@ -791,7 +899,7 @@ export default function ProfileView({
         {/* ============================================================== */}
         {currentScreen === 'settings' && (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 16 }}>
-            
+
             {/* Header: Back Arrow + Title */}
             <div style={{
               display: 'flex',
@@ -1015,7 +1123,7 @@ export default function ProfileView({
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title="Ma'lumotlarim va Profil" onClose={() => setModalType(null)} maxWidth={460}>
             <form onSubmit={handleSaveProfileInfo} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              
+
               {/* Avatar Photo Selector */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <div style={{ position: 'relative', width: 84, height: 84 }}>
@@ -1302,7 +1410,7 @@ export default function ProfileView({
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title="Qurilmalar va Push token" onClose={() => setModalType(null)} maxWidth={460}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              
+
               <p style={{ fontSize: '13px', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
                 Ko'p qurilmalarni boshqarish va bildirishnomalarni (FCM push-token) o'rnatish.
               </p>
@@ -1471,7 +1579,7 @@ export default function ProfileView({
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title="Ilova haqida" onClose={() => setModalType(null)} maxWidth={480}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              
+
               {/* Brand Header */}
               <div style={{
                 display: 'flex',
@@ -1966,7 +2074,7 @@ export default function ProfileView({
                 <AlertCircle size={44} />
               </div>
               <p style={{ fontSize: '14px', fontWeight: 600, color: '#334155', margin: 0 }}>
-                 {t('settings.deleteWarning')}
+                {t('settings.deleteWarning')}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
                 <button

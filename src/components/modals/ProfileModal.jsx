@@ -1,5 +1,5 @@
 import React from 'react';
-import ProfileView from './ProfileView';
+import ProfileView from '../../views/ProfileView';
 import { X } from 'lucide-react';
 
 export default function ProfileModal({

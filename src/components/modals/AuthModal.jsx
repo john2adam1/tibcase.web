@@ -12,8 +12,8 @@ import {
   X,
   Zap
 } from 'lucide-react';
-import { api, setStoredUser, setToken, setRefreshToken } from '../api';
-import { useTranslation } from '../i18n.jsx';
+import { api, setStoredUser, setToken, setRefreshToken } from '../../api';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function AuthModal({
   isOpen,

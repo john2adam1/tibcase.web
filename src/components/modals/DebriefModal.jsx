@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   AlertTriangle,
   Award,
@@ -15,12 +14,14 @@ import {
   ShieldCheck,
   Stethoscope
 } from 'lucide-react';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function DebriefModal({
   debriefData,
   onClose,
   onRetryCase,
 }) {
+  const { t } = useTranslation();
   if (!debriefData) return null;
 
   const score = debriefData.final_score ?? 0;
@@ -127,7 +128,7 @@ export default function DebriefModal({
             marginBottom: 10,
           }}>
             <Sparkles size={15} />
-            <span>AI Klinik Debriefing Hisoboti</span>
+            <span>{t('debrief.reportTitle', 'AI Klinik Debriefing Hisoboti')}</span>
           </div>
 
           <h2 style={{
@@ -138,7 +139,7 @@ export default function DebriefModal({
             margin: '0 0 6px 0',
             lineHeight: 1.3,
           }}>
-            {isSuccess ? "Bemor muvaffaqiyatli saqlab qolindi! 🎉" : "Klinik qiyinchilik kuzatildi ⚠️"}
+            {isSuccess ? t('debrief.successTitle', "Bemor muvaffaqiyatli saqlab qolindi! 🎉") : t('debrief.criticalTitle', "Klinik qiyinchilik kuzatildi ⚠️")}
           </h2>
           <p style={{
             color: '#64748B',
@@ -147,7 +148,7 @@ export default function DebriefModal({
             margin: 0,
             lineHeight: 1.4,
           }}>
-            Xalqaro AHA (American Heart Association) va ESC klinik protokollari asosidagi tahlil
+            {t('debrief.protocolDesc', "Xalqaro AHA (American Heart Association) va ESC klinik protokollari asosidagi tahlil")}
           </p>
         </div>
 
@@ -174,7 +175,7 @@ export default function DebriefModal({
             justifyContent: 'center',
           }}>
             <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              Klinik Aniqlik
+              {t('debrief.accuracy', 'Klinik Aniqlik')}
             </div>
             <div style={{
               fontSize: '28px',
@@ -287,7 +288,7 @@ export default function DebriefModal({
                 marginBottom: 10,
               }}>
                 <CheckCircle2 size={18} strokeWidth={2.4} />
-                <span>To'g'ri va o'z vaqtida bajarilgan harakatlar:</span>
+                <span>{t('debrief.correctActions', "To'g'ri va o'z vaqtida bajarilgan harakatlar:")}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {debriefData.correct_steps.map((step, idx) => (
@@ -319,7 +320,7 @@ export default function DebriefModal({
                 marginBottom: 10,
               }}>
                 <XCircle size={18} strokeWidth={2.4} />
-                <span>Kechiktirilgan yoki xato qadamlar:</span>
+                <span>{t('debrief.errors', "Kechiktirilgan yoki xato qadamlar:")}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {debriefData.incorrect_steps.map((step, idx) => (
@@ -351,7 +352,7 @@ export default function DebriefModal({
                 marginBottom: 10,
               }}>
                 <AlertTriangle size={18} strokeWidth={2.4} />
-                <span>Rivojlantirish kerak bo'lgan mavzular (Weak Topics):</span>
+                <span>{t('debrief.weakTopics', "Rivojlantirish kerak bo'lgan mavzular:")}</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {debriefData.weak_topics.map((topic, idx) => (
@@ -436,7 +437,7 @@ export default function DebriefModal({
               }}
             >
               <RotateCcw size={16} strokeWidth={2.4} />
-              Qayta urinish
+              {t('sim.retry', 'Qayta urinish')}
             </button>
           )}
 
@@ -458,7 +459,7 @@ export default function DebriefModal({
               gap: 8,
             }}
           >
-            Tushundim
+            {t('debrief.closeBtn', 'Tushundim')}
           </button>
 
           <button

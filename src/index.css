@@ -200,6 +200,11 @@ input, select, textarea {
     padding: 24px 24px 60px 24px;
     box-sizing: border-box;
   }
+
+  /* Hide 3 stats cards (Klinik bo'limlar, Daraja/XP, Tangalar) on tablet screens */
+  .dashboard-stats-grid {
+    display: none !important;
+  }
 }
 
 /* Mobile view (< 768px) & Telegram Mini App */
@@ -231,9 +236,16 @@ input, select, textarea {
     box-sizing: border-box;
   }
 
+  /* Hide 3 stats cards on mobile screens */
   .dashboard-stats-grid {
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
+    display: none !important;
+  }
+}
+
+/* Tablets and Mobile (< 1024px) rule */
+@media (max-width: 1023.98px) {
+  .dashboard-stats-grid {
+    display: none !important;
   }
 }
 
