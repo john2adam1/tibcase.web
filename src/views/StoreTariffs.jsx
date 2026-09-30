@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   AlertTriangle,
-  Award,
   Check,
   CheckCircle2,
   Coins,
   CreditCard,
   Gift,
-  HelpCircle,
   ShieldCheck,
-  Sparkles,
-  Zap,
   RefreshCw,
-  Crown,
-  ExternalLink,
   ChevronRight,
   ChevronLeft,
-  Clock
+  Clock,
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
@@ -24,6 +18,7 @@ import { useTranslation } from '../i18n.jsx';
 export default function StoreTariffs({
   tariffs: initialTariffs = [],
   user,
+  userLimit,
   onUserUpdate,
   onBack,
   initialTab = 'all',
@@ -31,11 +26,6 @@ export default function StoreTariffs({
   const { t } = useTranslation();
   const [tariffsList, setTariffsList] = useState(initialTariffs || []);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(initialTab || 'all'); // 'all' | 'subscription' | 'coins'
-
-  useEffect(() => {
-    if (initialTab) setActiveTab(initialTab);
-  }, [initialTab]);
 
   const [promocode, setPromocode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
@@ -80,16 +70,18 @@ export default function StoreTariffs({
 
     try {
       const res = await api.redeemPromocode(promocode.trim());
-      const coinsAdded = res?.coins_added ?? 10;
+      const coinsAdded = res?.coins_added;
       setPromoResult({
         success: true,
-        message: `Muvaffaqiyatli! Hamyoningizga +${coinsAdded} ta Tanga qo'shildi.`
+        message: coinsAdded != null
+          ? `Muvaffaqiyatli! Hamyoningizga +${coinsAdded} ta Tanga qo'shildi.`
+          : "Promokod muvaffaqiyatli qo'llandi."
       });
-      if (onUserUpdate) {
-        onUserUpdate(prev => ({
-          ...(prev || {}),
-          coins: (prev?.coins || 0) + coinsAdded,
-        }));
+      try {
+        const fresh = await api.getUserProfile();
+        if (fresh && onUserUpdate) onUserUpdate(fresh);
+      } catch {
+        // keep current profile
       }
       setPromocode('');
     } catch (err) {
@@ -107,41 +99,28 @@ export default function StoreTariffs({
     setPaymentModalOpen(true);
   };
 
-  const handleSimulatePayment = async (gateway) => {
+  const handleSimulatePayment = async () => {
     if (!selectedTariff) return;
     setPaymentLoading(true);
     try {
       const result = await api.subscribe(selectedTariff.id, 0);
-      
-      // If API returns payme/click URL, open payment window
-      if (result && result.url) {
-        window.open(result.url, '_blank');
+
+      // Backend returns the payment (Click) URL
+      const payUrl = typeof result === 'string' ? result : result?.url;
+      if (payUrl && /^https?:\/\//.test(payUrl)) {
+        window.open(payUrl, '_blank', 'noopener,noreferrer');
       }
 
       setPaymentModalOpen(false);
-      if (onUserUpdate) {
-        const addedCoins = selectedTariff.coins || 0;
-        const isSub = selectedTariff.kind === 'subscription' || (selectedTariff.duration && selectedTariff.duration > 0);
-        onUserUpdate(prev => ({
-          ...(prev || {}),
-          coins: (prev?.coins || 0) + addedCoins,
-          has_subscription: isSub ? true : prev?.has_subscription
-        }));
+      // Sync real balance/subscription from backend
+      try {
+        const fresh = await api.getUserProfile();
+        if (fresh && onUserUpdate) onUserUpdate(fresh);
+      } catch {
+        // keep current profile
       }
-      alert(`🎉 To'lov qabul qilindi! ${selectedTariff.name} muvaffaqiyatli faollashtirildi.`);
     } catch (err) {
-      // In case of demo simulation fallback
-      setPaymentModalOpen(false);
-      if (onUserUpdate) {
-        const addedCoins = selectedTariff.coins || 0;
-        const isSub = selectedTariff.kind === 'subscription' || (selectedTariff.duration && selectedTariff.duration > 0);
-        onUserUpdate(prev => ({
-          ...(prev || {}),
-          coins: (prev?.coins || 0) + addedCoins,
-          has_subscription: isSub ? true : prev?.has_subscription
-        }));
-      }
-      alert(`🎉 To'lov muvaffaqiyatli! ${selectedTariff.name} faollashtirildi.`);
+      alert(err?.message || "Xatolik yuz berdi");
     } finally {
       setPaymentLoading(false);
     }
@@ -151,11 +130,10 @@ export default function StoreTariffs({
     return new Intl.NumberFormat('uz-UZ').format(price) + " so'm";
   };
 
-  // Filter tariffs by tab
+  // Exclusively show coin tariffs
   const displayedTariffs = tariffsList.filter((t) => {
-    if (activeTab === 'subscription') return t.kind === 'subscription' || (t.duration && t.duration > 0);
-    if (activeTab === 'coins') return t.kind === 'coin_package' || (!t.duration && t.coins > 0);
-    return true;
+    if (t.kind === 'subscription' || (t.duration && t.duration > 0 && !t.coins)) return false;
+    return t.kind === 'coin_package' || (t.coins && t.coins > 0) || !t.duration;
   });
 
   return (
@@ -181,13 +159,13 @@ export default function StoreTariffs({
               padding: '10px 18px',
               borderRadius: 16,
               background: '#FFFFFF',
-              border: '2px solid #E2E8F0',
+              border: '1px solid #E2E8F0',
               color: '#0F172A',
               fontSize: '14px',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               marginBottom: 20,
-              boxShadow: '0 2px 0 #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'all 0.15s ease',
             }}
           >
@@ -203,25 +181,25 @@ export default function StoreTariffs({
             alignItems: 'center',
             gap: 6,
             background: '#FEF3C7',
-            border: '1.5px solid #FDE68A',
+            border: '1px solid #FDE68A',
             color: '#D97706',
             fontSize: '12px',
-            fontWeight: 800,
+            fontWeight: 700,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             padding: '5px 14px',
             borderRadius: 99,
             marginBottom: 10,
           }}>
-            <Crown size={14} />
-            <span>Tariflar va Hamyon</span>
+            <Coins size={14} />
+            <span>{t('store.badge', 'Tanga tariflari')}</span>
           </div>
 
-          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#0F172A', margin: '4px 0 6px 0', letterSpacing: '-0.02em' }}>
-            Premium Obuna va Tangalar
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0F172A', margin: '4px 0 6px 0', letterSpacing: '-0.02em' }}>
+            {t('store.coinTariffsTitle', 'Tanga tariflari')}
           </h1>
           <p style={{ color: '#64748B', fontSize: '14px', maxWidth: 560, margin: '0 auto', lineHeight: 1.5 }}>
-            Cheksiz klinik keyslar yechish, AI tahlillardan cheklovlarsiz foydalanish va shifokorlik mahoratingizni oshirish uchun tarifni tanlang.
+            {t('store.coinTariffsSubtitle', 'Klinik keyslar yechish va tibbiy simulyatsiyalardan cheklovlarsiz foydalanish uchun tanga paketini tanlang.')}
           </p>
 
           {/* User Current Balance Card */}
@@ -232,19 +210,19 @@ export default function StoreTariffs({
             gap: 12,
             marginTop: 16,
             padding: '10px 16px',
-            borderRadius: 20,
+            borderRadius: 16,
             background: '#FFFFFF',
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 3px 0 #E2E8F0',
+            border: '1px solid #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 800, color: '#D97706' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 700, color: '#D97706' }}>
               <span>🪙</span>
               <span>{user?.coins ?? 0} tanga mavjud</span>
             </div>
             <div style={{ width: 1, height: 18, background: '#CBD5E1' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 800, color: user?.has_subscription ? '#15803D' : '#64748B' }}>
-              <ShieldCheck size={16} color={user?.has_subscription ? '#16A34A' : '#94A3B8'} />
-              <span>{user?.has_subscription ? 'PRO Obuna faol' : 'Bepul tarif (Kunlik limit)'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 700, color: (user?.has_subscription || userLimit?.has_subscription) ? '#15803D' : '#64748B' }}>
+              <ShieldCheck size={16} color={(user?.has_subscription || userLimit?.has_subscription) ? '#16A34A' : '#94A3B8'} />
+              <span>{(user?.has_subscription || userLimit?.has_subscription) ? 'PRO Obuna faol' : `Bepul tarif (${userLimit?.remaining ?? '-'}/${userLimit?.total ?? '-'} limit)`}</span>
             </div>
           </div>
         </div>
@@ -252,9 +230,9 @@ export default function StoreTariffs({
         {/* Promocode Redemption Banner */}
         <div style={{
           background: '#FFFFFF',
-          borderRadius: 24,
-          border: '2px solid #E2E8F0',
-          boxShadow: '0 4px 0 #E2E8F0',
+          borderRadius: 18,
+          border: '1px solid #E2E8F0',
+          boxShadow: 'var(--shadow-sm)',
           padding: '20px 22px',
           marginBottom: 24,
         }}>
@@ -268,7 +246,7 @@ export default function StoreTariffs({
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                 <Gift size={20} color="#D97706" />
-                <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
                   Promokod bormi?
                 </h3>
               </div>
@@ -287,7 +265,7 @@ export default function StoreTariffs({
                   flex: 1,
                   padding: '12px 14px',
                   borderRadius: 14,
-                  border: '2px solid #E2E8F0',
+                  border: '1px solid #E2E8F0',
                   fontSize: '14px',
                   fontWeight: 700,
                   outline: 'none',
@@ -301,11 +279,11 @@ export default function StoreTariffs({
                 style={{
                   padding: '12px 20px',
                   borderRadius: 14,
-                  border: '1.5px solid #16A34A',
-                  background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                  boxShadow: '0 3px 0 #15803D',
+                  border: '1px solid #16A34A',
+                  background: '#16A34A',
+                  boxShadow: 'var(--shadow-sm)',
                   color: '#FFFFFF',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '14px',
                   cursor: promoLoading ? 'default' : 'pointer',
                   whiteSpace: 'nowrap',
@@ -324,7 +302,7 @@ export default function StoreTariffs({
               fontSize: '13px',
               fontWeight: 700,
               background: promoResult.success ? '#DCFCE7' : '#FEE2E2',
-              border: `1.5px solid ${promoResult.success ? '#86EFAC' : '#FECACA'}`,
+              border: `1px solid ${promoResult.success ? '#86EFAC' : '#FECACA'}`,
               color: promoResult.success ? '#166534' : '#DC2626',
               display: 'flex',
               alignItems: 'center',
@@ -334,40 +312,6 @@ export default function StoreTariffs({
               <span>{promoResult.message}</span>
             </div>
           )}
-        </div>
-
-        {/* Category Filter Tabs */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 10,
-          marginBottom: 24,
-        }}>
-          {[
-            { id: 'all', label: 'Barcha paketlar' },
-            { id: 'subscription', label: '👑 Premium Obunalar' },
-            { id: 'coins', label: '🪙 Tanga paketlari' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '10px 18px',
-                borderRadius: 16,
-                border: activeTab === tab.id ? '2px solid #22C55E' : '1.5px solid #E2E8F0',
-                background: activeTab === tab.id ? '#F0FDF4' : '#FFFFFF',
-                boxShadow: activeTab === tab.id ? '0 3px 0 #BBF7D0' : '0 2px 0 #E2E8F0',
-                color: activeTab === tab.id ? '#15803D' : '#64748B',
-                fontWeight: 800,
-                fontSize: '13px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
         </div>
 
         {/* Loading Spinner */}
@@ -390,19 +334,19 @@ export default function StoreTariffs({
         {!loading && displayedTariffs.length === 0 && (
           <div style={{
             background: '#FFFFFF',
-            borderRadius: 24,
-            border: '2px solid #E2E8F0',
+            borderRadius: 18,
+            border: '1px solid #E2E8F0',
             padding: '50px 20px',
             textAlign: 'center',
             color: '#64748B',
             marginBottom: 30,
           }}>
             <Coins size={36} style={{ marginBottom: 12, opacity: 0.5 }} />
-            <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
-              Tariflar mavjud emas
+            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
+              {t('store.coinsEmpty', 'Tanga tariflari mavjud emas')}
             </h3>
             <p style={{ fontSize: '13px', margin: 0 }}>
-              Hozirda sotuvda tarif paketlari mavjud emas.
+              Hozirda sotuvda tanga paketlari mavjud emas.
             </p>
           </div>
         )}
@@ -423,8 +367,8 @@ export default function StoreTariffs({
                   key={tariff.id}
                   style={{
                     background: '#FFFFFF',
-                    borderRadius: 26,
-                    border: isPopular ? '2.5px solid #22C55E' : '2px solid #E2E8F0',
+                    borderRadius: 18,
+                    border: isPopular ? '2.5px solid #22C55E' : '1px solid #E2E8F0',
                     boxShadow: isPopular ? '0 12px 30px rgba(34, 197, 94, 0.18), 0 4px 0 #16A34A' : '0 4px 0 #E2E8F0',
                     padding: '26px 22px',
                     display: 'flex',
@@ -443,13 +387,13 @@ export default function StoreTariffs({
                       top: -13,
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                      background: '#16A34A',
                       color: '#FFFFFF',
                       fontSize: '11px',
-                      fontWeight: 900,
+                      fontWeight: 700,
                       padding: '4px 14px',
                       borderRadius: 99,
-                      boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)',
+                      boxShadow: 'var(--shadow-sm)',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
                     }}>
@@ -466,10 +410,10 @@ export default function StoreTariffs({
                         background: isCoinPkg ? '#FEF3C7' : '#DCFCE7',
                         color: isCoinPkg ? '#D97706' : '#15803D',
                         fontSize: '11px',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         textTransform: 'uppercase',
                       }}>
-                        {isCoinPkg ? '🪙 Tanga paketi' : '👑 Cheksiz Obuna'}
+                        {isCoinPkg ? `🪙 ${t('store.coinPackage', 'Tanga paketi')}` : '👑 Cheksiz Obuna'}
                       </span>
 
                       {tariff.duration > 0 && (
@@ -479,13 +423,13 @@ export default function StoreTariffs({
                       )}
                     </div>
 
-                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '4px 0 8px 0', lineHeight: 1.3 }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '4px 0 8px 0', lineHeight: 1.3 }}>
                       {tariff.name}
                     </h3>
 
                     {/* Price block */}
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 14 }}>
-                      <span style={{ fontSize: '26px', fontWeight: 900, color: '#0F172A' }}>
+                      <span style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A' }}>
                         {formatPrice(tariff.price)}
                       </span>
                     </div>
@@ -552,13 +496,13 @@ export default function StoreTariffs({
                       padding: '14px',
                       borderRadius: 16,
                       background: isPopular 
-                        ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)' 
+                        ? '#16A34A' 
                         : '#FFFFFF',
-                      border: isPopular ? 'none' : '2px solid #E2E8F0',
+                      border: isPopular ? 'none' : '1px solid #E2E8F0',
                       boxShadow: isPopular ? '0 4px 0 #15803D' : '0 3px 0 #E2E8F0',
                       color: isPopular ? '#FFFFFF' : '#0F172A',
                       fontSize: '14px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -569,7 +513,7 @@ export default function StoreTariffs({
                     onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(2px)'; }}
                     onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <span>{isCoinPkg ? "Tangalarni sotib olish" : "Obunani faollashtirish"}</span>
+                    <span>{isCoinPkg ? t('store.buyCoinsBtn', 'Tangalarni sotib olish') : 'Obunani faollashtirish'}</span>
                     <ChevronRight size={16} strokeWidth={2.4} />
                   </button>
                 </div>
@@ -602,8 +546,8 @@ export default function StoreTariffs({
               width: '100%',
               maxWidth: 420,
               background: '#FFFFFF',
-              borderRadius: 28,
-              border: '2px solid #E2E8F0',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.2)',
               padding: '26px 22px',
               textAlign: 'center',
@@ -623,7 +567,7 @@ export default function StoreTariffs({
               <CreditCard size={26} strokeWidth={2.2} />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: '0 0 6px 0' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
               To'lov tizimini tanlang
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 20px 0', lineHeight: 1.4 }}>
@@ -644,10 +588,10 @@ export default function StoreTariffs({
                     padding: '14px',
                     borderRadius: 16,
                     background: '#FFFFFF',
-                    border: '2px solid #E2E8F0',
-                    boxShadow: '0 3px 0 #E2E8F0',
+                    border: '1px solid #E2E8F0',
+                    boxShadow: 'var(--shadow-sm)',
                     fontSize: '14px',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#0F172A',
                     cursor: paymentLoading ? 'default' : 'pointer',
                     display: 'flex',

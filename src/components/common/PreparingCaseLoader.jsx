@@ -30,7 +30,7 @@ export default function PreparingCaseLoader({
         height: 170,
         borderRadius: '50%',
         background: '#FFFFFF',
-        boxShadow: '0 0 70px rgba(251, 146, 60, 0.4), 0 10px 30px rgba(0, 0, 0, 0.06)',
+        boxShadow: 'var(--shadow-sm)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -57,7 +57,7 @@ export default function PreparingCaseLoader({
       {/* Preparing Case Label with Pulsating Dot */}
       <div style={{
         background: 'rgba(255, 237, 213, 0.65)',
-        border: '1.5px solid #FED7AA',
+        border: '1px solid #FED7AA',
         borderRadius: 99,
         padding: '8px 20px',
         display: 'flex',
@@ -69,11 +69,11 @@ export default function PreparingCaseLoader({
           height: 8,
           borderRadius: '50%',
           background: '#EA580C',
-          boxShadow: '0 0 8px #EA580C',
+          boxShadow: 'var(--shadow-sm)',
         }} />
         <span style={{
           fontSize: '15px',
-          fontWeight: 800,
+          fontWeight: 700,
           color: '#EA580C',
           letterSpacing: '-0.01em',
         }}>

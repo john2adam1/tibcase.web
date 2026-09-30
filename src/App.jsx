@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import {
   api,
-  getLang,
-  setLang,
   getToken,
   getRefreshToken,
   getStoredUser,
   setToken,
   setRefreshToken,
   setStoredUser,
-  setOnUnauthorized
+  setOnUnauthorized,
+  isSessionNotActiveError,
+  registerStoredFcmDevice,
 } from './api';
 // Views
+import { autoEnablePush, onForegroundPush } from './utils/push';
 import LandingPage from './views/LandingPage';
 import HomeView from './views/HomeView';
-import CasesCatalog from './views/CasesCatalog';
 import CategoriesView from './views/CategoriesView';
 import RoadmapView from './views/RoadmapView';
 import CaseDetailsView from './views/CaseDetailsView';
-import SimulationRoom from './views/SimulationRoom';
 import CaseSimulationRoom from './views/CaseSimulationRoom';
 import Leaderboard from './views/Leaderboard';
 import ProfileView from './views/ProfileView';
@@ -26,11 +25,9 @@ import FavoritesView from './views/FavoritesView.jsx';
 import ActivityView from './views/ActivityView.jsx';
 import NotificationsView from './views/NotificationsView.jsx';
 import StudyPlanView from './views/StudyPlanView.jsx';
-import AiReportsView from './views/AiReportsView.jsx';
 import StoreTariffs from './views/StoreTariffs';
 
 // Layout
-import AppNavbar from './components/layout/AppNavbar';
 import BottomNavBar from './components/layout/BottomNavBar';
 import Sidebar from './components/layout/Sidebar.jsx';
 import TabletHeader from './components/layout/TabletHeader.jsx';
@@ -45,7 +42,11 @@ import DebriefModal from './components/modals/DebriefModal';
 // Common UI
 import PreparingCaseLoader from './components/common/PreparingCaseLoader';
 
-import { Crown, Coins, Lock, ShieldAlert, Sparkles, ChevronRight, X } from 'lucide-react';
+import {
+  Crown,
+  ChevronRight,
+  X,
+} from 'lucide-react';
 import { useTranslation } from './i18n.jsx';
 
 export default function App() {
@@ -85,8 +86,9 @@ export default function App() {
 
   // Telegram Native BackButton integration for in-app navigation
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.Telegram?.WebApp?.BackButton) return;
-    const tg = window.Telegram.WebApp;
+    const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+    // BackButton needs Bot API 6.1+ and a real Telegram session
+    if (!tg?.initData || !tg.isVersionAtLeast?.('6.1')) return;
 
     const handleTelegramBack = () => {
       if (sidebarOpen) {
@@ -101,7 +103,7 @@ export default function App() {
         setCurrentView('cases');
       } else if (currentView === 'simulation') {
         setCurrentView('cases');
-      } else if (['favorites', 'activity', 'notifications', 'study_plan', 'ai_reports', 'leaderboard', 'store', 'tariffs'].includes(currentView)) {
+      } else if (['favorites', 'activity', 'notifications', 'study_plan', 'leaderboard', 'store', 'tariffs'].includes(currentView)) {
         setCurrentView('profile');
       } else if (currentView === 'profile') {
         setCurrentView('cases');
@@ -121,6 +123,18 @@ export default function App() {
       tg.BackButton.offClick(handleTelegramBack);
     };
   }, [currentView, sidebarOpen]);
+
+  // Foreground push: refresh the in-app notification list when a message arrives
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let unsub = () => {};
+    let cancelled = false;
+    autoEnablePush();
+    onForegroundPush(() => {
+      api.getNotifications().then((res) => setNotifications(res?.notifications || [])).catch(() => {});
+    }).then((u) => { if (cancelled) u(); else unsub = u; }).catch(() => {});
+    return () => { cancelled = true; unsub(); };
+  }, [isAuthenticated]);
 
   // Listen for unauthorized/expired session events from api client
   useEffect(() => {
@@ -183,12 +197,28 @@ export default function App() {
     showToast(msg);
   };
 
+  const getTodayDateStr = () => {
+    return new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
+  };
+
+  const handleRefreshLimit = async () => {
+    if (isAuthenticated) {
+      try {
+        const fresh = await api.getUserLimit();
+        if (fresh) setUserLimit(fresh);
+        return fresh;
+      } catch (err) {
+        console.warn('Refresh limit error:', err);
+      }
+    }
+    return null;
+  };
+
   // Initial Data Fetch
   useEffect(() => {
     let isMounted = true;
 
     async function loadAllData() {
-      // Only fetch protected endpoints if authenticated
       if (!isAuthenticated) return;
 
       try {
@@ -202,7 +232,8 @@ export default function App() {
           faqsData,
           aboutsData,
           contactsData,
-          bannersData
+          bannersData,
+          notifData
         ] = await Promise.all([
           api.getUserProfile().catch(() => null),
           api.getCategories().catch(() => []),
@@ -214,6 +245,7 @@ export default function App() {
           api.getAbout().catch(() => []),
           api.getContacts().catch(() => []),
           api.getBanners().catch(() => []),
+          api.getNotifications().catch(() => ({ count: 0, notifications: [] })),
         ]);
 
         if (isMounted) {
@@ -230,13 +262,17 @@ export default function App() {
           }
           if (catsData && catsData.length) setCategories(catsData);
           if (casesData && casesData.length) setCases(casesData);
-          if (limitData) setUserLimit(limitData);
+          if (limitData) {
+            setUserLimit(limitData);
+            localStorage.setItem('tibcase_last_limit_date', getTodayDateStr());
+          }
           if (tariffsData && tariffsData.length) setTariffs(tariffsData);
           if (partnersData && partnersData.length) setPartners(partnersData);
           if (faqsData && faqsData.length) setFaqs(faqsData);
           if (aboutsData && aboutsData.length) setAbouts(aboutsData);
           if (contactsData && contactsData.length) setContacts(contactsData);
           if (bannersData && bannersData.length) setBanners(bannersData);
+          if (notifData) setNotifications(notifData?.notifications || []);
         }
       } catch (err) {
         console.warn('Data load handled:', err.message);
@@ -248,6 +284,47 @@ export default function App() {
     return () => { isMounted = false; };
   }, [lang, isAuthenticated]);
 
+  // Automatic Daily Limit & Midnight Rollover Synchronization
+  useEffect(() => {
+    const checkAndSyncLimit = async () => {
+      const today = getTodayDateStr();
+      const lastChecked = localStorage.getItem('tibcase_last_limit_date');
+
+      if (!lastChecked || lastChecked !== today) {
+        localStorage.setItem('tibcase_last_limit_date', today);
+        if (isAuthenticated) {
+          try {
+            const freshLimit = await api.getUserLimit();
+            if (freshLimit) setUserLimit(freshLimit);
+          } catch { /* keep existing */ }
+        }
+      } else if (isAuthenticated && !userLimit) {
+        // If logged in and limit state is empty, fetch it
+        api.getUserLimit().then(lim => {
+          if (lim) setUserLimit(lim);
+        }).catch(() => {});
+      }
+    };
+
+    checkAndSyncLimit();
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndSyncLimit();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    const interval = setInterval(checkAndSyncLimit, 60000); // 1 minute ticker to catch midnight rollover
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      clearInterval(interval);
+    };
+  }, [isAuthenticated, userLimit]);
+
   // Auth Handlers
   const handleLoginSuccess = async (loggedInUser) => {
     setUser(loggedInUser);
@@ -257,14 +334,24 @@ export default function App() {
     setCurrentView('cases');
     showToast(`Xush kelibsiz, ${loggedInUser.name || ''}!`);
 
-    // Refresh full profile from API
+    // Refresh full profile & daily limit from API
     try {
-      const freshProfile = await api.getUserProfile();
+      const [freshProfile, freshLimit] = await Promise.all([
+        api.getUserProfile().catch(() => null),
+        api.getUserLimit().catch(() => null),
+      ]);
       if (freshProfile) {
         setUser(freshProfile);
         setStoredUser(freshProfile);
       }
+      if (freshLimit) {
+        setUserLimit(freshLimit);
+        localStorage.setItem('tibcase_last_limit_date', getTodayDateStr());
+      }
     } catch { /* use whatever came from login */ }
+
+    registerStoredFcmDevice();
+    autoEnablePush();
   };
 
   const handleLogout = () => {
@@ -285,53 +372,80 @@ export default function App() {
   };
 
   // Simulation Triggers
-  const handleStartSimulation = async (caseItem) => {
+  // Starts a real backend session. Returns true only when the session was created.
+  const startBackendSession = async (caseItem) => {
+    if (!caseItem?.id) {
+      showToast(t('common.error', "Xatolik yuz berdi"));
+      return false;
+    }
     try {
-      showToast("Simulyatsiya xonasi ochilmoqda...");
       const session = await api.startSimulation(caseItem.id);
+      if (!session?.session_id) throw new Error('session_id missing');
       setActiveCase({
         ...caseItem,
-        sessionId: session?.session_id || 'sim-' + Date.now()
+        sessionId: session.session_id,
+        health_percent: session.health_percent,
+        initial_vitals: session.initial_vitals,
       });
-      setCurrentView('simulation');
-    } catch {
-      setActiveCase({
-        ...caseItem,
-        sessionId: 'sim-' + Date.now()
-      });
-      setCurrentView('simulation');
+      // Sync limit/profile from backend instead of guessing locally
+      api.getUserLimit().then(lim => { if (lim) setUserLimit(lim); }).catch(() => {});
+      return true;
+    } catch (err) {
+      showToast(err?.message || t('common.error', "Xatolik yuz berdi"));
+      return false;
     }
   };
 
+  const handleStartSimulation = async (caseItem) => {
+    const ok = await startBackendSession(caseItem);
+    if (ok) setCurrentView('simulation');
+  };
+
   // Free Tier Limit & Coins Gatekeeper
-  const checkLimitAndStartCase = (caseItem) => {
-    const target = caseItem || selectedDetailCase || cases[0];
+  const checkLimitAndStartCase = async (caseItem) => {
+    const target = caseItem || selectedDetailCase;
     if (!target) return;
 
-    const hasSub = user?.has_subscription || userLimit?.has_subscription;
-    const remaining = userLimit ? (userLimit.remaining ?? 3) : 3;
+    // Check if day has rolled over
+    const today = getTodayDateStr();
+    const lastChecked = localStorage.getItem('tibcase_last_limit_date');
+    let effectiveLimit = userLimit;
+
+    if (!lastChecked || lastChecked !== today) {
+      localStorage.setItem('tibcase_last_limit_date', today);
+      if (isAuthenticated) {
+        try {
+          const fresh = await api.getUserLimit();
+          if (fresh) {
+            effectiveLimit = fresh;
+            setUserLimit(fresh);
+          }
+        } catch { /* continue with current */ }
+      }
+    }
+
+    const hasSub = Boolean(user?.has_subscription || effectiveLimit?.has_subscription);
+    const remaining = effectiveLimit?.remaining ?? 0;
+
+    const launchSimulation = async (sessionTarget) => {
+      const ok = await startBackendSession(sessionTarget);
+      if (ok) setIsPreparingCase(true);
+    };
 
     // 1. If user has active Premium subscription -> Play unlimited!
     if (hasSub) {
-      setActiveCase(target);
-      setIsPreparingCase(true);
+      launchSimulation(target);
       return;
     }
 
     // 2. If user has free daily attempts remaining -> Play for free!
     if (remaining > 0) {
-      setUserLimit(prev => ({
-        ...(prev || {}),
-        remaining: Math.max(0, (prev?.remaining ?? 3) - 1),
-        used: (prev?.used ?? 0) + 1,
-      }));
-      setActiveCase(target);
-      setIsPreparingCase(true);
+      launchSimulation(target);
       return;
     }
 
     // 3. Free daily limit is exhausted (0 remaining) -> Check coins!
-    const caseCost = target.coins_price || target.coins || target.coin_cost || 5;
+    const caseCost = target.coins_price || target.coins || target.coin_cost || 0;
     const userCoins = user?.coins || 0;
 
     if (userCoins >= caseCost) {
@@ -365,99 +479,112 @@ export default function App() {
 
       if (!targetCase) {
         const randomRes = await api.getRandomCase();
-        targetCase = randomRes?.data || randomRes || (cases && cases.length > 0 ? cases[Math.floor(Math.random() * cases.length)] : null);
+        targetCase = randomRes?.data || randomRes || null;
       }
 
-      checkLimitAndStartCase(targetCase || cases[0]);
+      if (!targetCase) {
+        showToast(t('common.error', "Xatolik yuz berdi"));
+        return;
+      }
+      checkLimitAndStartCase(targetCase);
     } catch (err) {
-      console.warn("Case launch fallback:", err);
-      checkLimitAndStartCase(cases[0]);
+      showToast(err?.message || t('common.error', "Xatolik yuz berdi"));
     }
   };
 
   const handleFinishSimulation = async (result) => {
-    const sessionId = activeCase?.sessionId || 'sim-1';
+    const sessionId = activeCase?.sessionId;
+    const hasRealSession = Boolean(sessionId);
+    const skipFinishApi = Boolean(result?.skipFinishApi || result?.sessionEnded);
 
     try {
       showToast("Simulyatsiya yakunlanmoqda...");
 
-      // 1. Sessiyani backendda yakunlash (PUT /mobile/simulation/{id}/finish)
-      let finishResult = null;
+      let finishResult = result?.finish_result || null;
       try {
-        finishResult = await api.finishSimulation(sessionId, 'completed');
+        if (!skipFinishApi && hasRealSession) {
+          finishResult = await api.finishSimulation(sessionId, 'manual');
+        }
       } catch (err) {
-        console.warn('finishSimulation API error (continuing):', err.message);
+        if (isSessionNotActiveError(err) && hasRealSession) {
+          try {
+            const sim = await api.getSimulation(sessionId);
+            finishResult = finishResult || {
+              session_id: sessionId,
+              final_score: sim?.final_score,
+              xp_earned: sim?.xp_earned,
+              coins_earned: sim?.coins_earned,
+              debrief_ready: true,
+            };
+          } catch {
+            // already ended — continue to debrief
+          }
+        } else if (!isSessionNotActiveError(err)) {
+          console.warn('finishSimulation API error (continuing):', err.message);
+        }
       }
 
       // 2. AI Debriefing hisobotini olish
       showToast("AI Debriefing hisoboti tayyorlanmoqda...");
       let debrief = null;
+      if (hasRealSession) {
+        try {
+          debrief = await api.getDebrief(sessionId);
+        } catch (err) {
+          console.warn('getDebrief API error:', err.message);
+        }
+      }
+
+      // 3. Faqat backenddan kelgan qiymatlar
+      // The debrief can be generated before rewards are booked, so also read the
+      // final session record and use the first source that reports a positive value.
+      let sessionRec = null;
+      if (hasRealSession) {
+        try { sessionRec = await api.getSimulation(sessionId); } catch { /* optional */ }
+      }
+      const pick = (key) => {
+        const vals = [sessionRec?.[key], finishResult?.[key], debrief?.[key]].filter((v) => typeof v === 'number');
+        return vals.find((v) => v > 0) ?? vals[0] ?? 0;
+      };
+      const earnedXp = pick('xp_earned');
+      const earnedCoins = pick('coins_earned');
+      console.info('[simulation] rewards', { session: sessionRec && { xp: sessionRec.xp_earned, coins: sessionRec.coins_earned, status: sessionRec.status }, finish: finishResult && { xp: finishResult.xp_earned, coins: finishResult.coins_earned }, debrief: debrief && { xp: debrief.xp_earned, coins: debrief.coins_earned } });
+
+      setDebriefData({
+        correct_steps: [],
+        incorrect_steps: [],
+        weak_topics: [],
+        guideline_notes: '',
+        ...(debrief || {}),
+        final_score: debrief?.final_score ?? sessionRec?.final_score ?? finishResult?.final_score ?? 0,
+        xp_earned: earnedXp,
+        coins_earned: earnedCoins,
+      });
+
+      // 6. Backenddan yangi profil va limit olish (haqiqiy qiymatlarni sinxronlash)
       try {
-        debrief = await api.getDebrief(sessionId);
-      } catch (err) {
-        console.warn('getDebrief API error:', err.message);
-      }
-
-      // 3. Backenddan kelgan haqiqiy XP va Coins qiymatlarini aniqlash
-      const earnedXp = debrief?.xp_earned ?? finishResult?.xp_earned ?? result?.xp ?? 0;
-      const earnedCoins = debrief?.coins_earned ?? finishResult?.coins_earned ?? result?.coins ?? 0;
-
-      // 4. Debrief data ni set qilish
-      if (debrief) {
-        setDebriefData(debrief);
-      } else {
-        // Backend javob bermagan bo'lsa, lokal natijalar ishlatiladi
-        setDebriefData({
-          final_score: finishResult?.final_score ?? result?.score ?? 0,
-          xp_earned: earnedXp,
-          coins_earned: earnedCoins,
-          correct_steps: [
-            "Bemorga zudlik bilan O2 kislorod ingalyatsiyasi boshlandi",
-            "12 tarmoqli EKG olindi va ST ko'tarilishi aniqlandi",
-            "Aspirin 300 mg chaynab yutish uchun berildi"
-          ],
-          incorrect_steps: [
-            "Gipotenziyada Nitroglikerin berish xavfi inobatga olinishi lozim edi"
-          ],
-          weak_topics: ["Miokard infarktida gipotenziya protokoli"],
-          guideline_notes: "AHA va ESC 2023 ko'rsatmalariga muvofiq STEMI da zudlik bilan perkutan koronar aralashuv (ChKB) tayyorgarligi ko'rilishi lozim."
-        });
-      }
-
-      // 5. User profilini lokal yangilash (tezkor ko'rsatish uchun)
-      if (user && (earnedXp > 0 || earnedCoins > 0)) {
-        setUser(prev => ({
-          ...prev,
-          xp: (prev?.xp || 0) + earnedXp,
-          coins: (prev?.coins || 0) + earnedCoins
-        }));
-      }
-
-      // 6. Backenddan yangi profil olish (haqiqiy qiymatlarni sinxronlash)
-      try {
-        const freshProfile = await api.getUserProfile();
+        const [freshProfile, freshLimit] = await Promise.all([
+          api.getUserProfile().catch(() => null),
+          api.getUserLimit().catch(() => null),
+        ]);
         if (freshProfile) {
           setUser(freshProfile);
           setStoredUser(freshProfile);
         }
-      } catch {
-        // Lokal yangilangan qiymatlarni localStorage ga saqlash
-        if (user) {
-          setStoredUser({
-            ...user,
-            xp: (user?.xp || 0) + earnedXp,
-            coins: (user?.coins || 0) + earnedCoins
-          });
+        if (freshLimit) {
+          setUserLimit(freshLimit);
         }
+      } catch {
+        // profile refresh failed — keep current values
       }
 
     } catch (err) {
       console.error('handleFinishSimulation error:', err);
-      // Fallback — backend ishlamasa ham UX buzilmasin
+      showToast(err?.message || t('common.error', "Xatolik yuz berdi"));
       setDebriefData({
-        final_score: result?.score ?? 0,
-        xp_earned: result?.xp ?? 0,
-        coins_earned: result?.coins ?? 0,
+        final_score: 0,
+        xp_earned: 0,
+        coins_earned: 0,
         correct_steps: [],
         incorrect_steps: [],
         weak_topics: [],
@@ -520,7 +647,7 @@ export default function App() {
             color: '#fff',
             fontSize: '0.9rem',
             fontWeight: 600,
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(6, 182, 212, 0.3)',
+            boxShadow: 'var(--shadow-sm)',
             zIndex: 100,
             animation: 'fadeIn 0.25s ease-out',
           }}>
@@ -551,7 +678,7 @@ export default function App() {
           <TabletHeader
             onToggleSidebar={() => setSidebarOpen(true)}
             onOpenNotifications={() => setCurrentView('notifications')}
-            unreadCount={1}
+            unreadCount={notifications.filter(n => !n.is_read).length}
           />
         )}
 
@@ -585,6 +712,7 @@ export default function App() {
           <StoreTariffs
             tariffs={tariffs}
             user={user}
+            userLimit={userLimit}
             onUserUpdate={setUser}
             onBack={() => setCurrentView('profile')}
             initialTab={storeInitialTab}
@@ -600,6 +728,8 @@ export default function App() {
         {currentView === 'profile' && (
           <ProfileView
             user={user}
+            userLimit={userLimit}
+            onRefreshLimit={handleRefreshLimit}
             onUserUpdate={setUser}
             onOpenStore={(tab) => {
               setStoreInitialTab(tab || 'all');
@@ -664,16 +794,18 @@ export default function App() {
           <ActivityView onBack={() => setCurrentView('profile')} />
         )}
         {currentView === 'notifications' && (
-          <NotificationsView onBack={() => setCurrentView('profile')} />
+          <NotificationsView
+            onBack={() => setCurrentView('profile')}
+            onRefreshNotifications={async () => {
+              try {
+                const res = await api.getNotifications();
+                if (res) setNotifications(res?.notifications || []);
+              } catch { /* silent */ }
+            }}
+          />
         )}
         {currentView === 'study_plan' && (
           <StudyPlanView onBack={() => setCurrentView('profile')} />
-        )}
-        {currentView === 'ai_reports' && (
-          <AiReportsView
-            onBack={() => setCurrentView('profile')}
-            onViewDebrief={(debrief) => setDebriefData(debrief)}
-          />
         )}
       </main>
 
@@ -681,7 +813,7 @@ export default function App() {
       <footer style={{
         marginTop: 40,
         padding: '24px 0 10px 0',
-        borderTop: '1.5px solid #E2E8F0',
+        borderTop: '1px solid #E2E8F0',
         background: 'transparent',
         textAlign: 'center',
         fontSize: '0.85rem',
@@ -791,8 +923,8 @@ export default function App() {
         }}>
           <div style={{
             background: '#FFFFFF',
-            borderRadius: 28,
-            border: '2px solid #E2E8F0',
+            borderRadius: 18,
+            border: '1px solid #E2E8F0',
             boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25), 0 6px 0 #E2E8F0',
             maxWidth: 480,
             width: '100%',
@@ -831,7 +963,7 @@ export default function App() {
                     height: 52,
                     borderRadius: 18,
                     background: '#FEF3C7',
-                    border: '2px solid #FDE68A',
+                    border: '1px solid #FDE68A',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -840,7 +972,7 @@ export default function App() {
                     🪙
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 900, color: '#0F172A' }}>
+                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: '#0F172A' }}>
                       Tanga orqali davom etish
                     </h3>
                     <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#64748B', fontWeight: 600 }}>
@@ -852,7 +984,7 @@ export default function App() {
                 <div style={{
                   background: '#F8FAFC',
                   borderRadius: 18,
-                  border: '1.5px solid #E2E8F0',
+                  border: '1px solid #E2E8F0',
                   padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -860,20 +992,20 @@ export default function App() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
                     <span style={{ color: '#64748B', fontWeight: 600 }}>Tanlangan keys:</span>
-                    <span style={{ color: '#0F172A', fontWeight: 800, maxWidth: 240, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span style={{ color: '#0F172A', fontWeight: 700, maxWidth: 240, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {limitModal.caseItem?.title || 'Klinik keys'}
                     </span>
                   </div>
                   <div style={{ width: '100%', height: 1, background: '#E2E8F0' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
                     <span style={{ color: '#64748B', fontWeight: 600 }}>Keys narxi:</span>
-                    <span style={{ color: '#D97706', fontWeight: 900 }}>
+                    <span style={{ color: '#D97706', fontWeight: 700 }}>
                       🪙 {limitModal.caseCost} tanga
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
                     <span style={{ color: '#64748B', fontWeight: 600 }}>Sizning balansingiz:</span>
-                    <span style={{ color: '#16A34A', fontWeight: 800 }}>
+                    <span style={{ color: '#16A34A', fontWeight: 700 }}>
                       🪙 {limitModal.userCoins} tanga (qoladi: {limitModal.userCoins - limitModal.caseCost})
                     </span>
                   </div>
@@ -888,26 +1020,25 @@ export default function App() {
                     id="btn-spend-coins-confirm"
                     onClick={() => {
                       const cost = limitModal.caseCost;
-                      setUser(prev => ({
-                        ...(prev || {}),
-                        coins: Math.max(0, (prev?.coins || 0) - cost),
-                      }));
                       const target = limitModal.caseItem;
                       setLimitModal(null);
-                      setActiveCase(target);
-                      setIsPreparingCase(true);
-                      showToast(`🪙 ${cost} tanga sarflandi. Simulyatsiya boshlandi!`);
+                      startBackendSession(target).then((ok) => {
+                        if (!ok) return;
+                        setIsPreparingCase(true);
+                        api.getUserProfile().then(p => { if (p) { setUser(p); setStoredUser(p); } }).catch(() => {});
+                        showToast(`🪙 ${cost} tanga sarflandi. Simulyatsiya boshlandi!`);
+                      });
                     }}
                     style={{
                       width: '100%',
                       padding: '14px',
                       borderRadius: 16,
-                      background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                      border: '2px solid #15803D',
-                      boxShadow: '0 4px 0 #15803D, 0 8px 20px rgba(34, 197, 94, 0.3)',
+                      background: '#16A34A',
+                      border: '1px solid #15803D',
+                      boxShadow: 'var(--shadow-sm)',
                       color: '#FFFFFF',
                       fontSize: '15px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -929,10 +1060,10 @@ export default function App() {
                       padding: '12px',
                       borderRadius: 16,
                       background: '#EFF6FF',
-                      border: '1.5px solid #BFDBFE',
+                      border: '1px solid #BFDBFE',
                       color: '#2563EB',
                       fontSize: '14px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -954,7 +1085,7 @@ export default function App() {
                     height: 52,
                     borderRadius: 18,
                     background: '#FEE2E2',
-                    border: '2px solid #FECACA',
+                    border: '1px solid #FECACA',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -963,7 +1094,7 @@ export default function App() {
                     🔒
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 900, color: '#0F172A' }}>
+                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: '#0F172A' }}>
                       Bepul limit va tangalar tugadi
                     </h3>
                     <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#DC2626', fontWeight: 700 }}>
@@ -975,7 +1106,7 @@ export default function App() {
                 <div style={{
                   background: '#FEF2F2',
                   borderRadius: 18,
-                  border: '1.5px solid #FECACA',
+                  border: '1px solid #FECACA',
                   padding: '14px 16px',
                   fontSize: '13px',
                   color: '#991B1B',
@@ -986,7 +1117,7 @@ export default function App() {
 
                 {/* Recommendations */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Tavsiya etiladigan yechimlar:
                   </div>
 
@@ -1003,8 +1134,8 @@ export default function App() {
                       padding: '12px 14px',
                       borderRadius: 16,
                       background: '#FFFFFF',
-                      border: '2px solid #22C55E',
-                      boxShadow: '0 3px 0 #16A34A',
+                      border: '1px solid #22C55E',
+                      boxShadow: 'var(--shadow-sm)',
                       cursor: 'pointer',
                     }}
                   >
@@ -1018,12 +1149,12 @@ export default function App() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#16A34A',
-                        fontWeight: 900,
+                        fontWeight: 700,
                       }}>
                         👑
                       </div>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
                           Premium Obuna xarid qilish
                         </div>
                         <div style={{ fontSize: '12px', color: '#16A34A', fontWeight: 700 }}>
@@ -1047,7 +1178,7 @@ export default function App() {
                       padding: '12px 14px',
                       borderRadius: 16,
                       background: '#FFFBEB',
-                      border: '1.5px solid #FDE68A',
+                      border: '1px solid #FDE68A',
                       cursor: 'pointer',
                     }}
                   >
@@ -1061,12 +1192,12 @@ export default function App() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#D97706',
-                        fontWeight: 900,
+                        fontWeight: 700,
                       }}>
                         🪙
                       </div>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
                           Tanga paketi sotib olish
                         </div>
                         <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600 }}>
@@ -1086,7 +1217,7 @@ export default function App() {
                       padding: '12px',
                       borderRadius: 16,
                       background: '#F1F5F9',
-                      border: '1.5px solid #CBD5E1',
+                      border: '1px solid #CBD5E1',
                       color: '#475569',
                       fontSize: '14px',
                       fontWeight: 700,
@@ -1106,12 +1237,12 @@ export default function App() {
                       flex: 2,
                       padding: '12px',
                       borderRadius: 16,
-                      background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                      border: '2px solid #15803D',
-                      boxShadow: '0 4px 0 #15803D',
+                      background: '#16A34A',
+                      border: '1px solid #15803D',
+                      boxShadow: 'var(--shadow-sm)',
                       color: '#FFFFFF',
                       fontSize: '14px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -1141,7 +1272,7 @@ export default function App() {
           color: '#fff',
           fontSize: '0.9rem',
           fontWeight: 600,
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(6, 182, 212, 0.3)',
+          boxShadow: 'var(--shadow-sm)',
           zIndex: 100,
           animation: 'fadeIn 0.25s ease-out',
         }}>

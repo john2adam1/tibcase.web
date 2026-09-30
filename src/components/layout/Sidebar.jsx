@@ -2,12 +2,10 @@ import React from 'react';
 import {
   Home,
   LayoutGrid,
-  TrendingUp,
   User,
   LogOut,
   X,
   Activity,
-  Stethoscope
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
@@ -52,101 +50,38 @@ export default function Sidebar({
     <aside
       className="sidebar-container"
       style={{
-        width: 250,
-        height: '100vh',
-        background: '#FFFFFF',
-        borderRight: '1.5px solid #E2E8F0',
+        width: 240,
+        height: '100dvh',
+        background: 'var(--bg-card)',
+        borderRight: '1px solid var(--border-color)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '24px 16px',
+        padding: '20px 12px calc(20px + env(safe-area-inset-bottom, 0px))',
         boxSizing: 'border-box',
-        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
         userSelect: 'none',
       }}
     >
-      {/* Top section: Logo + Navigation Links */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-        {/* Brand Logo matching TibCase */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '4px 8px',
-        }}>
-          <div
-            onClick={() => handleNavClick('cases')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              cursor: 'pointer',
-            }}
-          >
-            {/* Red Pulsing ECG Badge */}
-            <div style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, #C8102E, #DC2626)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(200, 16, 46, 0.3)',
-            }}>
-              <Activity className="heart-pulse" size={20} color="#FFFFFF" strokeWidth={2.4} />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              <span style={{
-                color: '#C8102E',
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: '1.4rem',
-                fontWeight: 900,
-                letterSpacing: '-0.5px',
-              }}>
-                Tib
-              </span>
-              <span style={{
-                color: '#0F172A',
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: '1.4rem',
-                fontWeight: 900,
-                letterSpacing: '-0.5px',
-              }}>
-                Case
-              </span>
-            </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px' }}>
+          <div onClick={() => handleNavClick('cases')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <Activity size={22} color="var(--accent)" strokeWidth={2.4} />
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>TibCase</span>
           </div>
-
-          {/* Close button for mobile drawer */}
           <button
             className="sidebar-close-btn"
             onClick={onClose}
             aria-label="Close menu"
-            style={{
-              display: 'none',
-              background: '#F1F5F9',
-              border: 'none',
-              borderRadius: '50%',
-              width: 32,
-              height: 32,
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#64748B',
-            }}
+            style={{ display: 'none', background: 'var(--bg-muted)', border: 'none', borderRadius: '50%', width: 36, height: 36, alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Navigation Menu */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {navItems.map((item) => {
             const isActive = currentView === item.id || (item.id === 'cases' && currentView === 'home');
             const Icon = item.icon;
-
             return (
               <button
                 key={item.id}
@@ -154,93 +89,41 @@ export default function Sidebar({
                 onClick={() => handleNavClick(item.id)}
                 style={{
                   width: '100%',
+                  minHeight: 44,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 18px',
-                  borderRadius: 9999,
-                  background: isActive ? '#C8102E' : 'transparent',
-                  color: isActive ? '#FFFFFF' : '#475569',
-                  fontWeight: isActive ? 800 : 600,
-                  fontSize: '0.94rem',
+                  gap: 12,
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-md)',
+                  background: isActive ? 'var(--accent-soft)' : 'transparent',
+                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: 15,
                   border: 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  boxShadow: isActive ? '0 4px 14px rgba(200, 16, 46, 0.3)' : 'none',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = '#F8FAFC';
-                    e.currentTarget.style.color = '#0F172A';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = '#475569';
-                  }
+                  textAlign: 'left',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Icon
-                    size={20}
-                    color={isActive ? '#FFFFFF' : '#64748B'}
-                    strokeWidth={isActive ? 2.4 : 2}
-                  />
-                  <span>{item.label}</span>
-                </div>
-
-                {/* Active white dot on right side matching screenshot */}
-                {isActive && (
-                  <span style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#FFFFFF',
-                  }} />
-                )}
+                <Icon size={20} strokeWidth={isActive ? 2.3 : 1.8} />
+                <span>{item.label}</span>
               </button>
             );
           })}
         </nav>
       </div>
 
-      {/* Bottom Section: Logout Button */}
-      <div>
-        <button
-          id="btn-sidebar-logout"
-          onClick={() => {
-            if (onLogout) onLogout();
-            onClose();
-          }}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '12px 18px',
-            borderRadius: 14,
-            background: 'transparent',
-            color: '#64748B',
-            fontWeight: 700,
-            fontSize: '0.92rem',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#FEF2F2';
-            e.currentTarget.style.color = '#DC2626';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = '#64748B';
-          }}
-        >
-          <LogOut size={20} strokeWidth={2} />
-          <span>{t('profile.logout', 'Tizimdan chiqish')}</span>
-        </button>
-      </div>
+      <button
+        id="btn-sidebar-logout"
+        onClick={() => { if (onLogout) onLogout(); onClose(); }}
+        style={{
+          width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', gap: 12, padding: '0 12px',
+          borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-muted)',
+          fontWeight: 500, fontSize: 15, border: 'none', cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <LogOut size={20} strokeWidth={1.8} />
+        <span>{t('profile.logout', 'Tizimdan chiqish')}</span>
+      </button>
     </aside>
   );
 
@@ -259,8 +142,7 @@ export default function Sidebar({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.45)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(17, 24, 39, 0.4)',
             zIndex: 999,
             display: 'flex',
           }}

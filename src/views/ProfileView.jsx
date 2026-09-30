@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
+import { enablePush, pushUnsupportedReason } from '../utils/push';
 import {
   Settings,
   Trophy,
-  FileText,
-  Clock,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Mail,
-  Heart,
   Share2,
-  Shield,
   Tag,
   Globe,
-  User,
-  RotateCcw,
   Copy,
   Trash2,
   Sparkles,
@@ -27,10 +20,10 @@ import {
   AlertCircle,
   Coins,
   ShieldAlert,
+  ShieldCheck,
   Smartphone,
   Activity as ActivityIcon,
   Bell,
-  CreditCard,
   Info,
   LogOut,
   CalendarDays,
@@ -38,17 +31,19 @@ import {
   Phone,
   ExternalLink,
   HelpCircle,
-  Upload,
   Camera,
   Laptop,
   RefreshCw,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Zap,
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
 
 export default function ProfileView({
   user,
+  userLimit,
+  onRefreshLimit,
   onUserUpdate,
   onOpenStore,
   onNavigate,
@@ -60,7 +55,15 @@ export default function ProfileView({
   const [currentScreen, setCurrentScreen] = useState('profile'); // 'profile' | 'settings'
   const [activeTab, setActiveTab] = useState('completed'); // 'completed' | 'ongoing'
   const [copiedId, setCopiedId] = useState(false);
-  const [drLeoOpen, setDrLeoOpen] = useState(false);
+  const [levelsList, setLevelsList] = useState([]);
+  const [loadingLevels, setLoadingLevels] = useState(false);
+  const [localLimit, setLocalLimit] = useState(userLimit || null);
+
+  useEffect(() => {
+    if (userLimit) {
+      setLocalLimit(userLimit);
+    }
+  }, [userLimit]);
 
   // Real API data
   const [completedSessions, setCompletedSessions] = useState([]);
@@ -70,25 +73,36 @@ export default function ProfileView({
   const [promoLoading, setPromoLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
 
-  // Load completed/ongoing simulations from API
+  // Load completed/ongoing simulations, levels and real daily limit from API
   useEffect(() => {
     let mounted = true;
     setLoadingSessions(true);
+    setLoadingLevels(true);
     Promise.all([
       api.getCompletedSimulations().catch(() => ({ sessions: [], count: 0 })),
       api.getOngoingSimulations().catch(() => ({ sessions: [], count: 0 })),
-    ]).then(([comp, ong]) => {
+      api.getUserLimit().catch(() => null),
+    ]).then(([comp, ong, freshLimit]) => {
       if (mounted) {
         setCompletedSessions(comp?.sessions || []);
         setOngoingSessions(ong?.sessions || []);
+        if (freshLimit) {
+          setLocalLimit(freshLimit);
+          if (onRefreshLimit) onRefreshLimit();
+        }
       }
-    }).finally(() => { if (mounted) setLoadingSessions(false); });
+    }).finally(() => {
+      if (mounted) {
+        setLoadingSessions(false);
+        setLoadingLevels(false);
+      }
+    });
     return () => { mounted = false; };
   }, []);
 
   // Sub-modals for Settings
-  const [modalType, setModalType] = useState(null); // 'profile_info' | 'devices' | 'about' | 'username' | 'coupon' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete'
-  const [tempUsername, setTempUsername] = useState(user?.name || 'John');
+  const [modalType, setModalType] = useState(null); // 'profile_info' | 'devices' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete' | 'levels_guide'
+  const [tempUsername, setTempUsername] = useState(user?.name || '');
   const [couponCode, setCouponCode] = useState('');
   const [feedbackText, setFeedbackText] = useState('');
   const [userRating, setUserRating] = useState(5);
@@ -144,7 +158,6 @@ export default function ProfileView({
         phone_number: profileForm.phone_number,
         email: profileForm.email,
         language: profileForm.language,
-        specialization: profileForm.specialization,
         image: profileForm.imageFile,
       });
       showToast("✅ Profil ma'lumotlari muvaffaqiyatli saqlandi!");
@@ -168,7 +181,7 @@ export default function ProfileView({
 
   // 2. Devices State & Handlers
   const [deviceToken, setDeviceToken] = useState(() => {
-    return localStorage.getItem('fcm_token') || `fcm_web_${user?.id ? String(user.id).slice(0, 6) : 'user'}_${Math.random().toString(36).substring(2, 9)}`;
+    return localStorage.getItem('fcm_token') || '';
   });
   const [devicePlatform, setDevicePlatform] = useState('web');
   const [deviceLoading, setDeviceLoading] = useState(false);
@@ -198,6 +211,19 @@ export default function ProfileView({
     const saved = localStorage.getItem('fcm_token');
     if (saved) setDeviceToken(saved);
     setModalType('devices');
+  };
+
+  const handleEnablePush = async () => {
+    setDeviceLoading(true);
+    try {
+      const token = await enablePush();
+      setDeviceToken(token);
+      showToast("✅ Push bildirishnoma yoqildi!");
+    } catch (err) {
+      showToast("⚠️ " + (err.message || "Push yoqilmadi"));
+    } finally {
+      setDeviceLoading(false);
+    }
   };
 
   const handleRegisterDevice = async () => {
@@ -242,6 +268,51 @@ export default function ProfileView({
   const [faqList, setFaqList] = useState([]);
   const [expandedFaq, setExpandedFaq] = useState(null);
 
+  // Referral (GET /mobile/referral)
+  const [referral, setReferral] = useState(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralError, setReferralError] = useState('');
+  const [copiedReferral, setCopiedReferral] = useState(false);
+
+  const handleOpenReferral = async () => {
+    setModalType('referral');
+    setReferralLoading(true);
+    setReferralError('');
+    try {
+      const res = await api.getReferral();
+      setReferral(res || null);
+    } catch (err) {
+      setReferralError(err?.message || t('common.error', 'Xatolik yuz berdi'));
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+
+  const handleCopyReferral = async () => {
+    if (!referral?.referral_code) return;
+    try {
+      await navigator.clipboard.writeText(referral.referral_code);
+      setCopiedReferral(true);
+      setTimeout(() => setCopiedReferral(false), 2000);
+    } catch {
+      showToast(referral.referral_code);
+    }
+  };
+
+  const handleShareReferral = async () => {
+    if (!referral?.referral_code) return;
+    const text = `TibCase: ${t('settings.referral', "Do'stlarni taklif qilish")} — ${referral.referral_code}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'TibCase', text, url: window.location.origin });
+      } catch {
+        // user cancelled
+      }
+    } else {
+      handleCopyReferral();
+    }
+  };
+
   const handleOpenAbout = () => {
     setModalType('about');
     setAboutLoading(true);
@@ -266,7 +337,7 @@ export default function ProfileView({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const userIdString = user?.id ? `usr_${String(user.id).padStart(8, '0')}_${user.name?.toLowerCase() || 'john'}` : 'ukjqhz1OU0d1pbwvHCfJ...';
+  const userIdString = user?.id ? String(user.id) : '';
 
   const handleCopyUserId = () => {
     navigator.clipboard?.writeText(userIdString);
@@ -298,13 +369,13 @@ export default function ProfileView({
     setPromoLoading(true);
     try {
       const res = await api.redeemPromocode(couponCode.trim());
-      const coinsAdded = res?.coins_added ?? 0;
-      showToast(`🎉 +${coinsAdded} ${t('settings.coins')}!`);
-      if (onUserUpdate) {
-        onUserUpdate(prev => ({
-          ...(prev || {}),
-          coins: (prev?.coins || 0) + coinsAdded,
-        }));
+      const coinsAdded = res?.coins_added;
+      showToast(coinsAdded != null ? `🎉 +${coinsAdded} ${t('settings.coins')}!` : '🎉');
+      try {
+        const fresh = await api.getUserProfile();
+        if (fresh && onUserUpdate) onUserUpdate(fresh);
+      } catch {
+        // keep current profile
       }
       setCouponCode('');
       setModalType(null);
@@ -333,12 +404,29 @@ export default function ProfileView({
     }
   };
 
-  // XP calculation
+  // XP & Level calculations strictly reflecting live API data
   const totalXP = user?.xp || 0;
-  const currentLevel = Math.max(1, Math.floor(totalXP / 1000) + 1);
-  const nextLevel = currentLevel + 1;
-  const xpInCurrentLevel = totalXP % 1000;
-  const xpProgressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / 1000) * 100));
+  const userLevelNum = Number(user?.level) || 1;
+
+  // Level from API response if present
+  const currentLevelObj = levelsList.find(l => Number(l.level_number) === userLevelNum) || null;
+  const nextLevelObj = levelsList.find(l => Number(l.level_number) === (userLevelNum + 1)) || null;
+
+  let currMinXp = 0;
+  let nextTargetXp = 1000;
+  let xpSpan = 1000;
+  let xpInCurrentLevel = totalXP % 1000;
+  let xpRemaining = 1000 - xpInCurrentLevel;
+  let xpProgressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / 1000) * 100));
+
+  if (currentLevelObj && nextLevelObj) {
+    currMinXp = currentLevelObj.required_xp || 0;
+    nextTargetXp = nextLevelObj.required_xp || (currMinXp + 1000);
+    xpSpan = Math.max(1, nextTargetXp - currMinXp);
+    xpInCurrentLevel = Math.max(0, totalXP - currMinXp);
+    xpRemaining = Math.max(0, nextTargetXp - totalXP);
+    xpProgressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / xpSpan) * 100));
+  }
 
   const completedCount = completedSessions.length || user?.completed_cases_count || 0;
   const ongoingCount = ongoingSessions.length || user?.ongoing_cases_count || 0;
@@ -389,7 +477,7 @@ export default function ProfileView({
 
               <h1 style={{
                 fontSize: '26px',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: '#0F172A',
                 letterSpacing: '-0.02em',
                 margin: 0,
@@ -415,8 +503,8 @@ export default function ProfileView({
                   height: 44,
                   borderRadius: 14,
                   background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
-                  border: '1.5px solid #FCD34D',
-                  boxShadow: '0 3px 0 #F59E0B, 0 6px 14px rgba(245, 158, 11, 0.15)',
+                  border: '1px solid #FCD34D',
+                  boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -439,9 +527,9 @@ export default function ProfileView({
             {/* Profile Main Card */}
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 28,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0, 0 10px 25px rgba(15, 23, 42, 0.03)',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               padding: '22px 20px',
               display: 'flex',
               flexDirection: 'column',
@@ -464,7 +552,7 @@ export default function ProfileView({
                   borderRadius: '50%',
                   background: '#FDE047',
                   border: '3px solid #FEF08A',
-                  boxShadow: '0 4px 14px rgba(234, 179, 8, 0.25)',
+                  boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -472,8 +560,8 @@ export default function ProfileView({
                   flexShrink: 0,
                 }}>
                   <img
-                    src="/student_avatar.jpg"
-                    alt={user?.name || 'John'}
+                    src={user?.image_url || undefined}
+                    alt={user?.name || ''}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -486,70 +574,154 @@ export default function ProfileView({
                   <span style={{
                     display: 'none',
                     fontSize: '2rem',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#854D0E',
                   }}>
                     {user?.name ? user.name[0] : 'J'}
                   </span>
                 </div>
 
-                {/* User Name & Subtitle */}
+                  {/* User Name & Subtitle */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 style={{
                     fontSize: '22px',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#0F172A',
                     margin: '0 0 4px 0',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}>
-                    {user?.name || 'John'}
+                    {user?.name || ''}
                   </h2>
-                  <p style={{
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: '#64748B',
-                    margin: 0,
-                  }}>
-                    {user?.specialty || t('profile.student')}
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {currentLevelObj?.title && (
+                      <span style={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: '#16A34A',
+                        background: '#DCFCE7',
+                        padding: '2px 8px',
+                        borderRadius: 8,
+                        border: '1px solid #86EFAC',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}>
+                        <Zap size={12} /> {currentLevelObj.title}
+                      </span>
+                    )}
+                    {user?.specialization && (
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>
+                        {user.specialization}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Glowing Green Trophy Badge */}
-                <div style={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: '50%',
-                  background: '#DCFCE7',
-                  border: '2.5px solid #86EFAC',
-                  boxShadow: '0 0 18px rgba(34, 197, 94, 0.38)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <Trophy size={26} color="#16A34A" strokeWidth={2.4} />
+                {/* Glowing Green Trophy / Badge */}
+                <div
+                  onClick={() => levelsList.length > 0 && setModalType('levels_guide')}
+                  title={levelsList.length > 0 ? t('profile.levelsTableTitle', 'Klinik Darajalar Tizimi') : ''}
+                  style={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: '50%',
+                    background: '#DCFCE7',
+                    border: '2.5px solid #86EFAC',
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    cursor: levelsList.length > 0 ? 'pointer' : 'default',
+                    overflow: 'hidden',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => { if (levelsList.length > 0) e.currentTarget.style.transform = 'scale(1.06)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  {currentLevelObj?.badge_image_url ? (
+                    <img
+                      src={currentLevelObj.badge_image_url}
+                      alt={currentLevelObj.title || 'Badge'}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Trophy size={26} color="#16A34A" strokeWidth={2.4} />
+                  )}
                 </div>
               </div>
 
-              {/* Level and Progress Bar */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+              {/* Level and Progress Bar strictly with live API values */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 6 }}>
+                
+                {/* Level Numbers & Titles Row */}
                 <div style={{
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                   justifyContent: 'space-between',
-                  fontSize: '13px',
+                  gap: 8,
                 }}>
-                  <span style={{ fontWeight: 800, color: '#1E293B', fontSize: '14px' }}>
-                    {t('profile.level')} {currentLevel}
-                  </span>
-                  <span style={{ fontWeight: 700, color: '#94A3B8', fontSize: '12px' }}>
-                    {xpInCurrentLevel}/1000 XP
-                  </span>
-                  <span style={{ fontWeight: 700, color: '#64748B', fontSize: '14px' }}>
-                    {t('profile.level')} {nextLevel}
-                  </span>
+                  {/* Current Level Info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '14.5px' }}>
+                        {t('profile.level')} {user?.level ?? 1}{currentLevelObj?.title ? `: ${currentLevelObj.title}` : ''}
+                      </span>
+                    </div>
+                    {currentLevelObj?.slug && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#0284C7',
+                          background: '#E0F2FE',
+                          padding: '1px 7px',
+                          borderRadius: 6,
+                          border: '1px solid #BAE6FD',
+                          fontFamily: 'monospace',
+                        }}>
+                          #{currentLevelObj.slug}
+                        </span>
+                        {currentLevelObj.required_xp > 0 && (
+                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
+                            • {currentLevelObj.required_xp} XP
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Target Next Level Info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, textAlign: 'right' }}>
+                    <span style={{ fontWeight: 700, color: '#64748B', fontSize: '13.5px' }}>
+                      {nextLevelObj 
+                        ? `${t('profile.level')} ${nextLevelObj.level_number}${nextLevelObj.title ? `: ${nextLevelObj.title}` : ''}`
+                        : `${t('profile.level')} ${(user?.level ?? 1) + 1}`}
+                    </span>
+                    {nextLevelObj?.slug && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        {nextLevelObj.required_xp > 0 && (
+                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
+                            {nextLevelObj.required_xp} XP •
+                          </span>
+                        )}
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#64748B',
+                          background: '#F1F5F9',
+                          padding: '1px 7px',
+                          borderRadius: 6,
+                          border: '1px solid #E2E8F0',
+                          fontFamily: 'monospace',
+                        }}>
+                          #{nextLevelObj.slug}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Progress Track */}
@@ -560,7 +732,7 @@ export default function ProfileView({
                   borderRadius: 999,
                   overflow: 'hidden',
                   position: 'relative',
-                  boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.1)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}>
                   <div style={{
                     height: '100%',
@@ -569,9 +741,81 @@ export default function ProfileView({
                     background: 'linear-gradient(90deg, #22C55E 0%, #10B981 100%)',
                     borderRadius: 999,
                     transition: 'width 0.4s ease',
-                    boxShadow: '0 0 10px rgba(34, 197, 94, 0.4)',
+                    boxShadow: 'var(--shadow-sm)',
                   }} />
                 </div>
+
+                {/* Stats Bar underneath */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '12px',
+                  paddingTop: 1,
+                  flexWrap: 'wrap',
+                  gap: 6,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontWeight: 700, color: '#16A34A' }}>
+                      {totalXP} XP
+                    </span>
+                    {nextTargetXp > 0 && (
+                      <>
+                        <span style={{ color: '#94A3B8' }}>/</span>
+                        <span style={{ fontWeight: 700, color: '#64748B' }}>
+                          {nextTargetXp} XP ({Math.round(xpProgressPercent)}%)
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {xpRemaining > 0 && (
+                    <span style={{
+                      fontWeight: 700,
+                      color: '#D97706',
+                      background: '#FEF3C7',
+                      padding: '2px 8px',
+                      borderRadius: 8,
+                      border: '1px solid #FDE68A',
+                      fontSize: '11px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      <Zap size={12} color="#D97706" />
+                      +{xpRemaining} XP {t('profile.xpRemaining', 'keyingi darajagacha')}
+                    </span>
+                  )}
+                </div>
+
+                {/* Clickable link to open all levels modal only if API returned levels */}
+                {levelsList.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setModalType('levels_guide')}
+                    style={{
+                      alignSelf: 'center',
+                      marginTop: 3,
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#0284C7',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '3px 8px',
+                      borderRadius: 8,
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Award size={14} />
+                    <span>{t('profile.allLevels', 'Barcha darajalar jadvalini ko‘rish')} &gt;</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -589,13 +833,13 @@ export default function ProfileView({
                 style={{
                   flex: 1,
                   background: '#FFFFFF',
-                  borderRadius: 22,
-                  border: '2px solid #E2E8F0',
+                  borderRadius: 18,
+                  border: '1px solid #E2E8F0',
                   padding: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 14,
-                  boxShadow: '0 4px 0 #E2E8F0',
+                  boxShadow: 'var(--shadow-sm)',
                   cursor: 'pointer',
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                 }}
@@ -613,31 +857,84 @@ export default function ProfileView({
                 </div>
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>Tangalar</div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>{user?.coins || 0}</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>{user?.coins || 0}</div>
                 </div>
               </div>
 
-              <div style={{
-                flex: 1,
-                background: '#FFFFFF',
-                borderRadius: 22,
-                border: '2px solid #E2E8F0',
-                padding: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                boxShadow: '0 4px 0 #E2E8F0'
-              }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ShieldAlert size={24} color="#2563EB" strokeWidth={2.4} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>Limit</div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>
-                    {user?.limit_used || 0}/{user?.limit_total || 3}
+              {/* Daily Limit Card (Strictly bound to API models.UserLimitStatusRes) */}
+              {(() => {
+                const isSub = Boolean(user?.has_subscription || localLimit?.has_subscription);
+                const rem = localLimit?.remaining ?? 0;
+                const tot = localLimit?.total ?? 0;
+                const isExhausted = !isSub && rem === 0;
+
+                return (
+                  <div
+                    id="profile-daily-limit-card"
+                    onClick={() => {
+                      if (isExhausted && onOpenStore) {
+                        onOpenStore('coins');
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      background: isSub ? '#F0FDF4' : (rem > 0 ? '#FFFFFF' : '#FEF2F2'),
+                      borderRadius: 18,
+                      border: isSub ? '1px solid #86EFAC' : (rem > 0 ? '1px solid #E2E8F0' : '1px solid #FECACA'),
+                      padding: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      boxShadow: isSub ? '0 4px 0 #86EFAC' : (rem > 0 ? '0 4px 0 #E2E8F0' : '0 4px 0 #FCA5A5'),
+                      cursor: isExhausted ? 'pointer' : 'default',
+                      transition: 'all 0.15s ease',
+                      minWidth: 0,
+                    }}
+                    title={isSub ? "Cheksiz PRO obuna faol" : `Kunlik bepul limit: ${rem}/${tot}`}
+                  >
+                    <div style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: isSub ? '#DCFCE7' : (rem > 0 ? '#DBEAFE' : '#FEE2E2'),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      {isSub ? (
+                        <ShieldCheck size={24} color="#16A34A" strokeWidth={2.4} />
+                      ) : (
+                        <ShieldAlert size={24} color={rem > 0 ? "#2563EB" : "#DC2626"} strokeWidth={2.4} />
+                      )}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>
+                        {t('profile.dailyLimit', 'Kunlik limit')}
+                      </div>
+                      <div style={{
+                        fontSize: isSub ? '17px' : '20px',
+                        fontWeight: 700,
+                        color: isSub ? '#16A34A' : (rem > 0 ? '#0F172A' : '#DC2626'),
+                        lineHeight: 1.1
+                      }}>
+                        {isSub ? 'Cheksiz' : `${rem}/${tot}`}
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: isSub ? '#15803D' : (rem > 0 ? '#64748B' : '#DC2626'),
+                        marginTop: 2,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {isSub ? 'PRO faol' : (rem > 0 ? 'ta qoldi' : 'Tugagan')}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             {/* Dedicated "Tanga sotib olish" Container */}
@@ -648,9 +945,9 @@ export default function ProfileView({
                 marginTop: 14,
                 width: '100%',
                 background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
-                borderRadius: 22,
-                border: '2px solid #FDE68A',
-                boxShadow: '0 4px 0 #F59E0B, 0 10px 20px rgba(245, 158, 11, 0.12)',
+                borderRadius: 18,
+                border: '1px solid #FDE68A',
+                boxShadow: 'var(--shadow-sm)',
                 padding: '16px 18px',
                 display: 'flex',
                 alignItems: 'center',
@@ -678,7 +975,7 @@ export default function ProfileView({
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#FFFFFF',
-                  boxShadow: '0 4px 12px rgba(217, 119, 6, 0.35)',
+                  boxShadow: 'var(--shadow-sm)',
                   fontSize: '22px',
                   flexShrink: 0,
                 }}>
@@ -686,12 +983,12 @@ export default function ProfileView({
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: '15.5px', fontWeight: 900, color: '#92400E' }}>
-                      Tanga sotib olish
+                    <span style={{ fontSize: '15.5px', fontWeight: 700, color: '#92400E' }}>
+                      {t('profile.coinTariffs', 'Tanga sotib olish')}
                     </span>
                     <span style={{
                       fontSize: '10px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       background: '#FDE68A',
                       color: '#B45309',
                       padding: '2px 8px',
@@ -712,7 +1009,7 @@ export default function ProfileView({
                 height: 34,
                 borderRadius: 12,
                 background: '#FFFFFF',
-                border: '1.5px solid #FDE68A',
+                border: '1px solid #FDE68A',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -726,9 +1023,9 @@ export default function ProfileView({
             {/* Menu List */}
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 24,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -739,13 +1036,6 @@ export default function ProfileView({
                 icon={<Bookmark size={20} color="#0F172A" strokeWidth={2} />}
                 label={t('fav.title', 'Saqlangan keyslar')}
                 onClick={() => onNavigate && onNavigate('favorites')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<Sparkles size={20} color="#16A34A" strokeWidth={2} />}
-                label="AI Hisobotlar"
-                subtitle="Klinik keyslar va AI tahlillari"
-                onClick={() => onNavigate && onNavigate('ai_reports')}
               />
               <Divider />
               <SettingsListItem
@@ -774,14 +1064,8 @@ export default function ProfileView({
               <Divider />
               <SettingsListItem
                 icon={<Coins size={20} color="#D97706" strokeWidth={2} />}
-                label="Tanga sotib olish"
+                label={t('profile.coinTariffs', 'Tanga sotib olish')}
                 onClick={() => onOpenStore && onOpenStore('coins')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<CreditCard size={20} color="#0F172A" strokeWidth={2} />}
-                label="Tariflar va Obunalar"
-                onClick={() => onOpenStore && onOpenStore('subscription')}
               />
               <Divider />
               <SettingsListItem
@@ -789,14 +1073,20 @@ export default function ProfileView({
                 label="Promokod"
                 onClick={() => setModalType('coupon')}
               />
+              <Divider />
+              <SettingsListItem
+                icon={<Share2 size={20} color="#0F172A" strokeWidth={2} />}
+                label={t('settings.referral', "Do'stlarni taklif qilish")}
+                onClick={handleOpenReferral}
+              />
             </div>
 
             {/* Settings Group 1: Ma'lumot, Qurilmalar, Ilova haqida */}
             <div id="profile-settings-group" style={{
               background: '#FFFFFF',
-              borderRadius: 24,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -827,9 +1117,9 @@ export default function ProfileView({
             {/* Settings Group 2: Language, Delete Account */}
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 24,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -860,17 +1150,17 @@ export default function ProfileView({
                   padding: '14px',
                   borderRadius: 18,
                   background: '#FEE2E2',
-                  border: '1.5px solid #FCA5A5',
+                  border: '1px solid #FCA5A5',
                   color: '#DC2626',
                   fontSize: '15px',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
                   marginBottom: 16,
-                  boxShadow: '0 2px 0 #FCA5A5',
+                  boxShadow: 'var(--shadow-sm)',
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#FECACA'; }}
@@ -889,7 +1179,7 @@ export default function ProfileView({
               color: '#94A3B8',
               paddingBottom: 36,
             }}>
-              Medical Case App 1.1.4
+              Medical Case App
             </div>
           </div>
         )}
@@ -930,7 +1220,7 @@ export default function ProfileView({
               <h1 style={{
                 flex: 1,
                 fontSize: '24px',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: '#0F172A',
                 letterSpacing: '-0.02em',
                 margin: 0,
@@ -944,9 +1234,9 @@ export default function ProfileView({
             {/* Settings Menu List */}
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 24,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -976,9 +1266,9 @@ export default function ProfileView({
 
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 24,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -1007,10 +1297,10 @@ export default function ProfileView({
                   padding: '14px',
                   borderRadius: 18,
                   background: '#FEE2E2',
-                  border: '1.5px solid #FCA5A5',
+                  border: '1px solid #FCA5A5',
                   color: '#DC2626',
                   fontSize: '14px',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -1032,85 +1322,10 @@ export default function ProfileView({
               color: '#94A3B8',
               padding: '12px 0 24px 0',
             }}>
-              Medical Case App 1.1.4
+              Medical Case App
             </div>
           </div>
         )}
-
-        {/* ============================================================== */}
-        {/* FLOATING DR. LEO MONKEY MASCOT WIDGET                          */}
-        {/* ============================================================== */}
-        <div style={{
-          position: 'fixed',
-          bottom: 84,
-          right: 'calc(50% - 220px)',
-          zIndex: 60,
-        }}>
-          <button
-            id="btn-dr-leo-mascot"
-            onClick={() => setDrLeoOpen(prev => !prev)}
-            title="Dr. Leo - AI Assistant"
-            style={{
-              position: 'relative',
-              width: 58,
-              height: 58,
-              borderRadius: '50%',
-              background: '#FFFFFF',
-              border: '2.5px solid #86EFAC',
-              boxShadow: '0 0 20px rgba(34, 197, 94, 0.45), 0 6px 14px rgba(0, 0, 0, 0.1)',
-              cursor: 'pointer',
-              padding: 0,
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'transform 0.2s ease',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            <img
-              src="/doctor_monkey.jpg"
-              alt="Dr. Leo"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          </button>
-
-          {/* Dr. Leo Speech Bubble Popup */}
-          {drLeoOpen && (
-            <div style={{
-              position: 'absolute',
-              bottom: 68,
-              right: 0,
-              width: 250,
-              background: '#FFFFFF',
-              borderRadius: 20,
-              border: '2px solid #86EFAC',
-              boxShadow: '0 10px 30px rgba(34, 197, 94, 0.25), 0 4px 0 #86EFAC',
-              padding: '16px',
-              animation: 'fadeIn 0.2s ease-out',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Sparkles size={14} /> Dr. Leo
-                </span>
-                <button
-                  onClick={() => setDrLeoOpen(false)}
-                  style={{ color: '#94A3B8', border: 'none', background: 'transparent', cursor: 'pointer', padding: 2 }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <p style={{ fontSize: '12px', fontWeight: 600, color: '#334155', margin: 0, lineHeight: 1.4 }}>
-                "Salom, {user?.name || 'hamkasb'}! Har kuni 1 ta klinik keys yechish orqali bilimlaringizni oshirib boring!"
-              </p>
-            </div>
-          )}
-        </div>
 
       </div>
 
@@ -1128,7 +1343,7 @@ export default function ProfileView({
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <div style={{ position: 'relative', width: 84, height: 84 }}>
                   <img
-                    src={profileForm.imagePreview || user?.image_url || '/student_avatar.jpg'}
+                    src={profileForm.imagePreview || user?.image_url || undefined}
                     alt="Profile"
                     style={{
                       width: 84,
@@ -1136,7 +1351,7 @@ export default function ProfileView({
                       borderRadius: '50%',
                       objectFit: 'cover',
                       border: '3px solid #22C55E',
-                      boxShadow: '0 4px 12px rgba(34, 197, 94, 0.25)',
+                      boxShadow: 'var(--shadow-sm)',
                     }}
                   />
                   <label
@@ -1155,8 +1370,8 @@ export default function ProfileView({
                       alignItems: 'center',
                       justifyContent: 'center',
                       cursor: 'pointer',
-                      border: '2px solid #FFFFFF',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                      border: '1px solid #FFFFFF',
+                      boxShadow: 'var(--shadow-sm)',
                     }}
                   >
                     <Camera size={14} />
@@ -1191,24 +1406,24 @@ export default function ProfileView({
                 padding: '10px 12px',
                 background: '#F8FAFC',
                 borderRadius: 16,
-                border: '1.5px solid #E2E8F0',
+                border: '1px solid #E2E8F0',
                 textAlign: 'center',
               }}>
                 <div>
                   <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Daraja</div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>⭐ {user?.level || 1}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>⭐ {user?.level || 1}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>XP</div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>⚡ {user?.xp || 0}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>⚡ {user?.xp || 0}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Tangalar</div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#F59E0B' }}>🪙 {user?.coins || 0}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#F59E0B' }}>🪙 {user?.coins || 0}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Streak</div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#EA580C' }}>🔥 {user?.streak_count || 0}d</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#EA580C' }}>🔥 {user?.streak_count || 0}d</div>
                 </div>
               </div>
 
@@ -1227,7 +1442,7 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '2px solid #E2E8F0',
+                    border: '1px solid #E2E8F0',
                     fontSize: '14px',
                     fontWeight: 600,
                     color: '#0F172A',
@@ -1251,7 +1466,7 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '2px solid #E2E8F0',
+                    border: '1px solid #E2E8F0',
                     fontSize: '14px',
                     fontWeight: 600,
                     color: '#0F172A',
@@ -1275,7 +1490,7 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '2px solid #E2E8F0',
+                    border: '1px solid #E2E8F0',
                     fontSize: '14px',
                     fontWeight: 600,
                     color: '#0F172A',
@@ -1283,33 +1498,6 @@ export default function ProfileView({
                     outline: 'none',
                   }}
                 />
-              </div>
-
-              {/* Mutaxassislik Select */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  Mutaxassislik
-                </label>
-                <select
-                  value={profileForm.specialization}
-                  onChange={(e) => setProfileForm(prev => ({ ...prev, specialization: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    border: '2px solid #E2E8F0',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    color: '#0F172A',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    background: '#FFFFFF',
-                  }}
-                >
-                  <option value="student">👨‍🎓 Tibbiyot talabasi (Student)</option>
-                  <option value="resident">👨‍⚕️ Rezident / Ordinator (Resident)</option>
-                  <option value="doctor">🩺 Shifokor (Doctor)</option>
-                </select>
               </div>
 
               {/* Til Select */}
@@ -1329,7 +1517,7 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '2px solid #E2E8F0',
+                    border: '1px solid #E2E8F0',
                     fontSize: '14px',
                     fontWeight: 600,
                     color: '#0F172A',
@@ -1384,11 +1572,11 @@ export default function ProfileView({
                   marginTop: 6,
                   padding: '14px',
                   borderRadius: 16,
-                  background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                  border: '1.5px solid #16A34A',
-                  boxShadow: '0 4px 0 #15803D, 0 8px 16px rgba(34, 197, 94, 0.25)',
+                  background: '#16A34A',
+                  border: '1px solid #16A34A',
+                  boxShadow: 'var(--shadow-sm)',
                   color: '#FFFFFF',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   fontSize: '15px',
                   cursor: saveLoading ? 'default' : 'pointer',
                   display: 'flex',
@@ -1423,8 +1611,8 @@ export default function ProfileView({
                 padding: '14px 16px',
                 background: '#F8FAFC',
                 borderRadius: 18,
-                border: '1.5px solid #E2E8F0',
-                boxShadow: '0 2px 0 #E2E8F0',
+                border: '1px solid #E2E8F0',
+                boxShadow: 'var(--shadow-sm)',
               }}>
                 <div style={{
                   width: 44,
@@ -1440,7 +1628,7 @@ export default function ProfileView({
                   <Laptop size={22} strokeWidth={2.2} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {getDeviceInfo().browser} ({getDeviceInfo().os})
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
@@ -1449,6 +1637,24 @@ export default function ProfileView({
                   </div>
                 </div>
               </div>
+
+              {/* Automatic push enable */}
+              <button
+                type="button"
+                onClick={handleEnablePush}
+                disabled={deviceLoading}
+                style={{
+                  padding: '12px', borderRadius: 14, background: '#2563EB', color: '#fff',
+                  border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                🔔 Bildirishnomalarni yoqish
+              </button>
+              {pushUnsupportedReason() && (
+                <div style={{ fontSize: 12, color: '#B45309', background: '#FEF3C7', padding: 10, borderRadius: 12, fontWeight: 600 }}>
+                  {pushUnsupportedReason()}
+                </div>
+              )}
 
               {/* FCM Push Token Input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1464,7 +1670,7 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 12px',
                     borderRadius: 14,
-                    border: '2px solid #E2E8F0',
+                    border: '1px solid #E2E8F0',
                     fontSize: '12px',
                     fontFamily: 'monospace',
                     fontWeight: 600,
@@ -1490,7 +1696,7 @@ export default function ProfileView({
                       style={{
                         padding: '10px',
                         borderRadius: 14,
-                        border: devicePlatform === p ? '2px solid #22C55E' : '1.5px solid #E2E8F0',
+                        border: devicePlatform === p ? '1px solid #22C55E' : '1px solid #E2E8F0',
                         background: devicePlatform === p ? '#F0FDF4' : '#FFFFFF',
                         color: devicePlatform === p ? '#15803D' : '#64748B',
                         fontWeight: 700,
@@ -1514,9 +1720,9 @@ export default function ProfileView({
                   style={{
                     padding: '12px',
                     borderRadius: 14,
-                    background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                    border: '1.5px solid #16A34A',
-                    boxShadow: '0 3px 0 #15803D',
+                    background: '#16A34A',
+                    border: '1px solid #16A34A',
+                    boxShadow: 'var(--shadow-sm)',
                     color: '#FFFFFF',
                     fontWeight: 700,
                     fontSize: '13px',
@@ -1539,8 +1745,8 @@ export default function ProfileView({
                     padding: '12px',
                     borderRadius: 14,
                     background: '#FEE2E2',
-                    border: '1.5px solid #FCA5A5',
-                    boxShadow: '0 3px 0 #F87171',
+                    border: '1px solid #FCA5A5',
+                    boxShadow: 'var(--shadow-sm)',
                     color: '#DC2626',
                     fontWeight: 700,
                     fontSize: '13px',
@@ -1588,8 +1794,8 @@ export default function ProfileView({
                 textAlign: 'center',
                 padding: '16px 12px',
                 background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
-                borderRadius: 20,
-                border: '1.5px solid #BBF7D0',
+                borderRadius: 16,
+                border: '1px solid #BBF7D0',
               }}>
                 <div style={{
                   width: 56,
@@ -1600,12 +1806,12 @@ export default function ProfileView({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 6px 16px rgba(22, 163, 74, 0.3)',
+                  boxShadow: 'var(--shadow-sm)',
                   marginBottom: 10,
                 }}>
                   <Sparkles size={28} />
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px 0' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
                   TibCase Medical Simulator
                 </h3>
                 <div style={{
@@ -1613,7 +1819,7 @@ export default function ProfileView({
                   alignItems: 'center',
                   gap: 6,
                   padding: '3px 10px',
-                  borderRadius: 20,
+                  borderRadius: 16,
                   background: '#FFFFFF',
                   border: '1px solid #86EFAC',
                   fontSize: '12px',
@@ -1621,7 +1827,7 @@ export default function ProfileView({
                   color: '#15803D',
                   marginBottom: 6,
                 }}>
-                  Versiya: {appRoute?.app_version?.android || '1.1.4'} (Build 2026)
+                  {appRoute?.app_version?.android ? `Versiya: ${appRoute.app_version.android}` : ''}
                 </div>
                 <p style={{ fontSize: '13px', color: '#475569', margin: 0, maxWidth: 320 }}>
                   Tibbiyot talabalari va amaliyotchi shifokorlar uchun interaktiv klinik vaziyatlar simulyatori.
@@ -1638,7 +1844,7 @@ export default function ProfileView({
               {/* Biz haqimizda items from API */}
               {!aboutLoading && aboutList.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
                     Biz haqimizda
                   </h4>
                   {aboutList.map((item, idx) => (
@@ -1648,10 +1854,10 @@ export default function ProfileView({
                         padding: '14px',
                         background: '#F8FAFC',
                         borderRadius: 16,
-                        border: '1.5px solid #E2E8F0',
+                        border: '1px solid #E2E8F0',
                       }}
                     >
-                      <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                      <h5 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
                         {item.title}
                       </h5>
                       <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
@@ -1683,13 +1889,14 @@ export default function ProfileView({
 
               {/* Support & Call Center */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
                   Aloqa va Qo'llab-quvvatlash
                 </h4>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {appRoute?.call_center && (
                   <a
-                    href={`tel:${appRoute?.call_center || '+998712000000'}`}
+                    href={`tel:${appRoute.call_center}`}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -1698,7 +1905,7 @@ export default function ProfileView({
                       padding: '12px',
                       borderRadius: 14,
                       background: '#F0FDF4',
-                      border: '1.5px solid #BBF7D0',
+                      border: '1px solid #BBF7D0',
                       color: '#15803D',
                       fontWeight: 700,
                       fontSize: '13px',
@@ -1708,9 +1915,11 @@ export default function ProfileView({
                     <Phone size={16} />
                     Call-center
                   </a>
+                  )}
 
+                  {appRoute?.support_url && (
                   <a
-                    href={appRoute?.support_url || 'https://t.me/tibcase_support'}
+                    href={appRoute.support_url}
                     target="_blank"
                     rel="noreferrer"
                     style={{
@@ -1721,7 +1930,7 @@ export default function ProfileView({
                       padding: '12px',
                       borderRadius: 14,
                       background: '#EFF6FF',
-                      border: '1.5px solid #BFDBFE',
+                      border: '1px solid #BFDBFE',
                       color: '#2563EB',
                       fontWeight: 700,
                       fontSize: '13px',
@@ -1731,6 +1940,7 @@ export default function ProfileView({
                     <MessageCircle size={16} />
                     Yordam
                   </a>
+                  )}
                 </div>
 
                 {/* Additional contacts list if available */}
@@ -1765,7 +1975,7 @@ export default function ProfileView({
               {/* FAQ Accordion */}
               {faqList.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <HelpCircle size={16} color="#2563EB" /> Tez-tez beriladigan savollar
                   </h4>
                   {faqList.map((faq, fIdx) => (
@@ -1776,7 +1986,7 @@ export default function ProfileView({
                         padding: '12px 14px',
                         borderRadius: 14,
                         background: '#F8FAFC',
-                        border: '1.5px solid #E2E8F0',
+                        border: '1px solid #E2E8F0',
                         cursor: 'pointer',
                       }}
                     >
@@ -1818,7 +2028,7 @@ export default function ProfileView({
                   width: '100%',
                   padding: '12px 14px',
                   borderRadius: 14,
-                  border: '2px solid #E2E8F0',
+                  border: '1px solid #E2E8F0',
                   fontSize: '15px',
                   fontWeight: 600,
                   color: '#0F172A',
@@ -1830,18 +2040,119 @@ export default function ProfileView({
                 style={{
                   padding: '12px',
                   borderRadius: 14,
-                  background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                  background: '#16A34A',
                   color: '#fff',
                   fontWeight: 700,
                   fontSize: '14px',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 {saveLoading ? '...' : t('settings.save')}
               </button>
             </div>
+          </ModalCard>
+        </ModalOverlay>
+      )}
+
+      {/* Referral Modal */}
+      {modalType === 'referral' && (
+        <ModalOverlay onClose={() => setModalType(null)}>
+          <ModalCard title={t('settings.referral', "Do'stlarni taklif qilish")} onClose={() => setModalType(null)}>
+            {referralLoading ? (
+              <p style={{ textAlign: 'center', color: '#64748B', fontSize: '14px', margin: 0 }}>...</p>
+            ) : referralError ? (
+              <p style={{ textAlign: 'center', color: '#DC2626', fontSize: '14px', fontWeight: 600, margin: 0 }}>{referralError}</p>
+            ) : referral ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {(referral.referrer_reward != null || referral.referred_reward != null) && (
+                  <p style={{ fontSize: '13px', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+                    {referral.referrer_reward != null && `Har bir taklif uchun siz +${referral.referrer_reward} tanga olasiz. `}
+                    {referral.referred_reward != null && `Taklif qilingan do'stingiz +${referral.referred_reward} tanga oladi.`}
+                  </p>
+                )}
+
+                <div style={{
+                  padding: '14px',
+                  borderRadius: 16,
+                  background: '#F0FDF4',
+                  border: '2px dashed #86EFAC',
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', marginBottom: 4 }}>
+                    {t('auth.referralLabel', 'Taklif kodi')}
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: 700, letterSpacing: '0.12em', color: '#15803D', wordBreak: 'break-all' }}>
+                    {referral.referral_code || '--'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={handleCopyReferral}
+                    disabled={!referral.referral_code}
+                    style={{
+                      flex: 1, minHeight: 48, borderRadius: 14, border: '1px solid #E2E8F0', background: '#FFFFFF',
+                      color: '#0F172A', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    <Copy size={15} /> {copiedReferral ? 'Nusxalandi!' : 'Nusxa olish'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareReferral}
+                    disabled={!referral.referral_code}
+                    style={{
+                      flex: 1, minHeight: 48, borderRadius: 14, border: 'none',
+                      background: '#16A34A', color: '#fff',
+                      fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    <Share2 size={15} /> Ulashish
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1, padding: 12, borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>{referral.invited_count ?? 0}</div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>Taklif qilinganlar</div>
+                  </div>
+                  <div style={{ flex: 1, padding: 12, borderRadius: 14, background: '#FFFBEB', border: '1px solid #FDE68A', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 700, color: '#B45309' }}>{referral.total_coins_earned ?? 0}</div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>Olingan tangalar</div>
+                  </div>
+                </div>
+
+                {Array.isArray(referral.invited) && referral.invited.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
+                    {referral.invited.map((item, idx) => (
+                      <div key={idx} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10,
+                        padding: '10px 12px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #E2E8F0',
+                      }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                          {item.joined_at && (
+                            <div style={{ fontSize: '11px', color: '#94A3B8' }}>{new Date(item.joined_at).toLocaleDateString()}</div>
+                          )}
+                        </div>
+                        {item.coins_given != null && (
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', flexShrink: 0 }}>+{item.coins_given}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '13px', margin: 0 }}>
+                    Hozircha hech kim taklif qilinmagan
+                  </p>
+                )}
+              </div>
+            ) : null}
           </ModalCard>
         </ModalOverlay>
       )}
@@ -1863,7 +2174,7 @@ export default function ProfileView({
                   width: '100%',
                   padding: '12px 14px',
                   borderRadius: 14,
-                  border: '2px solid #E2E8F0',
+                  border: '1px solid #E2E8F0',
                   fontSize: '15px',
                   fontWeight: 700,
                   textTransform: 'uppercase',
@@ -1882,7 +2193,7 @@ export default function ProfileView({
                   fontSize: '14px',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 {promoLoading ? '...' : t('store.activate')}
@@ -1916,7 +2227,7 @@ export default function ProfileView({
                     justifyContent: 'space-between',
                     padding: '14px 16px',
                     borderRadius: 16,
-                    border: lang === item.code ? '2px solid #22C55E' : '1.5px solid #E2E8F0',
+                    border: lang === item.code ? '1px solid #22C55E' : '1px solid #E2E8F0',
                     background: lang === item.code ? '#F0FDF4' : '#FFFFFF',
                     cursor: 'pointer',
                     fontWeight: 700,
@@ -1969,13 +2280,13 @@ export default function ProfileView({
                   width: '100%',
                   padding: '12px',
                   borderRadius: 14,
-                  background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                  background: '#16A34A',
                   color: '#fff',
                   fontWeight: 700,
                   fontSize: '14px',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 Submit Rating
@@ -2002,7 +2313,7 @@ export default function ProfileView({
                   width: '100%',
                   padding: '12px',
                   borderRadius: 14,
-                  border: '2px solid #E2E8F0',
+                  border: '1px solid #E2E8F0',
                   fontSize: '14px',
                   color: '#0F172A',
                   boxSizing: 'border-box',
@@ -2026,7 +2337,7 @@ export default function ProfileView({
                   fontSize: '14px',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 Send Feedback
@@ -2119,6 +2430,120 @@ export default function ProfileView({
         </ModalOverlay>
       )}
 
+      {/* 9. Levels Guide Modal (Strictly API data) */}
+      {modalType === 'levels_guide' && (
+        <ModalOverlay onClose={() => setModalType(null)}>
+          <ModalCard title={t('profile.levelsTableTitle', 'Klinik Darajalar Tizimi')} onClose={() => setModalType(null)} maxWidth={480}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '65vh', overflowY: 'auto', paddingRight: 4 }}>
+              {loadingLevels ? (
+                <div style={{ textAlign: 'center', padding: '30px 16px', color: '#16A34A', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <RefreshCw size={24} className="animate-spin" />
+                  <span style={{ fontSize: '13px', fontWeight: 700 }}>Darajalar yuklanmoqda...</span>
+                </div>
+              ) : levelsList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px 16px', color: '#64748B' }}>
+                  <Award size={36} style={{ opacity: 0.4, marginBottom: 10 }} />
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#0F172A' }}>
+                    Darajalar mavjud emas
+                  </p>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '13px' }}>
+                    API orqali hozircha darajalar ro'yxati taqdim etilmagan.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 6px 0', lineHeight: 1.5 }}>
+                    Klinik keyslar yechish va debriefing tahlillaridan yuqori ball olish orqali XP to'plang va yangi darajalarga erishing:
+                  </p>
+
+                  {levelsList.map((lvl) => {
+                    const isCurrent = Number(lvl.level_number) === Number(user?.level || 1);
+                    const isPassed = totalXP >= (lvl.required_xp || 0);
+
+                    return (
+                      <div
+                        key={lvl.id || lvl.level_number}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 14px',
+                          borderRadius: 16,
+                          background: isCurrent ? '#F0FDF4' : '#F8FAFC',
+                          border: isCurrent ? '1px solid #22C55E' : '1px solid #E2E8F0',
+                          boxShadow: isCurrent ? '0 4px 12px rgba(34, 197, 94, 0.15)' : 'none',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 12,
+                            background: isCurrent ? '#22C55E' : (isPassed ? '#DCFCE7' : '#E2E8F0'),
+                            color: isCurrent ? '#FFFFFF' : (isPassed ? '#16A34A' : '#64748B'),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '14px',
+                            flexShrink: 0,
+                          }}>
+                            {lvl.level_number}
+                          </div>
+
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
+                                {lvl.title || `${t('profile.level')} ${lvl.level_number}`}
+                              </span>
+                              {isCurrent && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  color: '#15803D',
+                                  background: '#DCFCE7',
+                                  padding: '2px 6px',
+                                  borderRadius: 6,
+                                  border: '1px solid #86EFAC',
+                                }}>
+                                  {t('profile.currentLevelBadge', 'Sizda')}
+                                </span>
+                              )}
+                            </div>
+                            {lvl.slug && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                <span style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  color: '#0284C7',
+                                  fontFamily: 'monospace',
+                                }}>
+                                  #{lvl.slug}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: isPassed ? '#16A34A' : '#64748B',
+                          }}>
+                            {lvl.required_xp || 0} XP
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </ModalCard>
+        </ModalOverlay>
+      )}
+
       {/* Toast Notification */}
       {toastMessage && (
         <div style={{
@@ -2130,7 +2555,7 @@ export default function ProfileView({
           borderRadius: 14,
           fontSize: '13px',
           fontWeight: 700,
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
+          boxShadow: 'var(--shadow-sm)',
           zIndex: 999,
           animation: 'fadeIn 0.2s ease-out',
         }}>
@@ -2146,39 +2571,25 @@ export default function ProfileView({
 // Helper subcomponents for clean Settings rows
 // -------------------------------------------------------------
 
-function SettingsListItem({ icon, label, subtitle, labelColor = '#0F172A', onClick }) {
+function SettingsListItem({ icon, label, subtitle, labelColor = 'var(--text-primary)', onClick }) {
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '16px 20px',
-        cursor: 'pointer',
-        gap: 12,
-        transition: 'background 0.15s ease',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+      onKeyDown={(e) => { if (e.key === 'Enter') onClick?.(); }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, padding: '10px 16px', cursor: 'pointer', gap: 12 }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-muted)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ width: 24, display: 'flex', justifyContent: 'center' }}>
-          {icon}
-        </div>
-        <div>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: labelColor }}>
-            {label}
-          </div>
-          {subtitle && (
-            <div style={{ fontSize: '13px', fontWeight: 500, color: '#64748B', marginTop: 2 }}>
-              {subtitle}
-            </div>
-          )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+        <div style={{ width: 24, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: labelColor }}>{label}</div>
+          {subtitle && <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</div>}
         </div>
       </div>
-
-      <ChevronRight size={20} color="#94A3B8" strokeWidth={2.4} />
+      <ChevronRight size={18} color="var(--text-muted)" strokeWidth={2} />
     </div>
   );
 }
@@ -2221,8 +2632,8 @@ function ModalCard({ title, children, onClose, maxWidth = 420 }) {
         maxHeight: '88vh',
         overflowY: 'auto',
         background: '#FFFFFF',
-        borderRadius: 24,
-        border: '2px solid #E2E8F0',
+        borderRadius: 18,
+        border: '1px solid #E2E8F0',
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
         padding: '22px 20px',
         position: 'relative',
@@ -2232,7 +2643,7 @@ function ModalCard({ title, children, onClose, maxWidth = 420 }) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
           {title}
         </h3>
         <button

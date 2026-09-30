@@ -8,10 +8,8 @@ import {
   Award,
   Play,
   FileText,
-  Activity,
-  Heart,
   Bookmark,
-  User
+  User,
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
 
@@ -99,8 +97,8 @@ export default function CaseDetailsView({
                 height: 44,
                 borderRadius: '50%',
                 background: '#FFFFFF',
-                border: '2px solid #E2E8F0',
-                boxShadow: '0 2px 0 #E2E8F0',
+                border: '1px solid #E2E8F0',
+                boxShadow: 'var(--shadow-sm)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -116,7 +114,7 @@ export default function CaseDetailsView({
           <h1 style={{
             flex: 1,
             fontSize: '19px',
-            fontWeight: 800,
+            fontWeight: 700,
             color: '#0F172A',
             margin: 0,
             textAlign: 'center',
@@ -135,7 +133,7 @@ export default function CaseDetailsView({
               height: 44,
               borderRadius: '50%',
               background: isFavorite ? '#FEF3C7' : '#FFFFFF',
-              border: isFavorite ? '2px solid #F59E0B' : '2px solid #E2E8F0',
+              border: isFavorite ? '1px solid #F59E0B' : '1px solid #E2E8F0',
               boxShadow: isFavorite ? '0 4px 12px rgba(245, 158, 11, 0.25)' : '0 2px 0 #E2E8F0',
               display: 'flex',
               alignItems: 'center',
@@ -155,10 +153,10 @@ export default function CaseDetailsView({
           {displayCategory && (
             <span style={{
               background: '#FFEDD5',
-              border: '1.5px solid #FED7AA',
+              border: '1px solid #FED7AA',
               color: '#EA580C',
               fontSize: '11px',
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: '0.5px',
               padding: '4px 10px',
               borderRadius: 8,
@@ -170,10 +168,10 @@ export default function CaseDetailsView({
           {caseItem.status && (
             <span style={{
               background: '#F1F5F9',
-              border: '1.5px solid #E2E8F0',
+              border: '1px solid #E2E8F0',
               color: '#475569',
               fontSize: '11px',
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: '0.5px',
               padding: '4px 10px',
               borderRadius: 8,
@@ -188,7 +186,7 @@ export default function CaseDetailsView({
         <div>
           <h2 style={{
             fontSize: '22px',
-            fontWeight: 900,
+            fontWeight: 700,
             color: '#0F172A',
             letterSpacing: '-0.02em',
             margin: '0 0 6px 0',
@@ -212,9 +210,9 @@ export default function CaseDetailsView({
           {displayDifficulty && (
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 20,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 16,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               padding: '16px 8px',
               display: 'flex',
               flexDirection: 'column',
@@ -234,10 +232,10 @@ export default function CaseDetailsView({
               }}>
                 <BarChart2 size={18} strokeWidth={2.4} />
               </div>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.5px' }}>
                 {t('case.difficulty', 'QIYINCHILIK')}
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
                 {displayDifficulty}
               </div>
             </div>
@@ -246,9 +244,9 @@ export default function CaseDetailsView({
           {displayDuration && (
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 20,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 16,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               padding: '16px 8px',
               display: 'flex',
               flexDirection: 'column',
@@ -268,10 +266,10 @@ export default function CaseDetailsView({
               }}>
                 <Clock size={18} strokeWidth={2.4} />
               </div>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.5px' }}>
                 {t('case.duration', 'DAVOMIYLIK')}
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
                 {displayDuration}
               </div>
             </div>
@@ -280,9 +278,9 @@ export default function CaseDetailsView({
           {caseItem.topic_name && (
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 20,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 4px 0 #E2E8F0',
+              borderRadius: 16,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               padding: '16px 8px',
               display: 'flex',
               flexDirection: 'column',
@@ -302,10 +300,10 @@ export default function CaseDetailsView({
               }}>
                 <Award size={18} strokeWidth={2.4} />
               </div>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.5px' }}>
                 {t('case.topic', 'MAVZU')}
               </div>
-              <div style={{ fontSize: '13px', fontWeight: 800, color: '#16A34A' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#16A34A' }}>
                 {caseItem.topic_name}
               </div>
             </div>
@@ -316,9 +314,9 @@ export default function CaseDetailsView({
         {(displayGender || displayAge) && (
           <div style={{
             background: '#FFFFFF',
-            borderRadius: 24,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
+            borderRadius: 18,
+            border: '1px solid #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
             padding: '16px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -329,7 +327,7 @@ export default function CaseDetailsView({
               height: 48,
               borderRadius: '50%',
               background: '#F1F5F9',
-              border: '2px solid #CBD5E1',
+              border: '1px solid #CBD5E1',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -338,10 +336,10 @@ export default function CaseDetailsView({
               <User size={24} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
                 {t('case.patientProfile', 'Bemor demografiyasi')}
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', marginTop: 2 }}>
                 {[displayGender, displayAge].filter(Boolean).join(', ')}
               </div>
             </div>
@@ -352,9 +350,9 @@ export default function CaseDetailsView({
         {displayAnamnesis && (
           <div style={{
             background: '#FFFFFF',
-            borderRadius: 24,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
+            borderRadius: 18,
+            border: '1px solid #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
             padding: '18px 20px',
             display: 'flex',
             flexDirection: 'column',
@@ -371,7 +369,7 @@ export default function CaseDetailsView({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FileText size={18} color="#64748B" />
-                <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>
                   {t('case.anamnesis', 'Bemor Shikoyati (Anamnez)')}
                 </span>
               </div>
@@ -400,13 +398,13 @@ export default function CaseDetailsView({
           style={{
             width: '100%',
             padding: '16px',
-            borderRadius: 20,
-            background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-            border: '2px solid #15803D',
-            boxShadow: '0 5px 0 #15803D, 0 10px 24px rgba(34, 197, 94, 0.4)',
+            borderRadius: 16,
+            background: '#16A34A',
+            border: '1px solid #15803D',
+            boxShadow: 'var(--shadow-sm)',
             color: '#FFFFFF',
             fontSize: '17px',
-            fontWeight: 800,
+            fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -439,11 +437,11 @@ export default function CaseDetailsView({
             padding: '13px 18px',
             borderRadius: 18,
             background: isFavorite ? '#FEF3C7' : '#FFFFFF',
-            border: isFavorite ? '2px solid #F59E0B' : '2px solid #E2E8F0',
-            boxShadow: '0 2px 0 #E2E8F0',
+            border: isFavorite ? '1px solid #F59E0B' : '1px solid #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
             color: isFavorite ? '#B45309' : '#334155',
             fontSize: '15px',
-            fontWeight: 800,
+            fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

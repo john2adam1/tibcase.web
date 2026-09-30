@@ -46,13 +46,13 @@ export default function ActivityView({ onBack }) {
             height: 40,
             borderRadius: 12,
             background: '#FFFFFF',
-            border: '2px solid #E2E8F0',
+            border: '1px solid #E2E8F0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             color: '#0F172A',
-            boxShadow: '0 2px 0 #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <ChevronLeft size={24} strokeWidth={2.5} />
@@ -61,7 +61,7 @@ export default function ActivityView({ onBack }) {
         <h1 style={{
           flex: 1,
           fontSize: '20px',
-          fontWeight: 800,
+          fontWeight: 700,
           color: '#0F172A',
           margin: 0,
           textAlign: 'center',
@@ -120,7 +120,7 @@ export default function ActivityView({ onBack }) {
           <div style={{
             width: 64,
             height: 64,
-            borderRadius: 20,
+            borderRadius: 16,
             background: '#F1F5F9',
             display: 'flex',
             alignItems: 'center',
@@ -143,13 +143,13 @@ export default function ActivityView({ onBack }) {
               key={i}
               style={{
                 background: '#FFFFFF',
-                borderRadius: 20,
-                border: '2px solid #E2E8F0',
+                borderRadius: 16,
+                border: '1px solid #E2E8F0',
                 padding: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 16,
-                boxShadow: '0 4px 0 #E2E8F0',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               <div style={{
@@ -166,7 +166,7 @@ export default function ActivityView({ onBack }) {
               </div>
 
               <div style={{ flex: 1 }}>
-                <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px 0' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
                   {a.activity} XP
                 </h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#64748B', fontWeight: 600 }}>

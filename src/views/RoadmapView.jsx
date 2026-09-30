@@ -4,8 +4,7 @@ import {
   BookOpen,
   Heart,
   Lock,
-  Sparkles,
-  Inbox
+  Inbox,
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
@@ -141,8 +140,8 @@ export default function RoadmapView({
               height: 44,
               borderRadius: '50%',
               background: '#FFFFFF',
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 2px 0 #E2E8F0',
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -158,7 +157,7 @@ export default function RoadmapView({
             <span style={{ fontSize: '24px' }}>{category?.emoji || '❤️'}</span>
             <h2 style={{
               fontSize: '18px',
-              fontWeight: 800,
+              fontWeight: 700,
               color: '#EA580C',
               margin: 0,
             }}>
@@ -169,11 +168,11 @@ export default function RoadmapView({
           {/* Progress pill: e.g. 0/1 */}
           <div style={{
             background: '#FFEDD5',
-            border: '1.5px solid #FDBA74',
+            border: '1px solid #FDBA74',
             borderRadius: 99,
             padding: '4px 12px',
             fontSize: '13px',
-            fontWeight: 800,
+            fontWeight: 700,
             color: '#EA580C',
           }}>
             {completedCount}/{totalCasesCount}
@@ -184,8 +183,8 @@ export default function RoadmapView({
         {!loading && topics.length > 0 && (
           <div style={{
             background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-            borderRadius: 28,
-            boxShadow: '0 8px 0 #C2410C, 0 16px 28px rgba(234, 88, 12, 0.25)',
+            borderRadius: 18,
+            boxShadow: 'var(--shadow-sm)',
             padding: '22px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -196,7 +195,7 @@ export default function RoadmapView({
             <div>
               <div style={{
                 fontSize: '12px',
-                fontWeight: 800,
+                fontWeight: 700,
                 letterSpacing: '1px',
                 color: '#FED7AA',
                 textTransform: 'uppercase',
@@ -206,7 +205,7 @@ export default function RoadmapView({
               </div>
               <div style={{
                 fontSize: '22px',
-                fontWeight: 900,
+                fontWeight: 700,
                 letterSpacing: '-0.02em',
               }}>
                 {topics[0].name?.toUpperCase()}
@@ -233,8 +232,8 @@ export default function RoadmapView({
         {loading && (
           <div style={{
             background: 'linear-gradient(135deg, #FB923C 0%, #F97316 100%)',
-            borderRadius: 28,
-            boxShadow: '0 8px 0 #C2410C',
+            borderRadius: 18,
+            boxShadow: 'var(--shadow-sm)',
             padding: '22px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -260,9 +259,9 @@ export default function RoadmapView({
         {!loading && roadmapNodes.length === 0 && (
           <div style={{
             background: '#FFFFFF',
-            borderRadius: 24,
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 4px 0 #E2E8F0',
+            borderRadius: 18,
+            border: '1px solid #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
             padding: '36px 20px',
             textAlign: 'center',
             display: 'flex',
@@ -271,7 +270,7 @@ export default function RoadmapView({
             gap: 12,
           }}>
             <Inbox size={44} color="#94A3B8" />
-            <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>
               {t('roadmap.emptyTitle', "Ushbu bo'limda hali keyslar mavjud emas")}
             </div>
           </div>
@@ -333,9 +332,9 @@ export default function RoadmapView({
                       borderRadius: 99,
                       padding: '4px 14px',
                       fontSize: '11px',
-                      fontWeight: 900,
+                      fontWeight: 700,
                       letterSpacing: '0.8px',
-                      boxShadow: '0 3px 0 #C2410C',
+                      boxShadow: 'var(--shadow-sm)',
                       marginBottom: 8,
                     }}>
                       START
@@ -368,7 +367,7 @@ export default function RoadmapView({
                         height: 70,
                         borderRadius: '50%',
                         background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-                        boxShadow: '0 6px 0 #C2410C, 0 10px 20px rgba(234, 88, 12, 0.35)',
+                        boxShadow: 'var(--shadow-sm)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -381,13 +380,13 @@ export default function RoadmapView({
                     <div style={{
                       marginTop: 10,
                       background: '#FFFFFF',
-                      border: '1.5px solid #E2E8F0',
+                      border: '1px solid #E2E8F0',
                       borderRadius: 99,
                       padding: '3px 10px',
                       fontSize: '11px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       color: '#64748B',
-                      boxShadow: '0 2px 0 #E2E8F0',
+                      boxShadow: 'var(--shadow-sm)',
                     }}>
                       ~{node.xp} XP ({node.casesCount} case)
                     </div>
@@ -411,7 +410,7 @@ export default function RoadmapView({
                     height: 70,
                     borderRadius: '50%',
                     background: '#E2E8F0',
-                    boxShadow: '0 5px 0 #CBD5E1',
+                    boxShadow: 'var(--shadow-sm)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

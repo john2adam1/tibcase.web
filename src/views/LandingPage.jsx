@@ -3,17 +3,11 @@ import {
   Activity,
   ArrowRight,
   Award,
-  CheckCircle2,
-  Clock,
   HeartPulse,
   LogIn,
   MessageSquare,
-  Microscope,
   Shield,
   Sparkles,
-  Stethoscope,
-  Users,
-  Zap
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
 
@@ -32,7 +26,7 @@ export default function LandingPage({
         background: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '2px solid #E2E8F0',
+        borderBottom: '1px solid #E2E8F0',
         padding: '0 24px',
       }}>
         <div style={{
@@ -49,11 +43,11 @@ export default function LandingPage({
               width: 40,
               height: 40,
               borderRadius: 12,
-              background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+              background: '#16A34A',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 6px 20px rgba(34, 197, 94, 0.35)',
+              boxShadow: 'var(--shadow-sm)',
             }}>
               <Activity className="heart-pulse" size={22} color="#ffffff" />
             </div>
@@ -61,7 +55,7 @@ export default function LandingPage({
               <span style={{
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontSize: '1.35rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 letterSpacing: '-0.02em',
                 color: '#0F172A'
               }}>
@@ -95,7 +89,7 @@ export default function LandingPage({
                 padding: '10px 22px',
                 fontSize: '0.92rem',
                 borderRadius: 14,
-                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                background: '#16A34A',
                 color: '#FFFFFF',
                 fontWeight: 700,
                 border: 'none',
@@ -103,7 +97,7 @@ export default function LandingPage({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)',
+                boxShadow: 'var(--shadow-sm)',
                 transition: 'transform 0.2s ease',
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
@@ -133,10 +127,10 @@ export default function LandingPage({
           padding: '8px 18px',
           borderRadius: 99,
           background: '#DCFCE7',
-          border: '1.5px solid #86EFAC',
+          border: '1px solid #86EFAC',
           color: '#166534',
           fontSize: '0.85rem',
-          fontWeight: 800,
+          fontWeight: 700,
           marginBottom: 24,
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
@@ -148,7 +142,7 @@ export default function LandingPage({
         <h1 style={{
           fontSize: 'clamp(1.85rem, 5vw, 3.4rem)',
           lineHeight: 1.15,
-          fontWeight: 900,
+          fontWeight: 700,
           letterSpacing: '-0.03em',
           marginBottom: 24,
           color: '#0F172A'
@@ -182,15 +176,15 @@ export default function LandingPage({
               padding: '16px 36px',
               fontSize: '1.05rem',
               borderRadius: 18,
-              background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+              background: '#16A34A',
               color: '#FFFFFF',
-              fontWeight: 800,
+              fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 12,
-              boxShadow: '0 8px 24px rgba(34, 197, 94, 0.35)',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'transform 0.2s ease',
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
@@ -209,7 +203,7 @@ export default function LandingPage({
         padding: '40px 24px 80px',
       }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h2 style={{ fontSize: '2.1rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>
+          <h2 style={{ fontSize: '2.1rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>
             Nima uchun aynan TibCase AI?
           </h2>
           <p style={{ color: '#64748B', fontSize: '1.05rem', fontWeight: 500, maxWidth: 560, margin: '0 auto' }}>
@@ -227,9 +221,9 @@ export default function LandingPage({
             style={{
               background: '#FFFFFF',
               padding: 32,
-              borderRadius: 28,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'transform 0.2s ease',
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
@@ -248,7 +242,7 @@ export default function LandingPage({
             }}>
               <HeartPulse size={28} />
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>Dinamik Fiziologiya</h3>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Dinamik Fiziologiya</h3>
             <p style={{ color: '#64748B', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.6 }}>
               Bemorning EKG kardiogrammasi, qon bosimi va saturatsiyasi siz tanlagan dori va muolajalarga ko'ra real vaqtda o'zgaradi.
             </p>
@@ -259,9 +253,9 @@ export default function LandingPage({
             style={{
               background: '#FFFFFF',
               padding: 32,
-              borderRadius: 28,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'transform 0.2s ease',
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
@@ -280,7 +274,7 @@ export default function LandingPage({
             }}>
               <MessageSquare size={28} />
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>AI Bemor bilan Muloqot</h3>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>AI Bemor bilan Muloqot</h3>
             <p style={{ color: '#64748B', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.6 }}>
               Gemini AI bilan integratsiya qilingan bemorga xohlagan savolingizni bering va shikoyatlarini aniqlashtiring.
             </p>
@@ -291,9 +285,9 @@ export default function LandingPage({
             style={{
               background: '#FFFFFF',
               padding: 32,
-              borderRadius: 28,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'transform 0.2s ease',
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
@@ -312,7 +306,7 @@ export default function LandingPage({
             }}>
               <Award size={28} />
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>Xalqaro Protokollar</h3>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Xalqaro Protokollar</h3>
             <p style={{ color: '#64748B', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.6 }}>
               AHA (American Heart Association) va ESC ko'rsatmalari asosida har bir qadamingiz baholanadi va debriefing beriladi.
             </p>
@@ -323,9 +317,9 @@ export default function LandingPage({
             style={{
               background: '#FFFFFF',
               padding: 32,
-              borderRadius: 28,
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'transform 0.2s ease',
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
@@ -344,7 +338,7 @@ export default function LandingPage({
             }}>
               <Shield size={28} />
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>Klinik va Birinchi Yordam</h3>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Klinik va Birinchi Yordam</h3>
             <p style={{ color: '#64748B', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.6 }}>
               Ham professional shifokorlar uchun og'ir klinik holatlar, ham aholi uchun favqulodda birinchi yordam (BLS) keyslari.
             </p>
@@ -359,7 +353,7 @@ export default function LandingPage({
         padding: '40px 24px 80px',
       }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h2 style={{ fontSize: '2.1rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>
+          <h2 style={{ fontSize: '2.1rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>
             Qanday Ishlaydi?
           </h2>
           <p style={{ color: '#64748B', fontSize: '1.05rem', fontWeight: 500 }}>
@@ -394,22 +388,22 @@ export default function LandingPage({
               style={{
                 background: '#FFFFFF',
                 padding: 32,
-                borderRadius: 28,
-                border: '2px solid #E2E8F0',
+                borderRadius: 18,
+                border: '1px solid #E2E8F0',
                 position: 'relative',
-                boxShadow: '0 12px 36px rgba(15, 23, 42, 0.04)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               <div style={{
                 fontSize: '2.5rem',
-                fontWeight: 900,
+                fontWeight: 700,
                 color: '#22C55E',
                 opacity: 0.2,
                 marginBottom: 16,
               }}>
                 {item.step}
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>{item.title}</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>{item.title}</h3>
               <p style={{ color: '#64748B', fontSize: '0.95rem', fontWeight: 500, lineHeight: 1.6 }}>
                 {item.desc}
               </p>
@@ -426,7 +420,7 @@ export default function LandingPage({
           padding: '20px 24px 80px',
           textAlign: 'center',
         }}>
-          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginBottom: 24 }}>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0F172A', marginBottom: 24 }}>
             Rasmiy Ta'limiy Hamkorlarimiz
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 20 }}>
@@ -436,12 +430,12 @@ export default function LandingPage({
                 style={{
                   background: '#FFFFFF',
                   padding: '16px 32px',
-                  borderRadius: 20,
-                  border: '2px solid #E2E8F0',
+                  borderRadius: 16,
+                  border: '1px solid #E2E8F0',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 16,
-                  boxShadow: '0 8px 24px rgba(15, 23, 42, 0.03)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}
               >
                 <div style={{
@@ -453,12 +447,12 @@ export default function LandingPage({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: '1.2rem',
                 }}>
                   {p.name.charAt(0)}
                 </div>
-                <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#0F172A' }}>{p.name}</span>
+                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#0F172A' }}>{p.name}</span>
               </div>
             ))}
           </div>
@@ -472,14 +466,14 @@ export default function LandingPage({
         padding: '0 24px 80px',
       }}>
         <div style={{
-          background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+          background: '#16A34A',
           padding: '56px 40px',
           borderRadius: 36,
           textAlign: 'center',
-          boxShadow: '0 16px 48px rgba(34, 197, 94, 0.3)',
+          boxShadow: 'var(--shadow-sm)',
           color: '#FFFFFF'
         }}>
-          <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: 16 }}>
+          <h2 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: 16 }}>
             Klinik Malakangizni Bugunoq Oshiring
           </h2>
           <p style={{ fontSize: '1.05rem', fontWeight: 500, maxWidth: 560, margin: '0 auto 32px', opacity: 0.9 }}>
@@ -490,16 +484,16 @@ export default function LandingPage({
             style={{
               padding: '16px 40px',
               fontSize: '1.1rem',
-              borderRadius: 20,
+              borderRadius: 16,
               background: '#FFFFFF',
               color: '#16A34A',
-              fontWeight: 800,
+              fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 12,
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'transform 0.2s ease',
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
@@ -513,7 +507,7 @@ export default function LandingPage({
 
       {/* Footer */}
       <footer style={{
-        borderTop: '2px solid #E2E8F0',
+        borderTop: '1px solid #E2E8F0',
         background: '#FFFFFF',
         padding: '32px 24px',
         textAlign: 'center',

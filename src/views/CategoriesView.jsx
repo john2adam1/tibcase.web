@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ChevronLeft,
-  Star,
-  Layers,
-  Sparkles,
-  Inbox
-} from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
 
@@ -76,210 +70,61 @@ export default function CategoriesView({
   }, []);
 
   return (
-    <div style={{
-      width: '100%',
-      minHeight: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '8px 0 100px 0',
-      background: 'transparent',
-      boxSizing: 'border-box',
-      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: 1100,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 20,
-      }}>
-        {/* Top Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          padding: '8px 4px 12px 4px',
-        }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              title={t('cat.back')}
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                background: '#FFFFFF',
-                border: '1.5px solid #E2E8F0',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#0F172A',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <ChevronLeft size={24} strokeWidth={2.4} />
-            </button>
-          )}
-
-          <div>
-            <h1 style={{
-              fontSize: '26px',
-              fontWeight: 900,
-              color: '#0F172A',
-              letterSpacing: '-0.02em',
-              margin: 0,
-            }}>
-              {t('cat.title', "Klinik Bo'limlar")}
-            </h1>
-            <p style={{
-              fontSize: '14px',
-              color: '#64748B',
-              margin: '3px 0 0 0',
-            }}>
-              {t('cat.subtitle', "O'zingiz qiziqqan yo'nalishni tanlang va interaktiv keyslarni yechishni boshlang")}
-            </p>
-          </div>
+    <div className="ui-page">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {onBack && (
+          <button className="ui-icon-btn" onClick={onBack} title={t('cat.back')} aria-label={t('cat.back', 'Orqaga')}>
+            <ChevronLeft size={22} />
+          </button>
+        )}
+        <div>
+          <h1 className="ui-title">{t('cat.title', "Klinik Bo'limlar")}</h1>
+          <p className="ui-subtitle">{t('cat.subtitle', "O'zingiz qiziqqan yo'nalishni tanlang")}</p>
         </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div
-            className="categories-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: 16,
-              width: '100%',
-            }}
-          >
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: 24,
-                  border: '1.5px solid #E2E8F0',
-                  padding: '24px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                  animation: 'pulse 1.5s infinite',
-                }}
-              >
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: '#E2E8F0' }} />
-                <div style={{ width: '70%', height: 16, borderRadius: 6, background: '#E2E8F0' }} />
-                <div style={{ width: '50%', height: 12, borderRadius: 6, background: '#E2E8F0' }} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Categories Grid */}
-        {!loading && categories.length > 0 && (
-          <div
-            className="categories-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: 18,
-              width: '100%',
-            }}
-          >
-            {categories.map((cat) => {
-              const meta = getCategoryMeta(cat);
-              const title = formatTitle(cat.name);
-              const casesCount = cat.cases_count ?? 1;
-
-              return (
-                <div
-                  key={cat.id}
-                  id={`cat-card-${cat.id}`}
-                  onClick={() => onSelectCategory({
-                    ...cat,
-                    title,
-                    emoji: meta.emoji,
-                    casesCount
-                  })}
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 24,
-                    border: '2px solid #E2E8F0',
-                    boxShadow: '0 4px 0 #E2E8F0, 0 8px 16px rgba(0, 0, 0, 0.02)',
-                    padding: '18px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 14,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    position: 'relative',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 0 #E2E8F0, 0 12px 24px rgba(0, 0, 0, 0.04)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 0 #E2E8F0, 0 8px 16px rgba(0, 0, 0, 0.02)';
-                  }}
-                >
-                  {/* Icon Container with tinted border */}
-                  <div style={{
-                    width: 58,
-                    height: 58,
-                    borderRadius: 18,
-                    background: meta.iconBg,
-                    border: `2px solid ${meta.iconBorder}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '28px',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-                    overflow: 'hidden',
-                  }}>
-                    {cat.icon_url ? (
-                      <img
-                        src={cat.icon_url}
-                        alt={title}
-                        style={{ width: '70%', height: '70%', objectFit: 'contain' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    ) : (
-                      <span>{meta.emoji}</span>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div>
-                    <h3 style={{
-                      fontSize: '16px',
-                      fontWeight: 800,
-                      color: '#0F172A',
-                      margin: '0 0 6px 0',
-                      lineHeight: 1.25,
-                    }}>
-                      {title}
-                    </h3>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: '#64748B',
-                    }}>
-                      <Star size={13} fill={meta.starColor} color={meta.starColor} />
-                      <span>{casesCount} {t('cat.cases')}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
+
+      {loading && (
+        <div className="ui-grid">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="ui-card" style={{ padding: 16, height: 110, background: 'var(--bg-muted)', animation: 'pulse 1.5s infinite' }} />
+          ))}
+        </div>
+      )}
+
+      {!loading && categories.length === 0 && (
+        <p className="ui-subtitle" style={{ textAlign: 'center', padding: 32 }}>{t('cat.empty', "Bo'limlar topilmadi")}</p>
+      )}
+
+      {!loading && categories.length > 0 && (
+        <div className="ui-grid">
+          {categories.map((cat) => {
+            const meta = getCategoryMeta(cat);
+            const title = formatTitle(cat.name);
+            const casesCount = cat.cases_count ?? 1;
+            return (
+              <div
+                key={cat.id}
+                id={`cat-card-${cat.id}`}
+                className="ui-card ui-card-press"
+                onClick={() => onSelectCategory({ ...cat, title, emoji: meta.emoji, casesCount })}
+                style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}
+              >
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, overflow: 'hidden' }}>
+                  {cat.icon_url ? (
+                    <img src={cat.icon_url} alt={title} style={{ width: '70%', height: '70%', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                  ) : (
+                    <span>{meta.emoji}</span>
+                  )}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.25 }}>{title}</h3>
+                  <span className="ui-subtitle" style={{ fontSize: 12 }}>{casesCount} {t('cat.cases')}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

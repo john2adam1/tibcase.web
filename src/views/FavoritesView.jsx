@@ -49,13 +49,13 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
             height: 40,
             borderRadius: 12,
             background: '#FFFFFF',
-            border: '2px solid #E2E8F0',
+            border: '1px solid #E2E8F0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             color: '#0F172A',
-            boxShadow: '0 2px 0 #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <ChevronLeft size={24} strokeWidth={2.5} />
@@ -64,7 +64,7 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
         <h1 style={{
           flex: 1,
           fontSize: '20px',
-          fontWeight: 800,
+          fontWeight: 700,
           color: '#0F172A',
           margin: 0,
           textAlign: 'center',
@@ -88,7 +88,7 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
           <div style={{
             width: 64,
             height: 64,
-            borderRadius: 20,
+            borderRadius: 16,
             background: '#DBEAFE',
             display: 'flex',
             alignItems: 'center',
@@ -112,14 +112,14 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
               onClick={() => onSelectCase && onSelectCase({ ...c, is_favorite: true })}
               style={{
                 background: '#FFFFFF',
-                borderRadius: 20,
-                border: '2px solid #E2E8F0',
+                borderRadius: 16,
+                border: '1px solid #E2E8F0',
                 padding: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 16,
                 cursor: 'pointer',
-                boxShadow: '0 4px 0 #E2E8F0',
+                boxShadow: 'var(--shadow-sm)',
                 transition: 'transform 0.1s ease',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
@@ -147,14 +147,14 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h4 style={{
                   fontSize: '15px',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   color: '#0F172A',
                   margin: '0 0 4px 0',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap'
                 }}>
-                  {c.title || 'Noma\'lum keys'}
+                  {c.title}
                 </h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -165,7 +165,7 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
                     color: c.difficulty === 'hard' ? '#EF4444' : c.difficulty === 'medium' ? '#F59E0B' : '#10B981',
                     textTransform: 'capitalize'
                   }}>
-                    {c.difficulty || 'Normal'}
+                    {c.difficulty}
                   </span>
                 </div>
               </div>
@@ -192,7 +192,7 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
                     height: 36,
                     borderRadius: 10,
                     background: '#FEF3C7',
-                    border: '1.5px solid #F59E0B',
+                    border: '1px solid #F59E0B',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

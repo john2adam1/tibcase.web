@@ -1,18 +1,13 @@
 import {
   AlertTriangle,
-  Award,
-  BookOpen,
   CheckCircle2,
-  Coins,
   RotateCcw,
   Share2,
   Sparkles,
   X,
   XCircle,
   Zap,
-  ArrowRight,
-  ShieldCheck,
-  Stethoscope
+  Stethoscope,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
@@ -74,7 +69,7 @@ export default function DebriefModal({
           overflowY: 'auto',
           borderRadius: 32,
           background: '#FFFFFF',
-          border: '2px solid #E2E8F0',
+          border: '1px solid #E2E8F0',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
           padding: '28px 24px',
           position: 'relative',
@@ -97,7 +92,7 @@ export default function DebriefModal({
             height: 36,
             borderRadius: 12,
             background: '#F1F5F9',
-            border: '1.5px solid #E2E8F0',
+            border: '1px solid #E2E8F0',
             color: '#64748B',
             display: 'flex',
             alignItems: 'center',
@@ -119,10 +114,10 @@ export default function DebriefModal({
             padding: '6px 14px',
             borderRadius: 99,
             background: isSuccess ? '#F0FDF4' : '#FEF2F2',
-            border: `1.5px solid ${isSuccess ? '#BBF7D0' : '#FECACA'}`,
+            border: `1px solid ${isSuccess ? '#BBF7D0' : '#FECACA'}`,
             color: isSuccess ? '#15803D' : '#DC2626',
             fontSize: '12px',
-            fontWeight: 800,
+            fontWeight: 700,
             letterSpacing: '0.04em',
             textTransform: 'uppercase',
             marginBottom: 10,
@@ -133,7 +128,7 @@ export default function DebriefModal({
 
           <h2 style={{
             fontSize: '22px',
-            fontWeight: 800,
+            fontWeight: 700,
             color: '#0F172A',
             letterSpacing: '-0.02em',
             margin: '0 0 6px 0',
@@ -164,9 +159,9 @@ export default function DebriefModal({
           {/* Score Card */}
           <div style={{
             background: isSuccess ? '#F0FDF4' : '#FEF3C7',
-            border: `2px solid ${isSuccess ? '#BBF7D0' : '#FDE68A'}`,
+            border: `1px solid ${isSuccess ? '#BBF7D0' : '#FDE68A'}`,
             boxShadow: `0 3px 0 ${isSuccess ? '#BBF7D0' : '#FDE68A'}`,
-            borderRadius: 20,
+            borderRadius: 16,
             padding: '16px 12px',
             textAlign: 'center',
             display: 'flex',
@@ -179,7 +174,7 @@ export default function DebriefModal({
             </div>
             <div style={{
               fontSize: '28px',
-              fontWeight: 900,
+              fontWeight: 700,
               color: isSuccess ? '#15803D' : '#D97706',
               margin: '2px 0',
               lineHeight: 1.1,
@@ -198,9 +193,9 @@ export default function DebriefModal({
           {/* XP Card */}
           <div style={{
             background: '#F0F9FF',
-            border: '2px solid #BAE6FD',
-            boxShadow: '0 3px 0 #BAE6FD',
-            borderRadius: 20,
+            border: '1px solid #BAE6FD',
+            boxShadow: 'var(--shadow-sm)',
+            borderRadius: 16,
             padding: '16px 12px',
             textAlign: 'center',
             display: 'flex',
@@ -213,7 +208,7 @@ export default function DebriefModal({
             </div>
             <div style={{
               fontSize: '26px',
-              fontWeight: 900,
+              fontWeight: 700,
               color: '#0284C7',
               margin: '2px 0',
               display: 'flex',
@@ -233,9 +228,9 @@ export default function DebriefModal({
           {/* Coins Card */}
           <div style={{
             background: '#FEFCE8',
-            border: '2px solid #FEF08A',
-            boxShadow: '0 3px 0 #FEF08A',
-            borderRadius: 20,
+            border: '1px solid #FEF08A',
+            boxShadow: 'var(--shadow-sm)',
+            borderRadius: 16,
             padding: '16px 12px',
             textAlign: 'center',
             display: 'flex',
@@ -248,7 +243,7 @@ export default function DebriefModal({
             </div>
             <div style={{
               fontSize: '26px',
-              fontWeight: 900,
+              fontWeight: 700,
               color: '#D97706',
               margin: '2px 0',
               display: 'flex',
@@ -273,9 +268,9 @@ export default function DebriefModal({
           {debriefData.correct_steps && debriefData.correct_steps.length > 0 && (
             <div style={{
               background: '#F0FDF4',
-              border: '1.5px solid #BBF7D0',
-              boxShadow: '0 2px 0 #BBF7D0',
-              borderRadius: 20,
+              border: '1px solid #BBF7D0',
+              boxShadow: 'var(--shadow-sm)',
+              borderRadius: 16,
               padding: '16px 18px',
             }}>
               <div style={{
@@ -283,7 +278,7 @@ export default function DebriefModal({
                 alignItems: 'center',
                 gap: 8,
                 color: '#15803D',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '14px',
                 marginBottom: 10,
               }}>
@@ -293,7 +288,7 @@ export default function DebriefModal({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {debriefData.correct_steps.map((step, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '13px', color: '#166534', fontWeight: 600, lineHeight: 1.4 }}>
-                    <span style={{ color: '#22C55E', fontWeight: 800, marginTop: 1 }}>•</span>
+                    <span style={{ color: '#22C55E', fontWeight: 700, marginTop: 1 }}>•</span>
                     <span>{step}</span>
                   </div>
                 ))}
@@ -305,9 +300,9 @@ export default function DebriefModal({
           {debriefData.incorrect_steps && debriefData.incorrect_steps.length > 0 && (
             <div style={{
               background: '#FEF2F2',
-              border: '1.5px solid #FECACA',
-              boxShadow: '0 2px 0 #FECACA',
-              borderRadius: 20,
+              border: '1px solid #FECACA',
+              boxShadow: 'var(--shadow-sm)',
+              borderRadius: 16,
               padding: '16px 18px',
             }}>
               <div style={{
@@ -315,7 +310,7 @@ export default function DebriefModal({
                 alignItems: 'center',
                 gap: 8,
                 color: '#DC2626',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '14px',
                 marginBottom: 10,
               }}>
@@ -325,7 +320,7 @@ export default function DebriefModal({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {debriefData.incorrect_steps.map((step, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '13px', color: '#991B1B', fontWeight: 600, lineHeight: 1.4 }}>
-                    <span style={{ color: '#EF4444', fontWeight: 800, marginTop: 1 }}>•</span>
+                    <span style={{ color: '#EF4444', fontWeight: 700, marginTop: 1 }}>•</span>
                     <span>{step}</span>
                   </div>
                 ))}
@@ -337,9 +332,9 @@ export default function DebriefModal({
           {debriefData.weak_topics && debriefData.weak_topics.length > 0 && (
             <div style={{
               background: '#FFFBEB',
-              border: '1.5px solid #FDE68A',
-              boxShadow: '0 2px 0 #FDE68A',
-              borderRadius: 20,
+              border: '1px solid #FDE68A',
+              boxShadow: 'var(--shadow-sm)',
+              borderRadius: 16,
               padding: '16px 18px',
             }}>
               <div style={{
@@ -347,7 +342,7 @@ export default function DebriefModal({
                 alignItems: 'center',
                 gap: 8,
                 color: '#B45309',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '14px',
                 marginBottom: 10,
               }}>
@@ -360,13 +355,13 @@ export default function DebriefModal({
                     key={idx}
                     style={{
                       background: '#FFFFFF',
-                      border: '1.5px solid #FCD34D',
+                      border: '1px solid #FCD34D',
                       borderRadius: 12,
                       padding: '6px 12px',
                       fontSize: '12px',
                       fontWeight: 700,
                       color: '#92400E',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                      boxShadow: 'var(--shadow-sm)',
                     }}
                   >
                     {topic}
@@ -380,9 +375,9 @@ export default function DebriefModal({
           {debriefData.guideline_notes && (
             <div style={{
               background: '#F8FAFC',
-              border: '1.5px solid #E2E8F0',
-              boxShadow: '0 2px 0 #E2E8F0',
-              borderRadius: 20,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
+              borderRadius: 16,
               padding: '16px 18px',
             }}>
               <div style={{
@@ -390,7 +385,7 @@ export default function DebriefModal({
                 alignItems: 'center',
                 gap: 8,
                 color: '#0F172A',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '14px',
                 marginBottom: 6,
               }}>
@@ -423,11 +418,11 @@ export default function DebriefModal({
               style={{
                 padding: '14px',
                 borderRadius: 16,
-                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                border: '1.5px solid #16A34A',
-                boxShadow: '0 4px 0 #15803D, 0 8px 16px rgba(34, 197, 94, 0.25)',
+                background: '#16A34A',
+                border: '1px solid #16A34A',
+                boxShadow: 'var(--shadow-sm)',
                 color: '#FFFFFF',
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '14px',
                 cursor: 'pointer',
                 display: 'flex',
@@ -447,10 +442,10 @@ export default function DebriefModal({
               padding: '14px',
               borderRadius: 16,
               background: '#FFFFFF',
-              border: '2px solid #E2E8F0',
-              boxShadow: '0 3px 0 #E2E8F0',
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               color: '#0F172A',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '14px',
               cursor: 'pointer',
               display: 'flex',
@@ -470,7 +465,7 @@ export default function DebriefModal({
               height: 48,
               borderRadius: 16,
               background: '#F1F5F9',
-              border: '1.5px solid #E2E8F0',
+              border: '1px solid #E2E8F0',
               color: '#0F172A',
               display: 'flex',
               alignItems: 'center',

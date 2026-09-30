@@ -2,26 +2,30 @@
 // Token & Language helpers
 // ============================================================
 export const getToken = () => {
-  return localStorage.getItem('tibcase_token') || '';
+  return localStorage.getItem('tibcase_token') || localStorage.getItem('access_token') || '';
 };
 
 export const setToken = (token) => {
   if (token) {
     localStorage.setItem('tibcase_token', token);
+    localStorage.setItem('access_token', token);
   } else {
     localStorage.removeItem('tibcase_token');
+    localStorage.removeItem('access_token');
   }
 };
 
 export const getRefreshToken = () => {
-  return localStorage.getItem('tibcase_refresh_token') || '';
+  return localStorage.getItem('tibcase_refresh_token') || localStorage.getItem('refresh_token') || '';
 };
 
 export const setRefreshToken = (token) => {
   if (token) {
     localStorage.setItem('tibcase_refresh_token', token);
+    localStorage.setItem('refresh_token', token);
   } else {
     localStorage.removeItem('tibcase_refresh_token');
+    localStorage.removeItem('refresh_token');
   }
 };
 
@@ -37,8 +41,12 @@ export const getStoredUser = () => {
 export const setStoredUser = (user) => {
   if (user) {
     localStorage.setItem('tibcase_user', JSON.stringify(user));
+    if (user.id) {
+      localStorage.setItem('user_id', String(user.id));
+    }
   } else {
     localStorage.removeItem('tibcase_user');
+    localStorage.removeItem('user_id');
   }
 };
 
@@ -59,6 +67,42 @@ let onUnauthorizedCallback = null;
 export const setOnUnauthorized = (cb) => {
   onUnauthorizedCallback = cb;
 };
+
+export class ApiError extends Error {
+  constructor(message, { status = 0, code = '', data = null } = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.data = data;
+  }
+}
+
+function extractErrorCode(data) {
+  if (!data) return '';
+  if (typeof data.error === 'string') return data.error;
+  if (data.error?.code) return data.error.code;
+  if (typeof data.code === 'string') return data.code;
+  return '';
+}
+
+export function isSessionNotActiveError(err) {
+  const code = err?.code || '';
+  const message = String(err?.message || '');
+  return code === 'session_not_active'
+    || message.includes('session_not_active')
+    || (err?.status === 409 && (code === 'session_not_active' || message.includes('session_not_active')));
+}
+
+export async function registerStoredFcmDevice() {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('fcm_token') : '';
+  if (!token) return;
+  try {
+    await api.registerDevice(token, 'web');
+  } catch (err) {
+    console.warn('FCM device register skipped:', err.message);
+  }
+}
 
 async function refreshTokens() {
   // If a refresh is already in flight, all concurrent callers share the EXACT same promise
@@ -136,8 +180,8 @@ async function request(path, options = {}) {
   try {
     let res = await fetch(path, { ...options, headers });
 
-    // Auto-refresh on 401 if refresh token is present
-    if (res.status === 401 && getRefreshToken() && path !== '/auth/token/refresh') {
+    // Auto-refresh on 401 if refresh token is present (bypass for auth endpoints)
+    if (res.status === 401 && getRefreshToken() && path !== '/auth/token/refresh' && !path.startsWith('/mobile/auth/')) {
       try {
         await refreshTokens();
         // Retry original request with newly acquired token
@@ -153,19 +197,27 @@ async function request(path, options = {}) {
     if (contentType.includes('application/json')) {
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 401 && !getRefreshToken()) {
+        if (res.status === 401 && !getRefreshToken() && !path.startsWith('/mobile/auth/')) {
           if (onUnauthorizedCallback) onUnauthorizedCallback();
         }
-        throw new Error(data?.message || data?.error?.message || data?.error || `Xatolik: ${res.status}`);
+        const errorText = data?.error?.details || data?.error?.message || (typeof data?.error === 'string' ? data.error : null) || data?.message || `Xatolik: ${res.status}`;
+        throw new ApiError(errorText, {
+          status: res.status,
+          code: extractErrorCode(data),
+          data,
+        });
       }
       return data;
     } else {
       const text = await res.text();
       if (!res.ok) {
-        if (res.status === 401 && !getRefreshToken()) {
+        if (res.status === 401 && !getRefreshToken() && !path.startsWith('/mobile/auth/')) {
           if (onUnauthorizedCallback) onUnauthorizedCallback();
         }
-        throw new Error(text || `Xatolik: ${res.status}`);
+        throw new ApiError(text || `Xatolik: ${res.status}`, {
+          status: res.status,
+          code: text.includes('session_not_active') ? 'session_not_active' : '',
+        });
       }
       return text;
     }
@@ -184,9 +236,13 @@ export const api = {
 
   /** Google orqali kirish (1 bosqichli) */
   loginWithGoogle: async (idToken, referralCode = '') => {
+    const payload = { id_token: idToken };
+    if (referralCode && typeof referralCode === 'string' && referralCode.trim()) {
+      payload.referral_code = referralCode.trim();
+    }
     return await request('/mobile/auth/google', {
       method: 'POST',
-      body: { id_token: idToken, referral_code: referralCode },
+      body: payload,
     });
   },
 
@@ -216,19 +272,23 @@ export const api = {
 
   // ===================== USER PROFILE =====================
 
+  /** Get levels list */
+  getLevels: async () => {
+    return await request('/web/level');
+  },
+
   /** Get user profile */
   getUserProfile: async () => {
     return await request('/mobile/user/get/profile');
   },
 
   /** Update user profile (multipart/form-data) */
-  updateUserProfile: async ({ name, phone_number, email, language, specialization, image }) => {
+  updateUserProfile: async ({ name, phone_number, email, language, image }) => {
     const formData = new FormData();
     if (name) formData.append('name', name);
     if (phone_number) formData.append('phone_number', phone_number);
     if (email) formData.append('email', email);
     if (language) formData.append('language', language);
-    if (specialization) formData.append('specialization', specialization);
     if (image) formData.append('image', image);
 
     return await request('/mobile/user/update/profile', {
@@ -300,14 +360,9 @@ export const api = {
 
   /** Get all categories */
   getCategories: async () => {
-    try {
-      const res = await request('/mobile/category');
-      const list = res?.categories || res?.data || (Array.isArray(res) ? res : []);
-      return Array.isArray(list) ? list : [];
-    } catch (err) {
-      console.warn('Categories API fetch error:', err.message);
-      return [];
-    }
+    const res = await request('/mobile/category');
+    const list = res?.categories || res?.data || (Array.isArray(res) ? res : []);
+    return Array.isArray(list) ? list : [];
   },
 
   /** Get single category by ID */
@@ -338,12 +393,8 @@ export const api = {
     if (params.limit) query.set('limit', params.limit);
     if (params.page) query.set('page', params.page);
 
-    try {
-      const res = await request(`/mobile/case?${query.toString()}`);
-      return res.cases || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await request(`/mobile/case?${query.toString()}`);
+    return res.cases || res.data || [];
   },
 
   /** Get case detail */
@@ -360,14 +411,9 @@ export const api = {
 
   /** Get favorites list */
   getFavorites: async (limit = 50, page = 1) => {
-    try {
-      const res = await request(`/mobile/favorite?limit=${limit}&page=${page}`);
-      const list = res?.cases || res?.data?.cases || res?.data || (Array.isArray(res) ? res : []);
-      return Array.isArray(list) ? list : [];
-    } catch (err) {
-      console.warn('Favorites API fetch error:', err.message);
-      return [];
-    }
+    const res = await request(`/mobile/favorite?limit=${limit}&page=${page}`);
+    const list = res?.cases || res?.data?.cases || res?.data || (Array.isArray(res) ? res : []);
+    return Array.isArray(list) ? list : [];
   },
 
   /** Toggle favorite */
@@ -412,7 +458,8 @@ export const api = {
   },
 
   /** Finish simulation */
-  finishSimulation: async (sessionId, reason = 'completed') => {
+  /** reason: manual | health_zero | timeout (per Swagger) */
+  finishSimulation: async (sessionId, reason = 'manual') => {
     return await request(`/mobile/simulation/${sessionId}/finish`, {
       method: 'PUT',
       body: { reason },
@@ -461,21 +508,17 @@ export const api = {
   /** Get all tariffs */
   getTariffs: async (duration) => {
     const query = duration ? `?duration=${duration}` : '';
-    try {
-      const res = await request(`/mobile/tariff${query}`);
-      if (Array.isArray(res)) return res;
-      if (res && typeof res === 'object') {
-        if (Array.isArray(res.tariffs)) return res.tariffs;
-        if (Array.isArray(res.items)) return res.items;
-        if (Array.isArray(res.data)) return res.data;
-        for (const k of Object.keys(res)) {
-          if (Array.isArray(res[k])) return res[k];
-        }
+    const res = await request(`/mobile/tariff${query}`);
+    if (Array.isArray(res)) return res;
+    if (res && typeof res === 'object') {
+      if (Array.isArray(res.tariffs)) return res.tariffs;
+      if (Array.isArray(res.items)) return res.items;
+      if (Array.isArray(res.data)) return res.data;
+      for (const k of Object.keys(res)) {
+        if (Array.isArray(res[k])) return res[k];
       }
-      return [];
-    } catch {
-      return [];
     }
+    return [];
   },
 
   /** Get tariff by ID */
@@ -528,12 +571,8 @@ export const api = {
 
   /** Get all banners */
   getBanners: async () => {
-    try {
-      const res = await request('/mobile/banner');
-      return res.banners || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await request('/mobile/banner');
+    return res.banners || res.data || [];
   },
 
   /** Get banner by ID */
@@ -545,12 +584,8 @@ export const api = {
 
   /** Get about info */
   getAbout: async () => {
-    try {
-      const res = await request('/mobile/about');
-      return res.abouts || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await request('/mobile/about');
+    return res.abouts || res.data || [];
   },
 
   /** Get about by ID */
@@ -562,12 +597,8 @@ export const api = {
 
   /** Get FAQs */
   getFaqs: async () => {
-    try {
-      const res = await request('/mobile/faq');
-      return res.faqs || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await request('/mobile/faq');
+    return res.faqs || res.data || [];
   },
 
   /** Get FAQ by ID */
@@ -579,12 +610,8 @@ export const api = {
 
   /** Get contacts */
   getContacts: async () => {
-    try {
-      const res = await request('/mobile/contact');
-      return res.contacts || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await request('/mobile/contact');
+    return res.contacts || res.data || [];
   },
 
   /** Get contact by ID */
@@ -596,12 +623,8 @@ export const api = {
 
   /** Get app routes */
   getAppRoutes: async () => {
-    try {
-      const res = await request('/mobile/app-route');
-      return res.app_routes || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await request('/mobile/app-route');
+    return res.app_routes || res.data || [];
   },
 
   /** Get app route by ID */
@@ -613,11 +636,7 @@ export const api = {
 
   /** Get partners */
   getPartners: async () => {
-    try {
-      const res = await request('/mobile/partner');
-      return res.partners || res.data || [];
-    } catch {
-      return [];
-    }
+    const res = await request('/mobile/partner');
+    return res.partners || res.data || [];
   },
 };

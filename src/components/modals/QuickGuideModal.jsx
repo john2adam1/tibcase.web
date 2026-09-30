@@ -1,15 +1,11 @@
 import React from 'react';
 import {
   Stethoscope,
-  Info,
   User,
-  Package,
   ChevronRight,
   Activity,
-  Heart,
   Lightbulb,
-  Sparkles,
-  FlaskConical
+  FlaskConical,
 } from 'lucide-react';
 
 export default function QuickGuideModal({
@@ -35,8 +31,8 @@ export default function QuickGuideModal({
         alignItems: 'center',
         justifyContent: 'space-between',
         background: '#FFFFFF',
-        borderBottom: '2px solid #E2E8F0',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+        borderBottom: '1px solid #E2E8F0',
+        boxShadow: 'var(--shadow-sm)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
@@ -44,8 +40,8 @@ export default function QuickGuideModal({
             height: 44,
             borderRadius: 14,
             background: '#DCFCE7',
-            border: '1.5px solid #86EFAC',
-            boxShadow: '0 3px 0 #86EFAC',
+            border: '1px solid #86EFAC',
+            boxShadow: 'var(--shadow-sm)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -55,7 +51,7 @@ export default function QuickGuideModal({
             <Stethoscope size={22} strokeWidth={2.4} />
           </div>
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
               Tezkor Qo'llanma
             </h2>
             <p style={{ fontSize: '13px', color: '#64748B', fontWeight: 600, margin: '2px 0 0 0' }}>
@@ -72,11 +68,11 @@ export default function QuickGuideModal({
             padding: '8px 16px',
             borderRadius: 16,
             background: '#FFFFFF',
-            border: '2px solid #E2E8F0',
-            boxShadow: '0 3px 0 #E2E8F0',
+            border: '1px solid #E2E8F0',
+            boxShadow: 'var(--shadow-sm)',
             color: '#64748B',
             fontSize: '13px',
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: 'pointer',
             transition: 'all 0.15s ease',
             whiteSpace: 'nowrap',
@@ -111,17 +107,17 @@ export default function QuickGuideModal({
         <div style={{
           width: '100%',
           background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-          borderRadius: 24,
+          borderRadius: 18,
           padding: '16px 18px',
-          border: '2px solid #C2410C',
-          boxShadow: '0 5px 0 #C2410C, 0 12px 24px rgba(234, 88, 12, 0.25)',
+          border: '1px solid #C2410C',
+          boxShadow: 'var(--shadow-sm)',
           display: 'flex',
           flexDirection: 'column',
           gap: 10,
           boxSizing: 'border-box',
           color: '#FFFFFF',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '13px', fontWeight: 800 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '13px', fontWeight: 700 }}>
             <Activity size={17} strokeWidth={2.4} />
             <span>BEMOR HOLATI: BARQAROR</span>
           </div>
@@ -200,9 +196,9 @@ export default function QuickGuideModal({
         <div style={{
           width: '100%',
           background: '#FFFFFF',
-          borderRadius: 24,
-          border: '2px solid #E2E8F0',
-          boxShadow: '0 4px 0 #E2E8F0, 0 10px 25px rgba(0, 0, 0, 0.04)',
+          borderRadius: 18,
+          border: '1px solid #E2E8F0',
+          boxShadow: 'var(--shadow-sm)',
           padding: '20px 16px',
           display: 'flex',
           flexDirection: 'column',
@@ -227,7 +223,7 @@ export default function QuickGuideModal({
               color: '#1E293B',
               fontSize: '13px',
               fontWeight: 600,
-              border: '1.5px solid #E2E8F0',
+              border: '1px solid #E2E8F0',
               lineHeight: 1.45,
             }}>
               "...tez o'rnimdan turganimda to'satdan boshim aylanib ketdi, ko'nglim ayniyapti va ko'kragimda biroz og'irlik sezilyapti."
@@ -259,7 +255,7 @@ export default function QuickGuideModal({
                 fontSize: '13px',
                 fontWeight: 600,
                 lineHeight: 1.5,
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
+                boxShadow: 'var(--shadow-sm)',
               }}>
                 Qon tahlillarini buyuramiz: umumiy qon tahlili, biokimyo, TSH va C-reaktiv oqsil. Bemorga og'riqsizlantiruvchi va qusishga qarshi dori berilsin.
               </div>
@@ -268,7 +264,7 @@ export default function QuickGuideModal({
                 height: 32,
                 borderRadius: '50%',
                 background: '#DCFCE7',
-                border: '2px solid #86EFAC',
+                border: '1px solid #86EFAC',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -302,7 +298,7 @@ export default function QuickGuideModal({
                 height: 32,
                 borderRadius: 10,
                 background: '#EEF2FF',
-                border: '1.5px solid #C7D2FE',
+                border: '1px solid #C7D2FE',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -314,7 +310,7 @@ export default function QuickGuideModal({
               </div>
               <div style={{
                 background: '#F8FAFC',
-                border: '1.5px solid #CBD5E1',
+                border: '1px solid #CBD5E1',
                 borderRadius: '4px 18px 18px 18px',
                 padding: '12px 14px',
                 fontSize: '13px',
@@ -332,7 +328,7 @@ export default function QuickGuideModal({
         <div style={{
           width: '100%',
           background: '#F0FDF4',
-          border: '1.5px solid #BBF7D0',
+          border: '1px solid #BBF7D0',
           borderRadius: 18,
           padding: '12px 16px',
           boxSizing: 'border-box',
@@ -357,13 +353,13 @@ export default function QuickGuideModal({
           style={{
             width: '100%',
             padding: '16px',
-            borderRadius: 20,
-            background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-            border: '2px solid #15803D',
-            boxShadow: '0 4px 0 #15803D, 0 10px 24px rgba(34, 197, 94, 0.35)',
+            borderRadius: 16,
+            background: '#16A34A',
+            border: '1px solid #15803D',
+            boxShadow: 'var(--shadow-sm)',
             color: '#FFFFFF',
             fontSize: '16px',
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -419,8 +415,8 @@ export default function QuickGuideModal({
             height: 16,
             borderRadius: '50%',
             background: '#FFFFFF',
-            border: '2px solid #16A34A',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+            border: '1px solid #16A34A',
+            boxShadow: 'var(--shadow-sm)',
           }} />
         </div>
       </div>

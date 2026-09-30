@@ -1,53 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Award,
-  Crown,
-  Flame,
-  Medal,
-  Sparkles,
   Trophy,
-  User,
-  Zap,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
+import { useAsync } from '../hooks/useAsync';
+import AsyncState from '../components/common/AsyncState';
 
-export default function Leaderboard({ user, onBack }) {
+export default function Leaderboard({ onBack }) {
   const { t } = useTranslation();
   const [filterType, setFilterType] = useState('total');
-  const [leaderboard, setLeaderboard] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    api.getUserRating(filterType)
-      .then(res => {
-        if (mounted) setLeaderboard(res);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    return () => { mounted = false; };
-  }, [filterType]);
+  const { data: leaderboard, loading, error, reload } = useAsync(
+    () => api.getUserRating(filterType),
+    [filterType],
+  );
 
   const items = leaderboard?.items || [];
   const me = leaderboard?.me || null;
 
-  if (loading) {
+  if (loading || error) {
     return (
       <div style={{
         width: '100%', minHeight: '85vh', background: '#F8FAFC',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
-        <div style={{ textAlign: 'center', color: '#94A3B8' }}>
-          <Trophy size={40} style={{ marginBottom: 12, opacity: 0.5 }} />
-          <p style={{ fontWeight: 700 }}>{t('lead.title')}</p>
-        </div>
+        <AsyncState loading={loading} error={error} onRetry={reload} />
       </div>
     );
   }
@@ -77,12 +56,12 @@ export default function Leaderboard({ user, onBack }) {
                 padding: '8px 14px',
                 borderRadius: 14,
                 background: '#FFFFFF',
-                border: '1.5px solid #E2E8F0',
+                border: '1px solid #E2E8F0',
                 color: '#475569',
                 fontSize: '13px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                boxShadow: 'var(--shadow-sm)',
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
@@ -104,10 +83,10 @@ export default function Leaderboard({ user, onBack }) {
             alignItems: 'center',
             gap: 6,
             background: '#FEF3C7',
-            border: '1.5px solid #FDE68A',
+            border: '1px solid #FDE68A',
             color: '#D97706',
             fontSize: '12px',
-            fontWeight: 800,
+            fontWeight: 700,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             padding: '5px 14px',
@@ -117,7 +96,7 @@ export default function Leaderboard({ user, onBack }) {
             <Trophy size={14} />
             <span>{t('lead.badge')}</span>
           </div>
-          <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#0F172A', margin: '4px 0 6px 0' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A', margin: '4px 0 6px 0' }}>
             {t('lead.title')}
           </h1>
           <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>
@@ -134,10 +113,10 @@ export default function Leaderboard({ user, onBack }) {
           <div style={{
             display: 'inline-flex',
             background: '#FFFFFF',
-            border: '1.5px solid #E2E8F0',
+            border: '1px solid #E2E8F0',
             borderRadius: 99,
             padding: 4,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+            boxShadow: 'var(--shadow-sm)',
           }}>
             {[
               { id: 'day', label: t('lead.today') },
@@ -152,7 +131,7 @@ export default function Leaderboard({ user, onBack }) {
                   padding: '8px 18px',
                   borderRadius: 99,
                   fontSize: '13px',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   background: filterType === f.id ? '#16A34A' : 'transparent',
                   color: filterType === f.id ? '#FFFFFF' : '#64748B',
                   boxShadow: filterType === f.id ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none',
@@ -177,9 +156,9 @@ export default function Leaderboard({ user, onBack }) {
           {items[1] && (
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 24,
-              border: '1.5px solid #E2E8F0',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               padding: '20px 14px',
               textAlign: 'center',
               order: 1,
@@ -191,19 +170,19 @@ export default function Leaderboard({ user, onBack }) {
                 borderRadius: '50%',
                 margin: '0 auto 10px',
                 background: '#E2E8F0',
-                border: '2px solid #CBD5E1',
+                border: '1px solid #CBD5E1',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#475569',
-                fontWeight: 900,
+                fontWeight: 700,
               }}>
                 {items[1].name.charAt(0)}
               </div>
-              <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[1].name}</div>
+              <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[1].name}</div>
               <div style={{
                 fontSize: '16px',
-                fontWeight: 900,
+                fontWeight: 700,
                 color: '#16A34A',
               }}>
                 {items[1].activity} {t('lead.casesSolved')}
@@ -215,9 +194,9 @@ export default function Leaderboard({ user, onBack }) {
           {items[0] && (
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 26,
-              border: '2px solid #FDE68A',
-              boxShadow: '0 8px 24px rgba(245, 158, 11, 0.15)',
+              borderRadius: 18,
+              border: '1px solid #FDE68A',
+              boxShadow: 'var(--shadow-sm)',
               padding: '26px 16px',
               textAlign: 'center',
               order: 2,
@@ -235,15 +214,15 @@ export default function Leaderboard({ user, onBack }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#B45309',
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: '18px',
               }}>
                 {items[0].name.charAt(0)}
               </div>
-              <div style={{ fontWeight: 900, fontSize: '15px', color: '#0F172A', marginBottom: 2 }}>{items[0].name}</div>
+              <div style={{ fontWeight: 700, fontSize: '15px', color: '#0F172A', marginBottom: 2 }}>{items[0].name}</div>
               <div style={{
                 fontSize: '18px',
-                fontWeight: 900,
+                fontWeight: 700,
                 color: '#D97706',
               }}>
                 {items[0].activity} {t('lead.casesSolved')}
@@ -255,9 +234,9 @@ export default function Leaderboard({ user, onBack }) {
           {items[2] && (
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 24,
-              border: '1.5px solid #E2E8F0',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+              borderRadius: 18,
+              border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)',
               padding: '20px 14px',
               textAlign: 'center',
               order: 3,
@@ -269,19 +248,19 @@ export default function Leaderboard({ user, onBack }) {
                 borderRadius: '50%',
                 margin: '0 auto 10px',
                 background: '#FFEDD5',
-                border: '2px solid #FDBA74',
+                border: '1px solid #FDBA74',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#C2410C',
-                fontWeight: 900,
+                fontWeight: 700,
               }}>
                 {items[2].name.charAt(0)}
               </div>
-              <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[2].name}</div>
+              <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[2].name}</div>
               <div style={{
                 fontSize: '16px',
-                fontWeight: 900,
+                fontWeight: 700,
                 color: '#16A34A',
               }}>
                 {items[2].activity} {t('lead.casesSolved')}
@@ -293,8 +272,8 @@ export default function Leaderboard({ user, onBack }) {
         {me && (
         <div style={{
           background: '#DCFCE7',
-          border: '1.5px solid #86EFAC',
-          borderRadius: 20,
+          border: '1px solid #86EFAC',
+          borderRadius: 16,
           padding: '14px 20px',
           marginBottom: 20,
           display: 'flex',
@@ -311,13 +290,13 @@ export default function Leaderboard({ user, onBack }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: '14px',
             }}>
               #{me.rank}
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#166534' }}>
+              <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#166534' }}>
                 {me.name} {t('lead.you')}
               </div>
               <div style={{ fontSize: '12px', color: '#15803D' }}>
@@ -327,7 +306,7 @@ export default function Leaderboard({ user, onBack }) {
           </div>
           <div style={{
             fontSize: '16px',
-            fontWeight: 900,
+            fontWeight: 700,
             color: '#166534',
           }}>
             #{me.rank}
@@ -338,9 +317,9 @@ export default function Leaderboard({ user, onBack }) {
         {/* Rankings Table/List */}
         <div style={{
           background: '#FFFFFF',
-          borderRadius: 24,
-          border: '1.5px solid #E2E8F0',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+          borderRadius: 18,
+          border: '1px solid #E2E8F0',
+          boxShadow: 'var(--shadow-sm)',
           overflow: 'hidden',
         }}>
           {items.map((item, idx) => (
@@ -357,7 +336,7 @@ export default function Leaderboard({ user, onBack }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{
                   fontSize: '14px',
-                  fontWeight: 800,
+                  fontWeight: 700,
                   color: item.rank <= 3 ? '#D97706' : '#94A3B8',
                   minWidth: 24,
                 }}>
@@ -365,7 +344,7 @@ export default function Leaderboard({ user, onBack }) {
                 </span>
 
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '14px', color: '#0F172A' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
                     {item.name}
                   </div>
                   <div style={{ fontSize: '12px', color: '#64748B' }}>
@@ -376,7 +355,7 @@ export default function Leaderboard({ user, onBack }) {
 
               <div style={{
                 fontSize: '14px',
-                fontWeight: 900,
+                fontWeight: 700,
                 color: item.is_me ? '#166534' : '#16A34A',
               }}>
                 {item.activity}

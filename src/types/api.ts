@@ -164,11 +164,26 @@ export interface SimulationSessionRes {
   ended_at?: string;
 }
 
+export interface SimulationEventResponse {
+  patient_reply?: string;
+  feedback?: string;
+  transcript?: string;
+  transcribe_error?: string;
+  patient_reply_error?: string;
+  feedback_error?: string;
+  reply_audio_base64?: string;
+  reply_audio_mime?: string;
+  vitals?: CaseVitals;
+  [key: string]: any;
+}
+
 export interface SimulationEventRes {
   health_delta?: number;
   health_percent?: number;
   is_correct?: boolean;
-  response?: Record<string, any>;
+  session_ended?: boolean;
+  finish_result?: SimulationFinishRes;
+  response?: SimulationEventResponse;
 }
 
 export interface SimulationFinishRes {

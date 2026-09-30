@@ -1,5 +1,9 @@
 import React, { useEffect } from 'react';
-import { LogOut, X, AlertTriangle, User } from 'lucide-react';
+import {
+  LogOut,
+  X,
+  User,
+} from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
 export default function LogoutConfirmModal({
@@ -51,7 +55,7 @@ export default function LogoutConfirmModal({
           width: '100%',
           maxWidth: '430px',
           background: '#FFFFFF',
-          borderRadius: 26,
+          borderRadius: 18,
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8)',
           padding: '28px 24px 24px 24px',
           position: 'relative',
@@ -107,7 +111,7 @@ export default function LogoutConfirmModal({
             alignItems: 'center',
             justifyContent: 'center',
             color: '#DC2626',
-            boxShadow: '0 10px 20px -5px rgba(239, 68, 68, 0.25)',
+            boxShadow: 'var(--shadow-sm)',
             marginBottom: 16
           }}
         >
@@ -119,7 +123,7 @@ export default function LogoutConfirmModal({
           style={{
             margin: '0 0 8px 0',
             fontSize: '21px',
-            fontWeight: 800,
+            fontWeight: 700,
             color: '#0F172A',
             letterSpacing: '-0.3px',
           }}
@@ -146,7 +150,7 @@ export default function LogoutConfirmModal({
             width: '100%',
             boxSizing: 'border-box',
             background: '#F8FAFC',
-            border: '1.5px solid #E2E8F0',
+            border: '1px solid #E2E8F0',
             borderRadius: 18,
             padding: '12px 14px',
             display: 'flex',
@@ -166,7 +170,7 @@ export default function LogoutConfirmModal({
               alignItems: 'center',
               justifyContent: 'center',
               color: '#475569',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: '16px',
               flexShrink: 0
             }}
@@ -223,7 +227,7 @@ export default function LogoutConfirmModal({
               padding: '13px 16px',
               borderRadius: 16,
               background: '#F1F5F9',
-              border: '1.5px solid #E2E8F0',
+              border: '1px solid #E2E8F0',
               color: '#475569',
               fontSize: '14px',
               fontWeight: 700,
@@ -254,13 +258,13 @@ export default function LogoutConfirmModal({
               border: 'none',
               color: '#FFFFFF',
               fontSize: '14px',
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              boxShadow: '0 8px 18px -4px rgba(220, 38, 38, 0.4)',
+              boxShadow: 'var(--shadow-sm)',
               transition: 'all 0.15s ease'
             }}
             onMouseEnter={(e) => {

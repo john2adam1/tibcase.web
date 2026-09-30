@@ -68,8 +68,8 @@ export default function ClinicalHintModal({
               height: 52,
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #FEF08A, #FDE047)',
-              border: '2px solid #FACC15',
-              boxShadow: '0 0 20px rgba(234, 179, 8, 0.4)',
+              border: '1px solid #FACC15',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -81,7 +81,7 @@ export default function ClinicalHintModal({
             <div>
               <h3 style={{
                 fontSize: '20px',
-                fontWeight: 800,
+                fontWeight: 700,
                 color: '#0F172A',
                 margin: '0 0 2px 0',
               }}>
@@ -121,10 +121,10 @@ export default function ClinicalHintModal({
         <div style={{ alignSelf: 'flex-start' }}>
           <span style={{
             background: '#FEF9C3',
-            border: '1.5px solid #FDE047',
+            border: '1px solid #FDE047',
             color: '#B45309',
             fontSize: '12px',
-            fontWeight: 800,
+            fontWeight: 700,
             padding: '4px 10px',
             borderRadius: 99,
             display: 'inline-flex',
@@ -139,14 +139,14 @@ export default function ClinicalHintModal({
         {/* Amber Hint Card */}
         <div style={{
           background: '#FEF9C3',
-          border: '1.5px solid #FDE047',
-          borderRadius: 22,
+          border: '1px solid #FDE047',
+          borderRadius: 18,
           padding: '20px 18px',
           color: '#1E293B',
           fontSize: '15px',
           fontWeight: 600,
           lineHeight: 1.55,
-          boxShadow: '0 2px 6px rgba(234, 179, 8, 0.1)',
+          boxShadow: 'var(--shadow-sm)',
         }}>
           {hintText}
         </div>
@@ -173,13 +173,13 @@ export default function ClinicalHintModal({
           style={{
             width: '100%',
             padding: '16px',
-            borderRadius: 20,
-            background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-            border: '2px solid #15803D',
-            boxShadow: '0 5px 0 #15803D, 0 10px 24px rgba(34, 197, 94, 0.35)',
+            borderRadius: 16,
+            background: '#16A34A',
+            border: '1px solid #15803D',
+            boxShadow: 'var(--shadow-sm)',
             color: '#FFFFFF',
             fontSize: '16px',
-            fontWeight: 800,
+            fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
