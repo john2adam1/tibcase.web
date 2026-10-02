@@ -6,6 +6,7 @@ export const translations = {
   uz: {
     // Nav
     'nav.home': 'Asosiy',
+    'case.preparing': 'Keys tayyorlanmoqda...',
     'nav.category': "Bo'limlar",
     'nav.ranking': 'Reyting',
     'nav.profile': 'Profil',
@@ -333,6 +334,7 @@ export const translations = {
   ru: {
     // Nav
     'nav.home': 'Главная',
+    'case.preparing': 'Подготовка кейса...',
     'nav.category': 'Категории',
     'nav.ranking': 'Рейтинг',
     'nav.profile': 'Профиль',
@@ -660,6 +662,7 @@ export const translations = {
   en: {
     // Nav
     'nav.home': 'Home',
+    'case.preparing': 'Preparing case...',
     'nav.category': 'Categories',
     'nav.ranking': 'Ranking',
     'nav.profile': 'Profile',

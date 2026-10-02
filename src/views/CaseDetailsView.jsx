@@ -9,7 +9,6 @@ import {
   Play,
   FileText,
   Bookmark,
-  User,
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
 
@@ -54,10 +53,6 @@ export default function CaseDetailsView({
   const displayDuration = caseItem.expected_duration_minutes
     ? `${caseItem.expected_duration_minutes} min`
     : null;
-  const displayGender = caseItem.patient_gender
-    ? (caseItem.patient_gender === 'female' ? t('case.female', 'Ayol') : t('case.male', 'Erkak'))
-    : null;
-  const displayAge = caseItem.patient_age ? `${caseItem.patient_age} ${t('case.yearsOld', 'yosh')}` : null;
   const displayAnamnesis = caseItem.chief_complaint || caseItem.subtitle || '';
 
   return (
@@ -165,21 +160,6 @@ export default function CaseDetailsView({
               {displayCategory}
             </span>
           )}
-          {caseItem.status && (
-            <span style={{
-              background: '#F1F5F9',
-              border: '1px solid #E2E8F0',
-              color: '#475569',
-              fontSize: '11px',
-              fontWeight: 700,
-              letterSpacing: '0.5px',
-              padding: '4px 10px',
-              borderRadius: 8,
-              textTransform: 'uppercase',
-            }}>
-              {caseItem.status}
-            </span>
-          )}
         </div>
 
         {/* Case Title and ID */}
@@ -189,16 +169,11 @@ export default function CaseDetailsView({
             fontWeight: 700,
             color: '#0F172A',
             letterSpacing: '-0.02em',
-            margin: '0 0 6px 0',
+            margin: 0,
             lineHeight: 1.3,
           }}>
             {displayTitle}
           </h2>
-          {caseItem.id && (
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8' }}>
-              Case ID: #{String(caseItem.id).slice(0, 8)}
-            </div>
-          )}
         </div>
 
         {/* Stat Cards Grid: Difficulty, Duration, Topic */}
@@ -309,42 +284,6 @@ export default function CaseDetailsView({
             </div>
           )}
         </div>
-
-        {/* Patient Demographics (Rendered only if gender or age exists in API) */}
-        {(displayGender || displayAge) && (
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 18,
-            border: '1px solid #E2E8F0',
-            boxShadow: 'var(--shadow-sm)',
-            padding: '16px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-          }}>
-            <div style={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              background: '#F1F5F9',
-              border: '1px solid #CBD5E1',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#475569',
-            }}>
-              <User size={24} />
-            </div>
-            <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
-                {t('case.patientProfile', 'Bemor demografiyasi')}
-              </div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', marginTop: 2 }}>
-                {[displayGender, displayAge].filter(Boolean).join(', ')}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Anamnesis / Chief Complaint Card */}
         {displayAnamnesis && (

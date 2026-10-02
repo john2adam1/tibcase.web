@@ -47,18 +47,10 @@ export default function HomeView({
 
       {modalOpen && (
         <div
+          className="ui-modal-overlay"
           onClick={() => setModalOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,.4)', zIndex: 120, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
-          <div
-            className="ui-card"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%', maxWidth: 440, borderRadius: '20px 20px 0 0', padding: 20,
-              paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
-              display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn .2s ease-out',
-            }}
-          >
+          <div className="ui-card ui-modal" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ fontSize: 18, fontWeight: 700 }}>{t('modal.configTitle')}</h3>
               <button className="ui-icon-btn" onClick={() => setModalOpen(false)} aria-label="Close" style={{ border: 'none' }}>

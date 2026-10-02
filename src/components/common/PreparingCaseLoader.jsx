@@ -1,85 +1,53 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { Activity } from 'lucide-react';
+import { useTranslation } from '../../i18n.jsx';
 
-export default function PreparingCaseLoader({
-  onFinish,
-  duration = 2000
-}) {
+export default function PreparingCaseLoader({ onFinish, duration = 2000 }) {
+  const { t } = useTranslation();
+  const finishRef = useRef(onFinish);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (onFinish) onFinish();
-    }, duration);
+    finishRef.current = onFinish;
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => finishRef.current?.(), duration);
     return () => clearTimeout(timer);
-  }, [duration, onFinish]);
+  }, [duration]);
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'radial-gradient(circle at center, #FFF4E6 0%, #FFF8EF 60%, #FFFFFF 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100,
-      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-    }}>
-      {/* Central Glowing Circle with 3D Ambulance */}
-      <div style={{
-        position: 'relative',
-        width: 170,
-        height: 170,
-        borderRadius: '50%',
-        background: '#FFFFFF',
-        boxShadow: 'var(--shadow-sm)',
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'var(--bg-main)',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 28,
-        animation: 'pulse 2s infinite',
-      }}>
-        {/* Soft Glowing Aura */}
-        <div style={{
-          position: 'absolute',
-          inset: -14,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(251, 146, 60, 0.25) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-
-        <div style={{
-          fontSize: '70px',
-          filter: 'drop-shadow(0 10px 14px rgba(0,0,0,0.15))',
-        }}>
-          🚑
-        </div>
+        gap: 20,
+        zIndex: 100,
+      }}
+    >
+      <div
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 20,
+          background: 'var(--accent-soft)',
+          border: '1px solid var(--accent-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'pulse 1.6s ease-in-out infinite',
+        }}
+      >
+        <Activity size={32} color="var(--accent)" strokeWidth={2.2} />
       </div>
-
-      {/* Preparing Case Label with Pulsating Dot */}
-      <div style={{
-        background: 'rgba(255, 237, 213, 0.65)',
-        border: '1px solid #FED7AA',
-        borderRadius: 99,
-        padding: '8px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-      }}>
-        <div style={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: '#EA580C',
-          boxShadow: 'var(--shadow-sm)',
-        }} />
-        <span style={{
-          fontSize: '15px',
-          fontWeight: 700,
-          color: '#EA580C',
-          letterSpacing: '-0.01em',
-        }}>
-          Preparing case...
-        </span>
-      </div>
+      <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>
+        {t('case.preparing', 'Keys tayyorlanmoqda...')}
+      </span>
     </div>
   );
 }

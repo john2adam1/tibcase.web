@@ -386,6 +386,8 @@ export default function App() {
         sessionId: session.session_id,
         health_percent: session.health_percent,
         initial_vitals: session.initial_vitals,
+        time_limit_seconds: session.time_limit_seconds || 0,
+        startedAt: Date.now(),
       });
       // Sync limit/profile from backend instead of guessing locally
       api.getUserLimit().then(lim => { if (lim) setUserLimit(lim); }).catch(() => {});
@@ -465,7 +467,7 @@ export default function App() {
     }
   };
 
-  const handleStartSimulationFromHome = async ({ categoryId, difficulty, duration }) => {
+  const handleStartSimulationFromHome = async ({ categoryId }) => {
     try {
       showToast("Klinik keys tayyorlanmoqda...");
       let targetCase = null;
@@ -503,7 +505,7 @@ export default function App() {
       let finishResult = result?.finish_result || null;
       try {
         if (!skipFinishApi && hasRealSession) {
-          finishResult = await api.finishSimulation(sessionId, 'manual');
+          finishResult = await api.finishSimulation(sessionId, result?.reason || 'manual');
         }
       } catch (err) {
         if (isSessionNotActiveError(err) && hasRealSession) {

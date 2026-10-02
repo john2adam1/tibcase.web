@@ -110,6 +110,13 @@ export default function CaseSimulationRoom({
     voiceEnabledRef.current = voiceEnabled && patientVoiceOn;
   }, [voiceEnabled, patientVoiceOn]);
 
+  // Lock page scroll while the room is open (only the chat scrolls)
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onPlaybackChange(setSpeaking);
     return () => {
@@ -122,7 +129,15 @@ export default function CaseSimulationRoom({
     const next = !patientVoiceOn;
     setPatientVoiceOn(next);
     try { localStorage.setItem(PATIENT_VOICE_KEY, next ? 'on' : 'off'); } catch { /* ignore */ }
-    if (!next) stopPlayback();
+    if (!next) {
+      stopPlayback();
+      return;
+    }
+    // Turning voice on: read the patient's complaint (or latest patient line) aloud;
+    // later replies keep being voiced because voiceEnabledRef follows this toggle.
+    const lastPatient = [...messages].reverse().find((m) => m.sender !== 'user' && m.text);
+    if (lastPatient?.audioBase64) playBase64Audio(lastPatient.audioBase64, lastPatient.audioMime || 'audio/wav');
+    else if (lastPatient?.text) speakText(lastPatient.text);
   };
 
   useEffect(() => {
@@ -145,13 +160,19 @@ export default function CaseSimulationRoom({
       .catch(() => setVoiceEnabled(true));
   }, []);
 
+  // Wall-clock timer: immune to throttled background tabs and re-renders
+  const [startedAt] = useState(() => caseItem?.startedAt || Date.now());
+  const timeLimit = Number(caseItem?.time_limit_seconds) || 0;
   useEffect(() => {
     if (sessionEnded) return undefined;
-    const timer = setInterval(() => {
-      setSecondsElapsed((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [sessionEnded]);
+    const tick = () => setSecondsElapsed(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+    const timer = setInterval(tick, 1000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [sessionEnded, startedAt]);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -193,6 +214,7 @@ export default function CaseSimulationRoom({
 
     if (onFinishCase) {
       onFinishCase({
+        reason: extra.reason || 'manual',
         skipFinishApi: Boolean(extra.skipFinishApi),
         sessionEnded: Boolean(extra.sessionEnded),
         finish_result: finishResult || null,
@@ -203,6 +225,13 @@ export default function CaseSimulationRoom({
       });
     }
   }, [onFinishCase]);
+
+  // Time limit from backend: auto-finish with reason "timeout"
+  useEffect(() => {
+    if (timeLimit > 0 && secondsElapsed >= timeLimit && !sessionEndedRef.current) {
+      completeSession(null, { reason: 'timeout' });
+    }
+  }, [secondsElapsed, timeLimit, completeSession]);
 
   const applyEventResult = useCallback((data, { userMsgId, userAudio } = {}) => {
     const response = data?.response || {};
@@ -399,18 +428,8 @@ export default function CaseSimulationRoom({
   );
 
   return (
-    <div style={{
-      width: '100%',
-      minHeight: '90vh',
-      background: '#F8FAFC',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '12px 12px 90px 12px',
-      boxSizing: 'border-box',
-      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-    }}>
-      <div style={{ width: '100%', maxWidth: 580, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div className="sim-root">
+      <div className="sim-col">
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -432,7 +451,7 @@ export default function CaseSimulationRoom({
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 2 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <Clock size={12} /> {formatTimer(secondsElapsed)}
+                <Clock size={12} /> {formatTimer(timeLimit > 0 ? Math.max(0, timeLimit - secondsElapsed) : secondsElapsed)}
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <MessageSquare size={12} /> {questionsCount}
@@ -514,15 +533,7 @@ export default function CaseSimulationRoom({
         )}
 
         {/* Conversation */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          minHeight: 200,
-          maxHeight: 'calc(100dvh - 430px)',
-          overflowY: 'auto',
-          padding: '4px 2px',
-        }}>
+        <div className="sim-chat" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 2px' }}>
           {messages.length === 0 && (
             <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, fontWeight: 600, margin: '24px 0' }}>
               {t('sim.emptyHint', 'Bemorga savol bering yoki klinik buyruq yozing')}
