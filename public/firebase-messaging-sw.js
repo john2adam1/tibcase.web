@@ -17,5 +17,5 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   if (payload.notification) return;
   const d = payload.data || {};
-  self.registration.showNotification(d.title || 'TibCase', { body: d.body || d.message || '', icon: '/favicon.svg' });
+  self.registration.showNotification(d.title || 'TibStation AI', { body: d.body || d.message || '', icon: '/favicon.svg' });
 });

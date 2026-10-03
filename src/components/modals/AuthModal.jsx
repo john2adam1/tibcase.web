@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import {
-  Activity,
   ArrowRight,
   CheckCircle2,
   Mail,
@@ -14,7 +13,7 @@ import {
 import { api, setStoredUser, setToken, setRefreshToken } from '../../api';
 import { useTranslation } from '../../i18n.jsx';
 
-const TELEGRAM_BOT_URL = 'https://t.me/tibstation_aibot/?start=login';
+const TELEGRAM_BOT_URL = 'https://t.me/tibstation_aibot?start=login';
 
 // Memoized Google Login component to prevent redundant GSI initializations on parent state updates
 const MemoizedGoogleLogin = React.memo(function MemoizedGoogleLogin({
@@ -496,19 +495,7 @@ export default function AuthModal({
 
         {/* Brand Logo */}
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div style={{
-            width: 52,
-            height: 52,
-            borderRadius: 18,
-            background: '#16A34A',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 12px',
-            boxShadow: 'var(--shadow-sm)',
-          }}>
-            <Activity size={26} color="#fff" />
-          </div>
+          <img src="/logo.svg" alt="TibStation AI" width={56} height={56} style={{ borderRadius: 16, display: 'block', margin: '0 auto 12px' }} />
 
           <h3 style={{
             fontSize: '1.35rem',
@@ -703,11 +690,13 @@ export default function AuthModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => {
-                    // The SDK script is loaded in every browser, so only use it when the
-                    // site is really opened inside Telegram (initData is non-empty).
-                    // In a normal browser let the anchor open a new tab.
+                    // SDK is loaded in every browser, so only treat it as Telegram when initData is non-empty.
+                    // On phones/tablets (android/ios) openTelegramLink switches to the bot chat and
+                    // collapses the Mini App to the bottom bar. On desktop/web keep the normal new tab.
                     const tg = window.Telegram?.WebApp;
-                    if (tg?.initData && typeof tg.openTelegramLink === 'function') {
+                    const isTelegram = Boolean(tg?.initData);
+                    const isMobileTg = isTelegram && ['android', 'ios', 'android_x'].includes(tg.platform);
+                    if (isMobileTg && typeof tg.openTelegramLink === 'function') {
                       e.preventDefault();
                       tg.openTelegramLink(TELEGRAM_BOT_URL);
                     }

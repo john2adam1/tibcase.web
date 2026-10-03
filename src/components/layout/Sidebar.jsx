@@ -5,7 +5,6 @@ import {
   User,
   LogOut,
   X,
-  Activity,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
@@ -65,8 +64,8 @@ export default function Sidebar({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px' }}>
           <div onClick={() => handleNavClick('cases')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <Activity size={22} color="var(--accent)" strokeWidth={2.4} />
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>TibCase</span>
+            <img src="/logo.svg" alt="TibStation AI" width={32} height={32} style={{ borderRadius: 8, display: 'block' }} />
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>TibStation <span style={{ color: 'var(--accent)' }}>AI</span></span>
           </div>
           <button
             className="sidebar-close-btn"

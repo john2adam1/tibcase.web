@@ -812,7 +812,7 @@ export default function App() {
         color: '#64748B',
       }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <div>© 2026 <strong>TibCase AI</strong>. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.</div>
+          <div>© 2026 <strong>TibStation AI</strong>. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.</div>
           <div style={{ display: 'flex', gap: 20 }}>
             <span style={{ color: '#16A34A', fontWeight: 700 }}>AHA & ESC Standartlari</span>
           </div>

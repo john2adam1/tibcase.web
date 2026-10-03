@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { Activity } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
 export default function PreparingCaseLoader({ onFinish, duration = 2000 }) {
@@ -43,7 +42,7 @@ export default function PreparingCaseLoader({ onFinish, duration = 2000 }) {
           animation: 'pulse 1.6s ease-in-out infinite',
         }}
       >
-        <Activity size={32} color="var(--accent)" strokeWidth={2.2} />
+        <img src="/logo.svg" alt="" width={44} height={44} style={{ borderRadius: 12, display: 'block' }} />
       </div>
       <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>
         {t('case.preparing', 'Keys tayyorlanmoqda...')}

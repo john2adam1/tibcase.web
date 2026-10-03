@@ -25,11 +25,11 @@ export default function DebriefModal({
   const isSuccess = score >= 75;
 
   const handleShare = async () => {
-    const text = `TibCase simulyatorida klinik keysni ${score}% aniqlik bilan yechdim va +${xp} XP to'pladim!`;
+    const text = `TibStation AI simulyatorida klinik keysni ${score}% aniqlik bilan yechdim va +${xp} XP to'pladim!`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'TibCase AI Debriefing Natijasi',
+          title: 'TibStation AI Debriefing Natijasi',
           text,
           url: window.location.origin,
         });

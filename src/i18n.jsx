@@ -165,7 +165,7 @@ export const translations = {
     'cat.back': 'Orqaga',
 
     // Auth
-    'auth.title': 'TibCase Profiliga Kirish',
+    'auth.title': 'TibStation AI Profiliga Kirish',
     'auth.subtitle': 'Klinik simulyatsiyalar va shaxsiy rivojlanish hisoboti',
     'auth.methodEmail': 'Email',
     'auth.methodTelegram': 'Telegram',
@@ -292,7 +292,7 @@ export const translations = {
     'debrief.closeBtn': 'Hisobotni yopish va davom etish',
 
     // General
-    'gen.copyright': '© 2026 TibCase AI. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.',
+    'gen.copyright': '© 2026 TibStation AI. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.',
     'gen.standards': 'AHA & ESC Standartlari',
 
     // Notifications
@@ -493,7 +493,7 @@ export const translations = {
     'cat.back': 'Назад',
 
     // Auth
-    'auth.title': 'Вход в TibCase',
+    'auth.title': 'Вход в TibStation AI',
     'auth.subtitle': 'Клинические симуляции и отчёт личного развития',
     'auth.methodEmail': 'Email',
     'auth.methodTelegram': 'Telegram',
@@ -620,7 +620,7 @@ export const translations = {
     'debrief.closeBtn': 'Закрыть отчет и продолжить',
 
     // General
-    'gen.copyright': '© 2026 TibCase AI. Виртуальный клинический симулятор для врачей и студентов.',
+    'gen.copyright': '© 2026 TibStation AI. Виртуальный клинический симулятор для врачей и студентов.',
     'gen.standards': 'Стандарты AHA & ESC',
 
     // Notifications
@@ -821,7 +821,7 @@ export const translations = {
     'cat.back': 'Back',
 
     // Auth
-    'auth.title': 'Sign in to TibCase',
+    'auth.title': 'Sign in to TibStation AI',
     'auth.subtitle': 'Clinical simulations and personal development reports',
     'auth.methodEmail': 'Email',
     'auth.methodTelegram': 'Telegram',
@@ -948,7 +948,7 @@ export const translations = {
     'debrief.closeBtn': 'Close Report and Continue',
 
     // General
-    'gen.copyright': '© 2026 TibCase AI. Virtual Clinical Simulator for Doctors and Students.',
+    'gen.copyright': '© 2026 TibStation AI. Virtual Clinical Simulator for Doctors and Students.',
     'gen.standards': 'AHA & ESC Standards',
 
     // Notifications

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bell, Activity } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
 
 export default function TabletHeader({ onToggleSidebar, onOpenNotifications, unreadCount = 0 }) {
   return (
@@ -24,8 +24,8 @@ export default function TabletHeader({ onToggleSidebar, onOpenNotifications, unr
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, userSelect: 'none' }}>
-        <Activity size={20} color="var(--accent)" strokeWidth={2.4} />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>TibCase</span>
+        <img src="/logo.svg" alt="TibStation AI" width={28} height={28} style={{ borderRadius: 8, display: 'block' }} />
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>TibStation <span style={{ color: 'var(--accent)' }}>AI</span></span>
       </div>
 
       <button id="btn-open-notifications" className="ui-icon-btn" onClick={onOpenNotifications} aria-label="Notifications" style={{ border: 'none' }}>

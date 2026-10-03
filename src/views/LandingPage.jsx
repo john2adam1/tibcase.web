@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Activity,
   ArrowRight,
   Award,
   HeartPulse,
@@ -39,18 +38,7 @@ export default function LandingPage({
         }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: '#16A34A',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-sm)',
-            }}>
-              <Activity className="heart-pulse" size={22} color="#ffffff" />
-            </div>
+            <img src="/logo.svg" alt="TibStation AI" width={40} height={40} style={{ borderRadius: 12, display: 'block' }} />
             <div>
               <span style={{
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -59,7 +47,7 @@ export default function LandingPage({
                 letterSpacing: '-0.02em',
                 color: '#0F172A'
               }}>
-                TibCase AI
+                TibStation AI
               </span>
             </div>
           </div>
@@ -204,7 +192,7 @@ export default function LandingPage({
       }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: '2.1rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>
-            Nima uchun aynan TibCase AI?
+            Nima uchun aynan TibStation AI?
           </h2>
           <p style={{ color: '#64748B', fontSize: '1.05rem', fontWeight: 500, maxWidth: 560, margin: '0 auto' }}>
             Nazariyadan amaliyotga o'tishning xavfsiz va eng samarali usuli

@@ -301,10 +301,10 @@ export default function ProfileView({
 
   const handleShareReferral = async () => {
     if (!referral?.referral_code) return;
-    const text = `TibCase: ${t('settings.referral', "Do'stlarni taklif qilish")} — ${referral.referral_code}`;
+    const text = `TibStation AI: ${t('settings.referral', "Do'stlarni taklif qilish")} — ${referral.referral_code}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'TibCase', text, url: window.location.origin });
+        await navigator.share({ title: 'TibStation AI', text, url: window.location.origin });
       } catch {
         // user cancelled
       }
@@ -388,8 +388,8 @@ export default function ProfileView({
 
   const handleShare = async () => {
     const shareData = {
-      title: 'TibCase Medical Simulator',
-      text: 'Join me on TibCase to practice real clinical cases!',
+      title: 'TibStation AI Medical Simulator',
+      text: 'Join me on TibStation AI to practice real clinical cases!',
       url: window.location.origin
     };
     if (navigator.share) {
@@ -1812,7 +1812,7 @@ export default function ProfileView({
                   <Sparkles size={28} />
                 </div>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
-                  TibCase Medical Simulator
+                  TibStation AI Medical Simulator
                 </h3>
                 <div style={{
                   display: 'inline-flex',
@@ -2250,7 +2250,7 @@ export default function ProfileView({
       {/* 4. Rate Us Modal */}
       {modalType === 'rate' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Rate TibCase" onClose={() => setModalType(null)}>
+          <ModalCard title="Rate TibStation AI" onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
               <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
                 How would you rate your clinical learning experience?
@@ -2353,7 +2353,7 @@ export default function ProfileView({
           <ModalCard title="Terms of Use" onClose={() => setModalType(null)}>
             <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, maxHeight: 300, overflowY: 'auto' }}>
               <p>
-                <strong>1. Educational Purpose:</strong> TibCase is an interactive medical simulator designed exclusively for training medical students and healthcare professionals. It does not replace real clinical judgement or hospital protocols.
+                <strong>1. Educational Purpose:</strong> TibStation AI is an interactive medical simulator designed exclusively for training medical students and healthcare professionals. It does not replace real clinical judgement or hospital protocols.
               </p>
               <p>
                 <strong>2. Virtual Cases:</strong> All patient data and scenarios are synthesized for clinical decision training and respect medical confidentiality.
