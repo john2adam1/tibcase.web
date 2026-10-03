@@ -40,6 +40,7 @@ export default function StudyPlanView({ onBack }) {
       }
     } catch (err) {
       console.error('Failed to load study plan', err);
+      showToast(err?.message || t('common.error', 'Xatolik yuz berdi'), 'error');
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,7 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
   const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
   const showToast = (msg) => {
     setToast(msg);
@@ -22,10 +23,12 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const res = await api.getNotifications();
       setNotifications(res?.notifications || []);
     } catch (err) {
       console.error('Failed to load notifications', err);
+      setLoadError(err?.message || 'Xatolik');
     } finally {
       setLoading(false);
     }
@@ -182,6 +185,12 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
           {t('notifications.loading', 'Yuklanmoqda...')}
+        </div>
+      ) : loadError ? (
+        <div style={{ textAlign: 'center', marginTop: 60, padding: '0 20px', color: '#B91C1C' }}>
+          <p style={{ fontWeight: 700, margin: '0 0 8px' }}>{t('common.error', 'Xatolik yuz berdi')}</p>
+          <p style={{ fontSize: 13, margin: '0 0 16px', color: '#64748B' }}>{loadError}</p>
+          <button type="button" className="ui-btn" onClick={fetchNotifications}>{t('common.retry', 'Qayta urinish')}</button>
         </div>
       ) : notifications.length === 0 ? (
         <div style={{

@@ -690,15 +690,15 @@ export default function AuthModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => {
-                    // SDK is loaded in every browser, so only treat it as Telegram when initData is non-empty.
-                    // On phones/tablets (android/ios) openTelegramLink switches to the bot chat and
-                    // collapses the Mini App to the bottom bar. On desktop/web keep the normal new tab.
+                    // Always stop the browser from following the link itself.
+                    e.preventDefault();
+                    // telegram-web-app.js (index.html) provides window.Telegram. initData is non-empty
+                    // only when the site is really opened inside Telegram.
                     const tg = window.Telegram?.WebApp;
-                    const isTelegram = Boolean(tg?.initData);
-                    const isMobileTg = isTelegram && ['android', 'ios', 'android_x'].includes(tg.platform);
-                    if (isMobileTg && typeof tg.openTelegramLink === 'function') {
-                      e.preventDefault();
+                    if (tg?.initData && typeof tg.openTelegramLink === 'function') {
                       tg.openTelegramLink(TELEGRAM_BOT_URL);
+                    } else {
+                      window.open(TELEGRAM_BOT_URL, '_blank', 'noopener,noreferrer');
                     }
                   }}
                   style={{
