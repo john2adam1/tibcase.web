@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import UserAvatar from '../components/common/UserAvatar';
 import { api } from '../api';
 import { enablePush, pushUnsupportedReason } from '../utils/push';
 import {
@@ -31,7 +32,6 @@ import {
   Phone,
   ExternalLink,
   HelpCircle,
-  Camera,
   Laptop,
   RefreshCw,
   ChevronDown,
@@ -544,42 +544,7 @@ export default function ProfileView({
                 justifyContent: 'space-between',
                 gap: 16,
               }}>
-                {/* Avatar with yellow circular background */}
-                <div style={{
-                  position: 'relative',
-                  width: 76,
-                  height: 76,
-                  borderRadius: '50%',
-                  background: '#FDE047',
-                  border: '3px solid #FEF08A',
-                  boxShadow: 'var(--shadow-sm)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  flexShrink: 0,
-                }}>
-                  <img
-                    src={user?.image_url || undefined}
-                    alt={user?.name || ''}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                  <span style={{
-                    display: 'none',
-                    fontSize: '2rem',
-                    fontWeight: 700,
-                    color: '#854D0E',
-                  }}>
-                    {user?.name ? user.name[0] : 'J'}
-                  </span>
-                </div>
+                <UserAvatar name={user?.name} size={76} />
 
                   {/* User Name & Subtitle */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1339,63 +1304,8 @@ export default function ProfileView({
           <ModalCard title="Ma'lumotlarim va Profil" onClose={() => setModalType(null)} maxWidth={460}>
             <form onSubmit={handleSaveProfileInfo} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-              {/* Avatar Photo Selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div style={{ position: 'relative', width: 84, height: 84 }}>
-                  <img
-                    src={profileForm.imagePreview || user?.image_url || undefined}
-                    alt="Profile"
-                    style={{
-                      width: 84,
-                      height: 84,
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '3px solid #22C55E',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  />
-                  <label
-                    htmlFor="profile-avatar-input"
-                    title="Rasmni o'zgartirish"
-                    style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      right: 0,
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: '#16A34A',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      border: '1px solid #FFFFFF',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  >
-                    <Camera size={14} />
-                  </label>
-                  <input
-                    id="profile-avatar-input"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setProfileForm(prev => ({
-                          ...prev,
-                          imageFile: file,
-                          imagePreview: URL.createObjectURL(file),
-                        }));
-                      }
-                    }}
-                  />
-                </div>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>
-                  Profil rasmini yangilash
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+                <UserAvatar name={profileForm.name || user?.name} size={84} />
               </div>
 
               {/* Readonly Badges Strip */}

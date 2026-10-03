@@ -240,6 +240,11 @@ input, select, textarea {
 
 /* Tablets and Mobile (< 1024px) rule */
 @media (max-width: 1023.98px) {
+  /* The sticky header sits inside the padded wrapper, so give the content its own gap below it */
+  .app-main-content-wrapper:not(.simulation-mode) > main {
+    padding-top: 20px;
+  }
+
   .dashboard-stats-grid {
     display: none !important;
   }

@@ -27,15 +27,6 @@ export default function DashboardHero({ user, categories = [], banners = [], onO
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div>
-        <h1 className="ui-title" style={{ fontSize: 24 }}>
-          {t('hero.greeting', 'Assalomu alaykum')}{user?.name ? `, ${user.name}` : ''}
-        </h1>
-        <p className="ui-subtitle" style={{ marginTop: 4 }}>
-          {t('home.welcomeSubtitle', 'Bugun yangi klinik bilimlarni mustahkamlash uchun ajoyib kun!')}
-        </p>
-      </div>
-
       <div className="ui-stats">
         <Stat icon={Zap} value={`${user?.level ?? 1}`} label={`${t('nav.level', 'Level')} · ${user?.xp ?? 0} XP`} onClick={onOpenLeaderboard} />
         <Stat icon={Coins} value={user?.coins ?? 0} label={t('nav.coins', 'Tangalar')} onClick={onOpenStore} />

@@ -1,19 +1,55 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronLeft,
   BookOpen,
   Heart,
-  Lock,
+  Wind,
+  Brain,
+  Baby,
+  Siren,
+  Bone,
+  Droplet,
+  Stethoscope,
+  Scissors,
+  Pill,
+  Eye,
+  Check,
   Inbox,
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
 
-export default function RoadmapView({
-  category,
-  onSelectNode,
-  onBack
-}) {
+// Department -> icon. Matched by keywords in the category name (any language).
+const ICON_RULES = [
+  [/kardio|cardio|yurak|сердц|кардио/i, Heart],
+  [/pulmo|opka|o'pka|лёгк|легк|пульмон|nafas/i, Wind],
+  [/nevro|neuro|miya|невро/i, Brain],
+  [/pediat|bola|педиат|детск/i, Baby],
+  [/reanim|shoshilinch|emergency|реаним|неотлож/i, Siren],
+  [/ortoped|travma|suyak|bone|травм|ортопед/i, Bone],
+  [/endokrin|diabet|эндокрин/i, Droplet],
+  [/jarroh|surg|хирург/i, Scissors],
+  [/farm|pharm|dori|фарм/i, Pill],
+  [/oftalm|ko'z|глаз|офтальм/i, Eye],
+];
+
+function pickIcon(name) {
+  const hit = ICON_RULES.find(([re]) => re.test(name || ''));
+  return hit ? hit[1] : Stethoscope;
+}
+
+function DeptIcon({ name, ...props }) {
+  return React.createElement(pickIcon(name), props);
+}
+
+const ml = (v) => {
+  if (v && typeof v === 'object') return v.uz || v.ru || v.en || '';
+  return v ?? '';
+};
+
+const ZIGZAG = [0, 56, 0, -56];
+
+export default function RoadmapView({ category, onSelectNode, onBack }) {
   const { t } = useTranslation();
   const [topics, setTopics] = useState([]);
   const [cases, setCases] = useState([]);
@@ -23,16 +59,14 @@ export default function RoadmapView({
 
   useEffect(() => {
     let isMounted = true;
-
-    async function loadRoadmapData() {
+    async function load() {
       if (!categoryId) return;
       try {
         setLoading(true);
         const [topicsData, casesData] = await Promise.all([
           api.getTopics(categoryId),
-          api.getCases({ category_id: categoryId, limit: 100 })
+          api.getCases({ category_id: categoryId, limit: 100 }),
         ]);
-
         if (isMounted) {
           setTopics(topicsData || []);
           setCases(casesData || []);
@@ -43,67 +77,37 @@ export default function RoadmapView({
         if (isMounted) setLoading(false);
       }
     }
-
-    loadRoadmapData();
-
+    load();
     return () => { isMounted = false; };
   }, [categoryId]);
 
-  const categoryTitle = category?.title || (category?.name ? category.name.charAt(0).toUpperCase() + category.name.slice(1) : 'Kategoriya');
-  const totalCasesCount = cases.length;
-  const completedCount = cases.filter(c => c.status === 'completed' || c.status === 'passed').length;
+  const categoryName = String(ml(category?.title || category?.name) || '');
+  const categoryTitle = categoryName
+    ? categoryName.charAt(0).toUpperCase() + categoryName.slice(1)
+    : t('roadmap.category', 'Kategoriya');
+  const isHeart = pickIcon(categoryName) === Heart;
 
-  // Build nodes based strictly on API topics (or cases if no topics created yet)
-  const roadmapNodes = topics.length > 0
-    ? topics.map((top, idx) => {
-        const topicCases = cases.filter(c => c.topic_id === top.id);
-        const casesInTopic = topicCases.length || 1;
-        return {
-          id: top.id,
-          title: top.name || `${idx + 1}-${t('roadmap.topic', 'mavzu')}`,
-          casesCount: casesInTopic,
-          cases: topicCases,
-          isUnlocked: idx === 0, // first topic unlocked
-          xp: 250 + (idx * 50),
-          xOffset: idx === 0 ? 0 : (idx % 2 === 1 ? 50 : -45)
-        };
-      })
-    : (cases.length > 0 ? [{
-        id: 'default-topic-1',
-        title: cases[0].title || `1-${t('roadmap.topic', 'mavzu')}`,
-        casesCount: cases.length,
-        cases: cases,
-        isUnlocked: true,
-        xp: 250,
-        xOffset: 0
-      }] : []);
+  const isDone = (c) => c.status === 'completed' || c.status === 'passed';
+  const completedCount = cases.filter(isDone).length;
 
-  // Helper to render SVG segmented ring based on cases count (how many parts the circle is divided into)
-  const renderSegmentedRing = (count) => {
-    const radius = 41;
-    const circumference = 2 * Math.PI * radius; // ~257.6
-    const numSegments = Math.max(1, count);
-    const gap = numSegments > 1 ? 12 : 0;
-    const dashLength = (circumference / numSegments) - gap;
+  // One section per topic, containing exactly the cases created for that topic.
+  const sections = useMemo(() => {
+    const list = topics
+      .map((top, idx) => ({
+        id: top.id,
+        title: String(ml(top.name) || `${idx + 1}-${t('roadmap.topic', 'mavzu')}`),
+        cases: cases.filter((c) => c.topic_id === top.id),
+      }))
+      .filter((s) => s.cases.length > 0);
 
-    return (
-      <svg width="90" height="90" viewBox="0 0 90 90" style={{ position: 'absolute', top: 0, left: 0 }}>
-        {Array.from({ length: numSegments }).map((_, i) => (
-          <circle
-            key={i}
-            cx="45"
-            cy="45"
-            r={radius}
-            fill="none"
-            stroke="#FDBA74"
-            strokeWidth="3.5"
-            strokeDasharray={`${dashLength} ${gap}`}
-            strokeDashoffset={-i * (dashLength + gap)}
-          />
-        ))}
-      </svg>
-    );
-  };
+    // Cases whose topic isn't in the list still must be reachable.
+    const knownIds = new Set(topics.map((x) => x.id));
+    const orphans = cases.filter((c) => !knownIds.has(c.topic_id));
+    if (orphans.length > 0) {
+      list.push({ id: 'other', title: String(ml(orphans[0].topic_name) || categoryTitle), cases: orphans });
+    }
+    return list;
+  }, [topics, cases, categoryTitle, t]);
 
   return (
     <div style={{
@@ -115,314 +119,138 @@ export default function RoadmapView({
       padding: '16px 16px 100px 16px',
       background: '#FFFDF9',
       boxSizing: 'border-box',
-      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
-      <div style={{
-        width: '100%',
-        maxWidth: 480,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-      }}>
-        {/* Header: Back button + Category Icon & Title + Progress */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '8px 4px 18px 4px',
-          gap: 12,
-        }}>
+      <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px 18px', gap: 12 }}>
           <button
             onClick={onBack}
-            title="Orqaga"
+            title={t('common.back', 'Orqaga')}
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              background: '#FFFFFF',
-              border: '1px solid #E2E8F0',
-              boxShadow: 'var(--shadow-sm)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#0F172A',
-              flexShrink: 0,
+              width: 44, height: 44, borderRadius: '50%', background: '#FFFFFF', border: '1px solid #E2E8F0',
+              boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: '#0F172A', flexShrink: 0,
             }}
           >
             <ChevronLeft size={24} strokeWidth={2.4} />
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-            <span style={{ fontSize: '24px' }}>{category?.emoji || '❤️'}</span>
-            <h2 style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#EA580C',
-              margin: 0,
-            }}>
-              {categoryTitle}
-            </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+            <DeptIcon name={categoryName} size={24} color="#EA580C" />
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#EA580C', margin: 0 }}>{categoryTitle}</h2>
           </div>
 
-          {/* Progress pill: e.g. 0/1 */}
           <div style={{
-            background: '#FFEDD5',
-            border: '1px solid #FDBA74',
-            borderRadius: 99,
-            padding: '4px 12px',
-            fontSize: '13px',
-            fontWeight: 700,
-            color: '#EA580C',
+            background: '#FFEDD5', border: '1px solid #FDBA74', borderRadius: 99,
+            padding: '4px 12px', fontSize: 13, fontWeight: 700, color: '#EA580C',
           }}>
-            {completedCount}/{totalCasesCount}
+            {completedCount}/{cases.length}
           </div>
         </div>
 
-        {/* Section Card — faqat API dan ma'lumot kelgandan keyin ko'rsatiladi */}
-        {!loading && topics.length > 0 && (
-          <div style={{
-            background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-            borderRadius: 18,
-            boxShadow: 'var(--shadow-sm)',
-            padding: '22px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 32,
-            color: '#FFFFFF',
-          }}>
-            <div>
-              <div style={{
-                fontSize: '12px',
-                fontWeight: 700,
-                letterSpacing: '1px',
-                color: '#FED7AA',
-                textTransform: 'uppercase',
-                marginBottom: 4,
-              }}>
-                {topics.length}. {t('roadmap.section', 'SECTION')}
-              </div>
-              <div style={{
-                fontSize: '22px',
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-              }}>
-                {topics[0].name?.toUpperCase()}
-              </div>
-            </div>
-
-            <div style={{
-              width: 48,
-              height: 48,
-              borderRadius: 16,
-              background: 'rgba(255, 255, 255, 0.25)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <BookOpen size={24} color="#FFFFFF" strokeWidth={2.4} />
-            </div>
-          </div>
-        )}
-
-        {/* Loading paytida skeleton card */}
         {loading && (
-          <div style={{
-            background: 'linear-gradient(135deg, #FB923C 0%, #F97316 100%)',
-            borderRadius: 18,
-            boxShadow: 'var(--shadow-sm)',
-            padding: '22px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 32,
-            opacity: 0.5,
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ width: 80, height: 12, background: 'rgba(255,255,255,0.4)', borderRadius: 6 }} />
-              <div style={{ width: 140, height: 22, background: 'rgba(255,255,255,0.4)', borderRadius: 6 }} />
-            </div>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8', fontSize: 15, fontWeight: 700 }}>
+            {t('roadmap.loading', 'Mavzular yuklanmoqda...')}
           </div>
         )}
 
-        {/* Loading state */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>
-            <div style={{ fontSize: '15px', fontWeight: 700 }}>{t('roadmap.loading', 'Mavzular yuklanmoqda...')}</div>
-          </div>
-        )}
-
-        {/* Empty state: No topics or cases */}
-        {!loading && roadmapNodes.length === 0 && (
+        {!loading && sections.length === 0 && (
           <div style={{
-            background: '#FFFFFF',
-            borderRadius: 18,
-            border: '1px solid #E2E8F0',
-            boxShadow: 'var(--shadow-sm)',
-            padding: '36px 20px',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 12,
+            background: '#FFFFFF', borderRadius: 18, border: '1px solid #E2E8F0', boxShadow: 'var(--shadow-sm)',
+            padding: '36px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           }}>
             <Inbox size={44} color="#94A3B8" />
-            <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>
               {t('roadmap.emptyTitle', "Ushbu bo'limda hali keyslar mavjud emas")}
             </div>
           </div>
         )}
 
-        {/* Roadmap Path */}
-        {!loading && roadmapNodes.length > 0 && (
-          <div style={{
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '10px 0 60px 0',
-          }}>
-            {/* SVG S-Curve Path connecting nodes */}
-            {roadmapNodes.length > 1 && (
-              <svg
-                style={{
-                  position: 'absolute',
-                  top: 40,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  pointerEvents: 'none',
-                  zIndex: 1,
-                }}
-              >
-                <path
-                  d="M 240,50 Q 280,110 290,170 T 200,290 T 170,410"
-                  fill="none"
-                  stroke="#E2E8F0"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            )}
+        {!loading && sections.map((section, sIdx) => (
+          <section key={section.id} style={{ marginBottom: 40 }}>
+            {/* Topic container */}
+            <div style={{
+              background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+              borderRadius: 18, boxShadow: 'var(--shadow-sm)', padding: '22px 24px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              marginBottom: 28, color: '#FFFFFF',
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: '#FED7AA', textTransform: 'uppercase', marginBottom: 4 }}>
+                  {sIdx + 1}. {t('roadmap.section', 'SECTION')} · {section.cases.length} case
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>
+                  {section.title.toUpperCase()}
+                </div>
+              </div>
+              <div style={{
+                width: 48, height: 48, borderRadius: 16, background: 'rgba(255,255,255,0.25)', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <BookOpen size={24} color="#FFFFFF" strokeWidth={2.4} />
+              </div>
+            </div>
 
-            {roadmapNodes.map((node, index) => {
-              const activeCaseItem = node.cases?.[0] || cases[0];
+            {/* Case nodes: one icon per case */}
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {section.cases.length > 1 && (
+                <div style={{
+                  position: 'absolute', top: 36, bottom: 36, left: '50%', width: 0,
+                  borderLeft: '6px dotted #E2E8F0', transform: 'translateX(-3px)', zIndex: 0,
+                }} />
+              )}
 
-              if (node.isUnlocked) {
+              {section.cases.map((c, i) => {
+                const done = isDone(c);
+                const subtitle = ml(c.subtitle);
                 return (
-                  <div
-                    key={node.id}
+                  <button
+                    key={c.id}
+                    id={`roadmap-case-${c.id}`}
+                    type="button"
+                    onClick={() => onSelectNode(c)}
                     style={{
-                      position: 'relative',
-                      zIndex: 2,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      marginBottom: 50,
-                      transform: `translateX(${node.xOffset}px)`,
+                      position: 'relative', zIndex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                      marginBottom: i === section.cases.length - 1 ? 0 : 28,
+                      transform: `translateX(${ZIGZAG[i % ZIGZAG.length]}px)`,
+                      maxWidth: 240, padding: 0, fontFamily: 'inherit',
                     }}
                   >
-                    {/* "START" pill label */}
-                    <div style={{
-                      background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-                      color: '#FFFFFF',
-                      borderRadius: 99,
-                      padding: '4px 14px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      letterSpacing: '0.8px',
-                      boxShadow: 'var(--shadow-sm)',
-                      marginBottom: 8,
-                    }}>
-                      START
-                    </div>
-
-                    {/* Circular Node with Segmented Ring */}
-                    <div
-                      id={`roadmap-node-${node.id}`}
-                      onClick={() => onSelectNode(activeCaseItem)}
-                      title={node.title}
-                      style={{
-                        position: 'relative',
-                        width: 90,
-                        height: 90,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'transform 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                    >
-                      {/* Segmented Ring showing number of cases inside */}
-                      {renderSegmentedRing(node.casesCount)}
-
-                      {/* Inner Solid Orange Circle Button */}
-                      <div style={{
-                        width: 70,
-                        height: 70,
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-                        boxShadow: 'var(--shadow-sm)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                    {i === 0 && !done && (
+                      <span style={{
+                        background: '#EA580C', color: '#FFF', borderRadius: 99, padding: '3px 12px',
+                        fontSize: 11, fontWeight: 700, letterSpacing: 0.8,
                       }}>
-                        <Heart size={32} color="#FFFFFF" fill="#FFFFFF" />
-                      </div>
-                    </div>
-
-                    {/* XP Badge */}
-                    <div style={{
-                      marginTop: 10,
-                      background: '#FFFFFF',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: 99,
-                      padding: '3px 10px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#64748B',
-                      boxShadow: 'var(--shadow-sm)',
+                        START
+                      </span>
+                    )}
+                    <span style={{
+                      width: 72, height: 72, borderRadius: '50%',
+                      background: done ? '#16A34A' : 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+                      border: '4px solid #FFEDD5', boxShadow: 'var(--shadow-sm)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      ~{node.xp} XP ({node.casesCount} case)
-                    </div>
-                  </div>
+                      {done
+                        ? <Check size={30} color="#FFF" strokeWidth={3} />
+                        : <DeptIcon name={categoryName} size={30} color="#FFF" fill={isHeart ? '#FFF' : 'none'} />}
+                    </span>
+                    <span style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', lineHeight: 1.25 }}>
+                        {ml(c.title)}
+                      </span>
+                      {subtitle && (
+                        <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B', lineHeight: 1.3 }}>
+                          {subtitle}
+                        </span>
+                      )}
+                    </span>
+                  </button>
                 );
-              }
-
-              // Locked Node
-              return (
-                <div
-                  key={node.id}
-                  style={{
-                    position: 'relative',
-                    zIndex: 2,
-                    transform: `translateX(${node.xOffset}px)`,
-                    marginBottom: 50,
-                  }}
-                >
-                  <div style={{
-                    width: 70,
-                    height: 70,
-                    borderRadius: '50%',
-                    background: '#E2E8F0',
-                    boxShadow: 'var(--shadow-sm)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#94A3B8',
-                  }}>
-                    <Lock size={26} strokeWidth={2.5} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
