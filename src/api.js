@@ -230,6 +230,21 @@ async function request(path, options = {}) {
 // ============================================================
 // API Endpoints (all from API_MOBILE.md)
 // ============================================================
+// Backend javoblari turlicha o'ralgan bo'lishi mumkin (massiv yoki {categories:[]}/{data:[]}).
+// user-panel.html dagi extractList bilan bir xil: birinchi massiv maydonini oladi.
+export function extractList(json) {
+  if (Array.isArray(json)) return json;
+  if (json && typeof json === 'object') {
+    for (const k of Object.keys(json)) {
+      if (Array.isArray(json[k])) return json[k];
+    }
+  }
+  return [];
+}
+
+// WebSocket brauzerda Vercel rewrite orqali o'tmaydi, shuning uchun to'g'ridan-to'g'ri backendga ulanadi.
+const API_ORIGIN = import.meta.env.VITE_API_BASE || 'https://dev-medic.axadjonovsardorbek.uz';
+
 export const api = {
 
   // ===================== AUTHENTICATION =====================
@@ -359,10 +374,10 @@ export const api = {
   // ===================== CATEGORIES =====================
 
   /** Get all categories */
-  getCategories: async () => {
-    const res = await request('/mobile/category');
-    const list = res?.categories || res?.data || (Array.isArray(res) ? res : []);
-    return Array.isArray(list) ? list : [];
+  getCategories: async (audience) => {
+    const query = new URLSearchParams({ limit: 100, page: 1 });
+    if (audience) query.set('audience', audience);
+    return extractList(await request(`/mobile/category?${query.toString()}`));
   },
 
   /** Get single category by ID */
@@ -377,7 +392,7 @@ export const api = {
     const query = new URLSearchParams({ limit, page });
     if (categoryId) query.set('category_id', categoryId);
     const res = await request(`/mobile/topic?${query.toString()}`);
-    return res.topics || res.data || [];
+    return extractList(res);
   },
 
   // ===================== CASES =====================
@@ -394,7 +409,7 @@ export const api = {
     if (params.page) query.set('page', params.page);
 
     const res = await request(`/mobile/case?${query.toString()}`);
-    return res.cases || res.data || [];
+    return extractList(res);
   },
 
   /** Get case detail */
@@ -403,8 +418,12 @@ export const api = {
   },
 
   /** Get random case */
-  getRandomCase: async () => {
-    return await request('/mobile/case/random');
+  getRandomCase: async ({ categoryId, difficulty } = {}) => {
+    const query = new URLSearchParams();
+    if (categoryId && categoryId !== 'random') query.set('category_id', categoryId);
+    if (difficulty) query.set('difficulty', difficulty);
+    const qs = query.toString();
+    return await request(`/mobile/case/random${qs ? `?${qs}` : ''}`);
   },
 
   // ===================== FAVORITES =====================
@@ -412,8 +431,7 @@ export const api = {
   /** Get favorites list */
   getFavorites: async (limit = 50, page = 1) => {
     const res = await request(`/mobile/favorite?limit=${limit}&page=${page}`);
-    const list = res?.cases || res?.data?.cases || res?.data || (Array.isArray(res) ? res : []);
-    return Array.isArray(list) ? list : [];
+    return extractList(res);
   },
 
   /** Toggle favorite */
@@ -437,10 +455,12 @@ export const api = {
   },
 
   /** Start simulation session */
-  startSimulation: async (caseId) => {
+  startSimulation: async (caseId, durationMinutes) => {
+    const body = { case_id: caseId };
+    if (durationMinutes) body.duration_minutes = durationMinutes;
     return await request('/mobile/simulation/start', {
       method: 'POST',
-      body: { case_id: caseId },
+      body,
     });
   },
 
@@ -450,10 +470,15 @@ export const api = {
   },
 
   /** Send simulation event (action step) */
-  sendSimulationEvent: async (sessionId, payload, type = 'action') => {
+  sendSimulationEvent: async (sessionId, payload, type = 'question') => {
+    // Backend 'question' turida {question}, boshqa turlarda {text} kutadi (audio o'zgarishsiz).
+    let shaped = payload;
+    if (payload && payload.text !== undefined && !payload.audio_base64) {
+      shaped = type === 'question' ? { question: payload.text } : { text: payload.text };
+    }
     return await request(`/mobile/simulation/${sessionId}/event`, {
       method: 'POST',
-      body: { session_id: sessionId, type, payload },
+      body: { session_id: sessionId, type, payload: shaped },
     });
   },
 
@@ -467,10 +492,10 @@ export const api = {
   },
 
   /** WebSocket URL for live vitals */
-  getSimulationWsUrl: (sessionId) => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    return `${protocol}//${host}/mobile/simulation/${sessionId}/ws`;
+  getSimulationWsUrl: (sessionId, wsPath) => {
+    const path = wsPath || `/mobile/simulation/${sessionId}/ws`;
+    const base = /^wss?:/.test(path) ? '' : API_ORIGIN.replace(/^http/, 'ws').replace(/\/$/, '');
+    return `${base}${path}?token=${encodeURIComponent(getToken() || '')}`;
   },
 
   // ===================== DEBRIEFING =====================
@@ -478,6 +503,19 @@ export const api = {
   /** Get debrief report */
   getDebrief: async (sessionId) => {
     return await request(`/mobile/debrief/${sessionId}`);
+  },
+
+  /** Debrief fonda tayyorlanadi (tayyor bo'lguncha 400) - tayyor bo'lguncha qayta so'raydi. */
+  waitForDebrief: async (sessionId, attempts = 10, delayMs = 2000) => {
+    for (let i = 0; i < attempts; i += 1) {
+      try {
+        return await request(`/mobile/debrief/${sessionId}`);
+      } catch (err) {
+        if (i === attempts - 1) throw err;
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+    return null;
   },
 
   // ===================== SETTINGS =====================

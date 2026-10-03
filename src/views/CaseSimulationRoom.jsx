@@ -78,6 +78,7 @@ export default function CaseSimulationRoom({
   const [questionsCount, setQuestionsCount] = useState(0);
   const [hintModalOpen, setHintModalOpen] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [eventType, setEventType] = useState('question');
   const [sending, setSending] = useState(false);
   const [recording, setRecording] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
@@ -159,6 +160,26 @@ export default function CaseSimulationRoom({
       .then((res) => setVoiceEnabled(res?.enabled !== false))
       .catch(() => setVoiceEnabled(true));
   }, []);
+
+  // Real-time vitals / health over WebSocket (same as user-panel.html)
+  const wsUrlPath = caseItem?.ws_url;
+  useEffect(() => {
+    if (!isRealSessionId(sessionId) || sessionEnded) return undefined;
+    let ws;
+    try {
+      ws = new WebSocket(api.getSimulationWsUrl(sessionId, wsUrlPath));
+      ws.onmessage = (ev) => {
+        let data;
+        try { data = JSON.parse(ev.data); } catch { return; }
+        if (typeof data.health_percent === 'number') {
+          setHealthPercent(data.health_percent);
+          setPatientStatus(healthToStatus(data.health_percent));
+        }
+        if (data.vitals) setVitals((prev) => mergeVitals(prev, data.vitals));
+      };
+    } catch { /* live vitals are optional */ }
+    return () => { try { ws?.close(); } catch { /* noop */ } };
+  }, [sessionId, sessionEnded, wsUrlPath]);
 
   // Wall-clock timer: immune to throttled background tabs and re-renders
   const [startedAt] = useState(() => caseItem?.startedAt || Date.now());
@@ -261,7 +282,10 @@ export default function CaseSimulationRoom({
       }));
     }
 
-    if (replyText || replyAudio) {
+    if (!replyText && !replyAudio) {
+      console.warn('[simulation] empty event response', data);
+    }
+    if (replyText || replyAudio || data?.is_correct !== undefined) {
       const evaluation = data.is_correct === true
         ? { type: 'correct', badge: t('sim.correctBadge', 'To‘g‘ri qaror') }
         : data.is_correct === false
@@ -271,7 +295,7 @@ export default function CaseSimulationRoom({
       setMessages((prev) => [...prev, {
         id: `sys-${Date.now()}`,
         sender: 'system',
-        text: replyText,
+        text: replyText || (data.is_correct ? t('sim.accepted', 'Qabul qilindi') : t('sim.noReply', "Javob kelmadi, boshqacha ifodalab ko'ring")),
         evaluation,
         audioBase64: replyAudio || '',
         audioMime: replyMime,
@@ -597,11 +621,38 @@ export default function CaseSimulationRoom({
           <div ref={chatBottomRef} />
         </div>
 
+        {/* Event type (backend: question | exam | lab | imaging | medication | procedure) */}
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6 }}>
+          {[
+            ['question', t('sim.type.question', 'Savol')],
+            ['exam', t('sim.type.exam', "Ko'rik")],
+            ['lab', t('sim.type.lab', 'Tahlil')],
+            ['imaging', t('sim.type.imaging', 'Instrumental')],
+            ['medication', t('sim.type.medication', 'Dori')],
+            ['procedure', t('sim.type.procedure', 'Protsedura')],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setEventType(value)}
+              className={`ui-chip${eventType === value ? ' active' : ''}`}
+              style={{
+                flexShrink: 0, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                border: `1px solid ${eventType === value ? '#16A34A' : '#E2E8F0'}`,
+                background: eventType === value ? '#16A34A' : '#FFFFFF',
+                color: eventType === value ? '#FFFFFF' : '#334155',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Input */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handlePerformAction(inputText);
+            handlePerformAction(inputText, eventType);
           }}
           style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
         >

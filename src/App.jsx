@@ -386,6 +386,7 @@ export default function App() {
         sessionId: session.session_id,
         health_percent: session.health_percent,
         initial_vitals: session.initial_vitals,
+        ws_url: session.ws_url,
         time_limit_seconds: session.time_limit_seconds || 0,
         startedAt: Date.now(),
       });
@@ -470,19 +471,8 @@ export default function App() {
   const handleStartSimulationFromHome = async ({ categoryId }) => {
     try {
       showToast("Klinik keys tayyorlanmoqda...");
-      let targetCase = null;
-
-      if (categoryId && categoryId !== 'random') {
-        const catCases = await api.getCases({ category_id: categoryId });
-        if (catCases && catCases.length > 0) {
-          targetCase = catCases[Math.floor(Math.random() * catCases.length)];
-        }
-      }
-
-      if (!targetCase) {
-        const randomRes = await api.getRandomCase();
-        targetCase = randomRes?.data || randomRes || null;
-      }
+      const randomRes = await api.getRandomCase({ categoryId });
+      const targetCase = randomRes?.data || randomRes || null;
 
       if (!targetCase) {
         showToast(t('common.error', "Xatolik yuz berdi"));
@@ -531,7 +521,7 @@ export default function App() {
       let debrief = null;
       if (hasRealSession) {
         try {
-          debrief = await api.getDebrief(sessionId);
+          debrief = await api.waitForDebrief(sessionId);
         } catch (err) {
           console.warn('getDebrief API error:', err.message);
         }
