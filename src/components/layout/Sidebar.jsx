@@ -49,7 +49,7 @@ export default function Sidebar({
     <aside
       className="sidebar-container"
       style={{
-        width: 240,
+        width: 280,
         height: '100dvh',
         background: 'var(--bg-card)',
         borderRight: '1px solid var(--border-color)',
@@ -88,22 +88,22 @@ export default function Sidebar({
                 onClick={() => handleNavClick(item.id)}
                 style={{
                   width: '100%',
-                  minHeight: 44,
+                  minHeight: 54,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12,
-                  padding: '0 12px',
+                  gap: 14,
+                  padding: '0 18px',
                   borderRadius: 'var(--radius-md)',
                   background: isActive ? 'var(--accent-soft)' : 'transparent',
                   color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                   fontWeight: isActive ? 700 : 500,
-                  fontSize: 15,
+                  fontSize: 16,
                   border: 'none',
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
               >
-                <Icon size={20} strokeWidth={isActive ? 2.3 : 1.8} />
+                <Icon size={22} strokeWidth={isActive ? 2.3 : 1.8} />
                 <span>{item.label}</span>
               </button>
             );
@@ -115,7 +115,7 @@ export default function Sidebar({
         id="btn-sidebar-logout"
         onClick={() => { if (onLogout) onLogout(); onClose(); }}
         style={{
-          width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', gap: 12, padding: '0 12px',
+          width: '100%', minHeight: 54, display: 'flex', alignItems: 'center', gap: 14, padding: '0 18px',
           borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-muted)',
           fontWeight: 500, fontSize: 15, border: 'none', cursor: 'pointer', textAlign: 'left',
         }}

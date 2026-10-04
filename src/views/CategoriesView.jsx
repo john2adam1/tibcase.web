@@ -86,7 +86,7 @@ export default function CategoriesView({
       {loading && (
         <div className="ui-grid">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="ui-card" style={{ padding: 16, height: 110, background: 'var(--bg-muted)', animation: 'pulse 1.5s infinite' }} />
+            <div key={i} className="ui-card" style={{ padding: 24, height: 180, background: 'var(--bg-muted)', animation: 'pulse 1.5s infinite' }} />
           ))}
         </div>
       )}
@@ -107,9 +107,9 @@ export default function CategoriesView({
                 id={`cat-card-${cat.id}`}
                 className="ui-card ui-card-press"
                 onClick={() => onSelectCategory({ ...cat, title, emoji: meta.emoji, casesCount })}
-                style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}
+                style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}
               >
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, overflow: 'hidden' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, overflow: 'hidden' }}>
                   {cat.icon_url ? (
                     <img src={cat.icon_url} alt={title} style={{ width: '70%', height: '70%', objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; }} />
                   ) : (
@@ -117,7 +117,7 @@ export default function CategoriesView({
                   )}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.25 }}>{title}</h3>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.25 }}>{title}</h3>
                   <span className="ui-subtitle" style={{ fontSize: 12 }}>{casesCount} {t('cat.cases')}</span>
                 </div>
               </div>

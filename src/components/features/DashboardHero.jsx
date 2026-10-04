@@ -5,7 +5,7 @@ import { useTranslation } from '../../i18n.jsx';
 function Stat({ icon: Icon, value, label, onClick }) {
   return (
     <button type="button" className="ui-card ui-card-press ui-stat" onClick={onClick}>
-      <Icon size={18} color="var(--accent)" strokeWidth={2} />
+      <Icon size={24} color="var(--accent)" strokeWidth={2} />
       <b>{value}</b>
       <span>{label}</span>
     </button>
@@ -26,7 +26,7 @@ export default function DashboardHero({ user, categories = [], banners = [], onO
   const banner = count > 0 ? banners[slide % count] : null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div className="ui-stats">
         <Stat icon={Zap} value={`${user?.level ?? 1}`} label={`${t('nav.level', 'Level')} · ${user?.xp ?? 0} XP`} onClick={onOpenLeaderboard} />
         <Stat icon={Coins} value={user?.coins ?? 0} label={t('nav.coins', 'Tangalar')} onClick={onOpenStore} />
@@ -39,8 +39,10 @@ export default function DashboardHero({ user, categories = [], banners = [], onO
           style={{
             position: 'relative',
             overflow: 'hidden',
-            minHeight: 150,
-            padding: 20,
+            minHeight: 260,
+            padding: 32,
+            borderRadius: 'var(--radius-xl)',
+            boxShadow: 'var(--shadow-premium)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
@@ -50,10 +52,10 @@ export default function DashboardHero({ user, categories = [], banners = [], onO
             border: 'none',
           }}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.25 }}>{banner.title}</h2>
-          {banner.description && <p style={{ fontSize: 13, opacity: 0.85 }}>{banner.description}</p>}
+          <h2 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.02em' }}>{banner.title}</h2>
+          {banner.description && <p style={{ fontSize: 16, opacity: 0.9, maxWidth: 520, lineHeight: 1.5 }}>{banner.description}</p>}
           {banner.link_url && (
-            <a href={banner.link_url} target="_blank" rel="noreferrer" style={{ color: '#fff', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <a href={banner.link_url} target="_blank" rel="noreferrer" style={{ color: '#fff', fontSize: 14, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
               Batafsil <ExternalLink size={13} />
             </a>
           )}

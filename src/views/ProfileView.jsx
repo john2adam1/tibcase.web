@@ -527,10 +527,10 @@ export default function ProfileView({
             {/* Profile Main Card */}
             <div style={{
               background: '#FFFFFF',
-              borderRadius: 18,
+              borderRadius: 'var(--radius-lg)',
               border: '1px solid #E2E8F0',
-              boxShadow: 'var(--shadow-sm)',
-              padding: '22px 20px',
+              boxShadow: 'var(--shadow-soft)',
+              padding: '32px 28px',
               display: 'flex',
               flexDirection: 'column',
               gap: 20,
@@ -544,7 +544,7 @@ export default function ProfileView({
                 justifyContent: 'space-between',
                 gap: 16,
               }}>
-                <UserAvatar name={user?.name} size={76} />
+                <UserAvatar name={user?.name} size={96} />
 
                   {/* User Name & Subtitle */}
                 <div style={{ flex: 1, minWidth: 0 }}>
