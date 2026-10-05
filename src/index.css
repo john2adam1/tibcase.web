@@ -435,6 +435,7 @@ body { background: var(--bg-main); }
 /* Telegram / small screens: respect safe areas and dynamic viewport */
 
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .75; transform: scale(.97); } }
+@keyframes bounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
 /* Simulation room: page never scrolls, only the chat does */
 .sim-root { position: fixed; inset: 0; z-index: 60; background: var(--bg-main); display: flex; justify-content: center; padding: 8px; box-sizing: border-box; overflow: hidden; height: 100dvh; }
@@ -518,3 +519,7 @@ body { background: var(--bg-main); }
   .ui-page, .ui-modal { animation: none; }
   .ui-card, .ui-btn, .ui-icon-btn { transition: none; }
 }
+
+/* Sidebar hover for inactive items (active one has an inline green background) */
+[id^="sidebar-nav-"]:hover:not([style*="var(--accent)"]) { background: var(--bg-muted) !important; color: var(--accent) !important; }
+#btn-sidebar-logout:hover { background: #FEF2F2 !important; color: #EF4444 !important; }

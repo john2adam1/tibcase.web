@@ -1503,188 +1503,69 @@ export default function ProfileView({
         </ModalOverlay>
       )}
 
-      {/* 0B. Devices (FCM Push) Modal */}
+      {/* 0B. Devices Modal */}
       {modalType === 'devices' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Qurilmalar va Push token" onClose={() => setModalType(null)} maxWidth={460}>
+          <ModalCard title="Qurilmalar" onClose={() => setModalType(null)} maxWidth={420}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>
+                Ulangan qurilmalar: {deviceToken ? 1 : 0}
+              </div>
 
-              <p style={{ fontSize: '13px', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
-                Ko'p qurilmalarni boshqarish va bildirishnomalarni (FCM push-token) o'rnatish.
-              </p>
-
-              {/* Active Device Session Card */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 16px',
-                background: '#F8FAFC',
-                borderRadius: 18,
-                border: '1px solid #E2E8F0',
-                boxShadow: 'var(--shadow-sm)',
-              }}>
+              {deviceToken ? (
                 <div style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 14,
-                  background: '#EFF6FF',
-                  color: '#2563EB',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                  background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0',
                 }}>
-                  <Laptop size={22} strokeWidth={2.2} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {getDeviceInfo().browser} ({getDeviceInfo().os})
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, background: '#EFF6FF', color: '#2563EB',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Laptop size={20} strokeWidth={2.2} />
                   </div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }}></span>
-                    Hozir faol sessiya (Web)
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Shu qurilma</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginTop: 2 }}>
+                      {getDeviceInfo().browser} · {getDeviceInfo().os}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveDevice}
+                    disabled={deviceLoading}
+                    style={{
+                      padding: '8px 12px', borderRadius: 12, background: '#FEE2E2', border: '1px solid #FCA5A5',
+                      color: '#DC2626', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    {deviceLoading ? '...' : 'Chiqarish'}
+                  </button>
                 </div>
-              </div>
-
-              {/* Automatic push enable */}
-              <button
-                type="button"
-                onClick={handleEnablePush}
-                disabled={deviceLoading}
-                style={{
-                  padding: '12px', borderRadius: 14, background: '#2563EB', color: '#fff',
-                  border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                }}
-              >
-                🔔 Bildirishnomalarni yoqish
-              </button>
-              {pushUnsupportedReason() && (
-                <div style={{ fontSize: 12, color: '#B45309', background: '#FEF3C7', padding: 10, borderRadius: 12, fontWeight: 600 }}>
-                  {pushUnsupportedReason()}
-                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
+                    Bu qurilmada bildirishnomalar yoqilmagan.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleEnablePush}
+                    disabled={deviceLoading}
+                    style={{
+                      padding: '12px', borderRadius: 14, background: '#16A34A', color: '#fff',
+                      border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                    }}
+                  >
+                    {deviceLoading ? '...' : '🔔 Bildirishnomalarni yoqish'}
+                  </button>
+                  {pushUnsupportedReason() && (
+                    <div style={{ fontSize: 12, color: '#B45309', background: '#FEF3C7', padding: 10, borderRadius: 12, fontWeight: 600 }}>
+                      {pushUnsupportedReason()}
+                    </div>
+                  )}
+                </>
               )}
-
-              {/* FCM Push Token Input */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  FCM Push Token
-                </label>
-                <input
-                  type="text"
-                  value={deviceToken}
-                  onChange={(e) => setDeviceToken(e.target.value)}
-                  placeholder="FCM token..."
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: 14,
-                    border: '1px solid #E2E8F0',
-                    fontSize: '12px',
-                    fontFamily: 'monospace',
-                    fontWeight: 600,
-                    color: '#0F172A',
-                    boxSizing: 'border-box',
-                    background: '#FFFFFF',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              {/* Platform Selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  Platforma
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                  {['web', 'android', 'ios'].map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setDevicePlatform(p)}
-                      style={{
-                        padding: '10px',
-                        borderRadius: 14,
-                        border: devicePlatform === p ? '1px solid #22C55E' : '1px solid #E2E8F0',
-                        background: devicePlatform === p ? '#F0FDF4' : '#FFFFFF',
-                        color: devicePlatform === p ? '#15803D' : '#64748B',
-                        fontWeight: 700,
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
-                <button
-                  type="button"
-                  onClick={handleRegisterDevice}
-                  disabled={deviceLoading}
-                  style={{
-                    padding: '12px',
-                    borderRadius: 14,
-                    background: '#16A34A',
-                    border: '1px solid #16A34A',
-                    boxShadow: 'var(--shadow-sm)',
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    cursor: deviceLoading ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <Smartphone size={16} />
-                  {deviceLoading ? '...' : "Ro'yxatdan o'tkazish"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleRemoveDevice}
-                  disabled={deviceLoading}
-                  style={{
-                    padding: '12px',
-                    borderRadius: 14,
-                    background: '#FEE2E2',
-                    border: '1px solid #FCA5A5',
-                    boxShadow: 'var(--shadow-sm)',
-                    color: '#DC2626',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    cursor: deviceLoading ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <Trash2 size={16} />
-                  O'chirish
-                </button>
-              </div>
-
-              {/* Info Callout */}
-              <div style={{
-                padding: '10px 14px',
-                borderRadius: 14,
-                background: '#F0FDF4',
-                border: '1px solid #BBF7D0',
-                fontSize: '12px',
-                color: '#166534',
-                lineHeight: 1.4,
-              }}>
-                💡 Push-token orqali yangi klinik keyslar, kunlik vazifalar va muhim eslatmalarni qurilmangizda qabul qilasiz.
-              </div>
-
             </div>
           </ModalCard>
         </ModalOverlay>

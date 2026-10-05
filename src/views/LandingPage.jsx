@@ -12,6 +12,7 @@ import { useTranslation } from '../i18n.jsx';
 
 export default function LandingPage({
   onOpenLogin,
+  isAuthenticated = false,
   partners = []
 }) {
   const { t } = useTranslation();
@@ -92,7 +93,7 @@ export default function LandingPage({
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <LogIn size={16} />
-              <span>Kirish</span>
+              <span>{isAuthenticated ? 'Kabinet' : 'Kirish'}</span>
             </button>
           </div>
         </div>
@@ -178,7 +179,7 @@ export default function LandingPage({
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
-            <span>Platformaga Kirish</span>
+            <span>{isAuthenticated ? 'Kabinetga kirish' : 'Platformaga Kirish'}</span>
             <ArrowRight size={20} />
           </button>
         </div>
@@ -487,7 +488,7 @@ export default function LandingPage({
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <span>Kirish va Boshlash</span>
+            <span>{isAuthenticated ? 'Kabinetga kirish' : 'Kirish va Boshlash'}</span>
             <ArrowRight size={20} />
           </button>
         </div>

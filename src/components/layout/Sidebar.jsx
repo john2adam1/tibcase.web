@@ -56,16 +56,16 @@ export default function Sidebar({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '20px 12px calc(20px + env(safe-area-inset-bottom, 0px))',
+        padding: '28px 16px calc(24px + env(safe-area-inset-bottom, 0px))',
         boxSizing: 'border-box',
         userSelect: 'none',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px' }}>
-          <div onClick={() => handleNavClick('cases')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <img src="/logo.svg" alt="TibStation AI" width={32} height={32} style={{ borderRadius: 8, display: 'block' }} />
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>TibStation <span style={{ color: 'var(--accent)' }}>AI</span></span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px' }}>
+          <div onClick={() => handleNavClick('cases')} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+            <img src="/logo.svg" alt="TibStation AI" width={44} height={44} style={{ borderRadius: 12, display: 'block' }} />
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>TibStation <span style={{ color: 'var(--accent)' }}>AI</span></span>
           </div>
           <button
             className="sidebar-close-btn"
@@ -77,7 +77,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {navItems.map((item) => {
             const isActive = currentView === item.id || (item.id === 'cases' && currentView === 'home');
             const Icon = item.icon;
@@ -88,23 +88,27 @@ export default function Sidebar({
                 onClick={() => handleNavClick(item.id)}
                 style={{
                   width: '100%',
-                  minHeight: 54,
+                  minHeight: 60,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 14,
-                  padding: '0 18px',
-                  borderRadius: 'var(--radius-md)',
-                  background: isActive ? 'var(--accent-soft)' : 'transparent',
-                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                  fontWeight: isActive ? 700 : 500,
-                  fontSize: 16,
+                  gap: 16,
+                  padding: '0 24px',
+                  borderRadius: 24,
+                  background: isActive ? 'var(--accent)' : 'transparent',
+                  color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                  boxShadow: isActive ? '0 12px 24px -8px rgba(22, 163, 74, 0.45)' : 'none',
+                  transform: isActive ? 'scale(1.02)' : 'none',
+                  fontWeight: 800,
+                  fontSize: 17,
+                  letterSpacing: '-0.01em',
                   border: 'none',
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
               >
-                <Icon size={22} strokeWidth={isActive ? 2.3 : 1.8} />
+                <Icon size={24} strokeWidth={2.2} color={isActive ? '#FFFFFF' : 'var(--text-muted)'} />
                 <span>{item.label}</span>
+                {isActive && <span style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#FFFFFF' }} />}
               </button>
             );
           })}
@@ -115,12 +119,12 @@ export default function Sidebar({
         id="btn-sidebar-logout"
         onClick={() => { if (onLogout) onLogout(); onClose(); }}
         style={{
-          width: '100%', minHeight: 54, display: 'flex', alignItems: 'center', gap: 14, padding: '0 18px',
-          borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-muted)',
-          fontWeight: 500, fontSize: 15, border: 'none', cursor: 'pointer', textAlign: 'left',
+          width: '100%', minHeight: 60, display: 'flex', alignItems: 'center', gap: 16, padding: '0 24px',
+          borderRadius: 24, background: 'transparent', color: 'var(--text-secondary)',
+          fontWeight: 800, fontSize: 17, border: 'none', cursor: 'pointer', textAlign: 'left',
         }}
       >
-        <LogOut size={20} strokeWidth={1.8} />
+        <LogOut size={24} strokeWidth={2.2} />
         <span>{t('profile.logout', 'Tizimdan chiqish')}</span>
       </button>
     </aside>

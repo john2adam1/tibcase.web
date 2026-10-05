@@ -8,7 +8,10 @@ import {
   X,
   ExternalLink,
   RefreshCw,
-  Phone
+  Phone,
+  ArrowUp,
+  MessageSquare,
+  ClipboardPaste
 } from 'lucide-react';
 import { api, setStoredUser, setToken, setRefreshToken } from '../../api';
 import { useTranslation } from '../../i18n.jsx';
@@ -66,6 +69,7 @@ export default function AuthModal({
     setStep('input');
     try {
       sessionStorage.removeItem('tibcase_auth_pending');
+      localStorage.removeItem('tibcase_auth_pending');
     } catch {
       // ignore
     }
@@ -88,15 +92,19 @@ export default function AuthModal({
   useEffect(() => {
     if (isOpen) {
       try {
-        const saved = sessionStorage.getItem('tibcase_auth_pending');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed?.step === 'otp' && parsed?.identifier) {
+        const raw = localStorage.getItem('tibcase_auth_pending') || sessionStorage.getItem('tibcase_auth_pending');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const isExpired = parsed?.timestamp && (Date.now() - parsed.timestamp > 10 * 60 * 1000);
+          if (!isExpired && parsed?.step === 'otp' && parsed?.identifier) {
             setIdentifier(parsed.identifier);
             if (parsed.authMethod) setAuthMethod(parsed.authMethod);
             if (parsed.referralCode) setReferralCode(parsed.referralCode);
             setStep('otp');
             return;
+          } else if (isExpired) {
+            localStorage.removeItem('tibcase_auth_pending');
+            sessionStorage.removeItem('tibcase_auth_pending');
           }
         }
       } catch {
@@ -242,14 +250,17 @@ export default function AuthModal({
     setCode('');
     setResendTimer(60);
 
-    // Save pending state in sessionStorage in case mobile browser tab reloads
+    // Save pending state in localStorage & sessionStorage in case mobile WebApp reloads or is minimized
     try {
-      sessionStorage.setItem('tibcase_auth_pending', JSON.stringify({
+      const pendingData = {
         step: 'otp',
         identifier: cleanId,
         authMethod: type,
-        referralCode: referralCode.trim()
-      }));
+        referralCode: referralCode.trim(),
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
+      localStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
     } catch {
       // ignore
     }
@@ -320,6 +331,7 @@ export default function AuthModal({
 
       try {
         sessionStorage.removeItem('tibcase_auth_pending');
+        localStorage.removeItem('tibcase_auth_pending');
       } catch {
         // ignore
       }
@@ -343,6 +355,7 @@ export default function AuthModal({
   const handleChangeNumber = () => {
     try {
       sessionStorage.removeItem('tibcase_auth_pending');
+      localStorage.removeItem('tibcase_auth_pending');
     } catch {
       // ignore
     }
@@ -351,6 +364,68 @@ export default function AuthModal({
     setErrorMsg('');
     setInfoMsg('');
   };
+
+  // Open Telegram Bot or close WebApp when inside Telegram
+  const handleOpenTelegramBot = (e) => {
+    if (e) e.preventDefault();
+    const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+    const type = resolveAuthType();
+    const cleanId = normalizeIdentifier(identifier, type);
+
+    // Save pending state so it is restored on re-opening WebApp
+    try {
+      const pendingData = {
+        step: 'otp',
+        identifier: cleanId,
+        authMethod: type,
+        referralCode: referralCodeRef.current.trim(),
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
+      localStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
+    } catch {
+      // ignore
+    }
+
+    // Inside Telegram WebApp:
+    if (tg?.initData) {
+      if (typeof tg.openTelegramLink === 'function') {
+        try {
+          tg.openTelegramLink(TELEGRAM_BOT_URL);
+        } catch {}
+      }
+      if (typeof tg.disableClosingConfirmation === 'function') {
+        try {
+          tg.disableClosingConfirmation();
+        } catch {}
+      }
+      if (typeof tg.close === 'function') {
+        tg.close();
+      }
+    } else {
+      window.open(TELEGRAM_BOT_URL, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // Clipboard paste helper for OTP
+  const handlePasteCode = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+        const text = await navigator.clipboard.readText();
+        const digits = (text || '').replace(/\D/g, '').slice(0, 6);
+        if (digits.length === 6) {
+          setCode(digits);
+          handleConfirmCode(null, digits);
+        } else if (digits.length > 0) {
+          setCode(digits);
+        }
+      }
+    } catch (err) {
+      console.warn('Clipboard paste error:', err);
+    }
+  };
+
+  const isInsideTelegram = Boolean(typeof window !== 'undefined' && window.Telegram?.WebApp?.initData);
 
   // Card & styles
   const cardStyle = {
@@ -669,59 +744,137 @@ export default function AuthModal({
           </div>
         ) : (
           <form onSubmit={handleConfirmCode} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Telegram bot hint + link button (phone login) */}
+            {/* Telegram bot guidance & button (phone login) */}
             {resolveAuthType() === 'telegram' && (
-              <div style={{
-                background: 'rgba(0, 136, 204, 0.06)',
-                borderRadius: 18,
-                border: '1px solid rgba(0, 136, 204, 0.25)',
-                padding: '14px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'stretch',
-                textAlign: 'center',
-                gap: 12,
-              }}>
-                <p style={{ margin: 0, fontSize: '0.88rem', color: '#0F172A', fontWeight: 600, lineHeight: 1.45 }}>
-                  {t('auth.botOtpHint')}
-                </p>
-                <a
-                  href={TELEGRAM_BOT_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => {
-                    // Always stop the browser from following the link itself.
-                    e.preventDefault();
-                    // telegram-web-app.js (index.html) provides window.Telegram. initData is non-empty
-                    // only when the site is really opened inside Telegram.
-                    const tg = window.Telegram?.WebApp;
-                    if (tg?.initData && typeof tg.openTelegramLink === 'function') {
-                      tg.openTelegramLink(TELEGRAM_BOT_URL);
-                    } else {
-                      window.open(TELEGRAM_BOT_URL, '_blank', 'noopener,noreferrer');
-                    }
-                  }}
-                  style={{
+              isInsideTelegram ? (
+                /* Inside Telegram Mini App: Visual 3-step guide + [ ∨ ] pointer + close to bot button */
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(0, 136, 204, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%)',
+                  borderRadius: 18,
+                  border: '1.5px solid rgba(0, 136, 204, 0.3)',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  position: 'relative',
+                }}>
+                  {/* Top animated badge pointing to Telegram header [ ∨ ] */}
+                  <div style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 8,
-                    minHeight: 48,
-                    padding: '12px 18px',
-                    borderRadius: 14,
+                    gap: 6,
                     background: '#0088cc',
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: '0.92rem',
-                    textDecoration: 'none',
-                    boxShadow: 'var(--shadow-sm)',
-                  }}
-                >
-                  <Send size={16} />
-                  <span>{t('auth.openBotBtn')}</span>
-                  <ExternalLink size={15} />
-                </a>
-              </div>
+                    color: '#ffffff',
+                    padding: '6px 14px',
+                    borderRadius: 20,
+                    fontSize: '0.8rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.01em',
+                    alignSelf: 'center',
+                    boxShadow: '0 2px 8px rgba(0, 136, 204, 0.35)',
+                    animation: 'pulse 2.2s infinite',
+                  }}>
+                    <ArrowUp size={14} style={{ animation: 'bounceUp 1.2s infinite' }} />
+                    <span>{t('auth.tgHeaderHint')}</span>
+                  </div>
+
+                  <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#0F172A', fontWeight: 800, fontSize: '0.9rem' }}>
+                      <MessageSquare size={17} color="#0088cc" />
+                      <span>{t('auth.tgStepTitle')}</span>
+                    </div>
+                    <ol style={{
+                      margin: 0,
+                      paddingLeft: 20,
+                      fontSize: '0.83rem',
+                      color: '#334155',
+                      lineHeight: 1.45,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4
+                    }}>
+                      <li>
+                        <strong>{t('auth.tgStep1')}</strong> {t('auth.tgStep1Sub')}
+                      </li>
+                      <li>
+                        <strong>{t('auth.tgStep2')}</strong>
+                      </li>
+                      <li>
+                        <strong>{t('auth.tgStep3')}</strong>
+                      </li>
+                    </ol>
+                  </div>
+
+                  {/* Direct action button to close webapp and switch to bot */}
+                  <button
+                    type="button"
+                    onClick={handleOpenTelegramBot}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      minHeight: 46,
+                      padding: '10px 16px',
+                      borderRadius: 14,
+                      background: '#0088cc',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: '0.88rem',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: 'var(--shadow-sm)',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <Send size={15} />
+                    <span>{t('auth.tgCloseToBotBtn')}</span>
+                  </button>
+                </div>
+              ) : (
+                /* Regular browser (Chrome / Safari): direct link to Telegram */
+                <div style={{
+                  background: 'rgba(0, 136, 204, 0.06)',
+                  borderRadius: 18,
+                  border: '1px solid rgba(0, 136, 204, 0.25)',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'stretch',
+                  textAlign: 'center',
+                  gap: 12,
+                }}>
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#0F172A', fontWeight: 600, lineHeight: 1.45 }}>
+                    {t('auth.botOtpHint')}
+                  </p>
+                  <a
+                    href={TELEGRAM_BOT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleOpenTelegramBot}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      minHeight: 48,
+                      padding: '12px 18px',
+                      borderRadius: 14,
+                      background: '#0088cc',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: '0.92rem',
+                      textDecoration: 'none',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <Send size={16} />
+                    <span>{t('auth.openBotBtn')}</span>
+                    <ExternalLink size={15} />
+                  </a>
+                </div>
+              )
             )}
 
             {/* Info Message (e.g. resend success) */}
@@ -741,15 +894,43 @@ export default function AuthModal({
             )}
 
             <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.8rem',
-                color: '#64748B',
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 marginBottom: 8,
-                fontWeight: 700,
               }}>
-                {t('auth.otpLabel')}
-              </label>
+                <label style={{
+                  fontSize: '0.8rem',
+                  color: '#64748B',
+                  fontWeight: 700,
+                }}>
+                  {t('auth.otpLabel')}
+                </label>
+                {typeof navigator !== 'undefined' && Boolean(navigator.clipboard?.readText) && (
+                  <button
+                    type="button"
+                    onClick={handlePasteCode}
+                    style={{
+                      background: 'rgba(0, 136, 204, 0.08)',
+                      border: '1px solid rgba(0, 136, 204, 0.2)',
+                      borderRadius: 8,
+                      color: '#0088cc',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '3px 8px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <ClipboardPaste size={13} />
+                    <span>{t('auth.pasteCode')}</span>
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 inputMode="numeric"

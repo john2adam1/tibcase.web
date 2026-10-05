@@ -63,6 +63,10 @@ export default function App() {
     return hasFlag && hasToken;
   });
 
+  // Returning, already signed-in users first see the landing page with a "Kabinet" button
+  // (no OTP needed). Inside the Telegram Mini App we skip the landing and open the app directly.
+  const [showLandingGate, setShowLandingGate] = useState(() => !window.Telegram?.WebApp?.initData);
+
   const [currentView, setCurrentView] = useState('cases'); // 'cases' | 'simulation' | 'store' | 'leaderboard'
   const [activeMode, setActiveMode] = useState('clinical'); // 'clinical' | 'citizen'
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -178,8 +182,21 @@ export default function App() {
   const [isPreparingCase, setIsPreparingCase] = useState(false);
   const [showQuickGuide, setShowQuickGuide] = useState(false);
 
-  // Modals
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  // Modals (restore pending OTP modal if user recently navigated to Telegram bot to get code)
+  const [authModalOpen, setAuthModalOpen] = useState(() => {
+    try {
+      const raw = localStorage.getItem('tibcase_auth_pending') || sessionStorage.getItem('tibcase_auth_pending');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.step === 'otp' && parsed?.identifier && (!parsed.timestamp || Date.now() - parsed.timestamp < 10 * 60 * 1000)) {
+          return true;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  });
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
@@ -330,6 +347,7 @@ export default function App() {
     setUser(loggedInUser);
     setStoredUser(loggedInUser);
     setIsAuthenticated(true);
+    setShowLandingGate(false);
     localStorage.setItem('tibcase_authenticated', 'true');
     setCurrentView('cases');
     showToast(`Xush kelibsiz, ${loggedInUser.name || ''}!`);
@@ -611,11 +629,12 @@ export default function App() {
 
 
   // 1. PUBLIC LANDING PAGE (If NOT authenticated)
-  if (!isAuthenticated) {
+  if (!isAuthenticated || showLandingGate) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <LandingPage
-          onOpenLogin={() => setAuthModalOpen(true)}
+          onOpenLogin={() => (isAuthenticated ? setShowLandingGate(false) : setAuthModalOpen(true))}
+          isAuthenticated={isAuthenticated}
           partners={partners}
         />
 
