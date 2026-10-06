@@ -289,7 +289,7 @@ export default function StoreTariffs({
                   whiteSpace: 'nowrap',
                 }}
               >
-                {promoLoading ? "..." : "Faollashtirish"}
+                {promoLoading ? "..." : t("store.activate", "Faollashtirish")}
               </button>
             </form>
           </div>

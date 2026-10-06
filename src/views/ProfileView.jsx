@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import UserAvatar from '../components/common/UserAvatar';
 import { api } from '../api';
-import { enablePush, pushUnsupportedReason } from '../utils/push';
 import {
   Settings,
   Trophy,
@@ -22,7 +21,6 @@ import {
   Coins,
   ShieldAlert,
   ShieldCheck,
-  Smartphone,
   Activity as ActivityIcon,
   Bell,
   Info,
@@ -32,7 +30,6 @@ import {
   Phone,
   ExternalLink,
   HelpCircle,
-  Laptop,
   RefreshCw,
   ChevronDown,
   ChevronUp,
@@ -104,7 +101,7 @@ export default function ProfileView({
   }, []);
 
   // Sub-modals for Settings
-  const [modalType, setModalType] = useState(null); // 'profile_info' | 'devices' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete' | 'levels_guide'
+  const [modalType, setModalType] = useState(null); // 'profile_info' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete' | 'levels_guide'
   const [tempUsername, setTempUsername] = useState(user?.name || '');
   const [couponCode, setCouponCode] = useState('');
   const [feedbackText, setFeedbackText] = useState('');
@@ -163,7 +160,7 @@ export default function ProfileView({
         language: profileForm.language,
         image: profileForm.imageFile,
       });
-      showToast("✅ Profil ma'lumotlari muvaffaqiyatli saqlandi!");
+      showToast('✅ ' + t('pm.profileSaved'));
       const fresh = await api.getUserProfile().catch(() => null);
       if (fresh && onUserUpdate) {
         onUserUpdate(fresh);
@@ -176,92 +173,12 @@ export default function ProfileView({
       }
       setModalType(null);
     } catch (err) {
-      showToast("⚠️ " + (err.message || "Saqlashda xatolik yuz berdi"));
+      showToast("⚠️ " + (err.message || t('pm.saveError')));
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // 2. Devices State & Handlers
-  const [deviceToken, setDeviceToken] = useState(() => {
-    return localStorage.getItem('fcm_token') || '';
-  });
-  const [devicePlatform, setDevicePlatform] = useState('web');
-  const [deviceLoading, setDeviceLoading] = useState(false);
-
-  const getDeviceInfo = () => {
-    const ua = navigator.userAgent;
-    let browser = "Web Brauzer";
-    if (ua.includes("Firefox")) browser = "Firefox";
-    else if (ua.includes("SamsungBrowser")) browser = "Samsung Internet";
-    else if (ua.includes("Opera") || ua.includes("OPR")) browser = "Opera";
-    else if (ua.includes("Edge") || ua.includes("Edg")) browser = "Edge";
-    else if (ua.includes("Chrome")) browser = "Chrome";
-    else if (ua.includes("Safari")) browser = "Safari";
-
-    let os = "Desktop";
-    if (ua.includes("iPhone")) os = "iOS (iPhone)";
-    else if (ua.includes("iPad")) os = "iPadOS (iPad)";
-    else if (ua.includes("Android")) os = "Android";
-    else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "macOS";
-    else if (ua.includes("Windows")) os = "Windows";
-    else if (ua.includes("Linux")) os = "Linux";
-
-    return { browser, os };
-  };
-
-  const handleOpenDevices = () => {
-    const saved = localStorage.getItem('fcm_token');
-    if (saved) setDeviceToken(saved);
-    setModalType('devices');
-  };
-
-  const handleEnablePush = async () => {
-    setDeviceLoading(true);
-    try {
-      const token = await enablePush();
-      setDeviceToken(token);
-      showToast("✅ Push bildirishnoma yoqildi!");
-    } catch (err) {
-      showToast("⚠️ " + (err.message || "Push yoqilmadi"));
-    } finally {
-      setDeviceLoading(false);
-    }
-  };
-
-  const handleRegisterDevice = async () => {
-    if (!deviceToken.trim()) {
-      showToast("⚠️ Token kiriting");
-      return;
-    }
-    setDeviceLoading(true);
-    try {
-      await api.registerDevice(deviceToken.trim(), devicePlatform);
-      localStorage.setItem('fcm_token', deviceToken.trim());
-      showToast("✅ Qurilma (FCM token) ro'yxatdan o'tkazildi!");
-    } catch (err) {
-      showToast("⚠️ " + (err.message || "Qurilmani ro'yxatdan o'tkazishda xatolik"));
-    } finally {
-      setDeviceLoading(false);
-    }
-  };
-
-  const handleRemoveDevice = async () => {
-    if (!deviceToken.trim()) {
-      showToast("⚠️ Token mavjud emas");
-      return;
-    }
-    setDeviceLoading(true);
-    try {
-      await api.removeDevice(deviceToken.trim());
-      localStorage.removeItem('fcm_token');
-      showToast("🗑 Qurilma tizimdan o'chirildi!");
-    } catch (err) {
-      showToast("⚠️ " + (err.message || "O'chirishda xatolik"));
-    } finally {
-      setDeviceLoading(false);
-    }
-  };
 
   // 3. About App State & Handlers
   const [aboutLoading, setAboutLoading] = useState(false);
@@ -374,7 +291,7 @@ export default function ProfileView({
       setCouponCode('');
       setModalType(null);
     } catch (err) {
-      showToast('⚠️ ' + (err.message || 'Invalid promocode'));
+      showToast('⚠️ ' + (err.message || t('pm.invalidPromo')));
     } finally {
       setPromoLoading(false);
     }
@@ -383,7 +300,7 @@ export default function ProfileView({
   const handleShare = async () => {
     const shareData = {
       title: 'TibStation AI Medical Simulator',
-      text: 'Join me on TibStation AI to practice real clinical cases!',
+      text: t('pm.shareText'),
       url: window.location.origin
     };
     if (navigator.share) {
@@ -394,7 +311,7 @@ export default function ProfileView({
       }
     } else {
       navigator.clipboard?.writeText(window.location.origin);
-      showToast('Link copied to clipboard!');
+      showToast(t('pm.linkCopied'));
     }
   };
 
@@ -816,7 +733,7 @@ export default function ProfileView({
               {/* Tangalar card — clickable to buy coins */}
               <div
                 onClick={() => onOpenStore && onOpenStore('coins')}
-                title="Tanga xarid qilish"
+                title={t('pm.buyCoinsTitle')}
                 style={{
                   flex: 1,
                   background: '#FFFFFF',
@@ -1089,13 +1006,6 @@ export default function ProfileView({
               />
               <Divider />
               <SettingsListItem
-                icon={<Smartphone size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.devices', "Qurilmalar")}
-                subtitle={t('settings.devicesDesc', "Push-token va seanslar")}
-                onClick={handleOpenDevices}
-              />
-              <Divider />
-              <SettingsListItem
                 icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
                 label={t('settings.about', "Ilova haqida")}
                 subtitle={t('settings.aboutDesc', "Versiya, FAQ va kontaktlar")}
@@ -1189,7 +1099,7 @@ export default function ProfileView({
               <button
                 id="btn-back-to-profile"
                 onClick={() => setCurrentScreen('profile')}
-                title="Back to Profile"
+                title={t('pm.backToProfile')}
                 style={{
                   width: 40,
                   height: 40,
@@ -1236,13 +1146,6 @@ export default function ProfileView({
                 label={t('settings.info', "Ma'lumot")}
                 subtitle={t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 onClick={handleOpenProfileInfo}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<Smartphone size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.devices', "Qurilmalar")}
-                subtitle={t('settings.devicesDesc', "Push-token va seanslar")}
-                onClick={handleOpenDevices}
               />
               <Divider />
               <SettingsListItem
@@ -1341,7 +1244,7 @@ export default function ProfileView({
                       e.target.value = '';
                       if (!file) return;
                       if (file.size > 5 * 1024 * 1024) {
-                        showToast("⚠️ Rasm hajmi 5 MB dan oshmasligi kerak");
+                        showToast('⚠️ ' + t('pm.imgTooBig'));
                         return;
                       }
                       setProfileForm((prev) => ({ ...prev, imageFile: file, imagePreview: URL.createObjectURL(file) }));
@@ -1388,7 +1291,7 @@ export default function ProfileView({
                   type="text"
                   value={profileForm.name}
                   onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ismingizni kiriting"
+                  placeholder={t('pm.namePh')}
                   required
                   style={{
                     width: '100%',
@@ -1514,78 +1417,10 @@ export default function ProfileView({
         </ModalOverlay>
       )}
 
-      {/* 0B. Devices Modal */}
-      {modalType === 'devices' && (
-        <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title={t('settings.devices', 'Qurilmalar')} onClose={() => setModalType(null)} maxWidth={420}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>
-                {t('settings.connectedDevices', 'Ulangan qurilmalar')}: {deviceToken ? 1 : 0}
-              </div>
-
-              {deviceToken ? (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                  background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0',
-                }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12, background: '#EFF6FF', color: '#2563EB',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    <Laptop size={20} strokeWidth={2.2} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{t('settings.thisDevice', 'Shu qurilma')}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginTop: 2 }}>
-                      {getDeviceInfo().browser} · {getDeviceInfo().os}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRemoveDevice}
-                    disabled={deviceLoading}
-                    style={{
-                      padding: '8px 12px', borderRadius: 12, background: '#FEE2E2', border: '1px solid #FCA5A5',
-                      color: '#DC2626', fontWeight: 700, fontSize: 12, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <Trash2 size={14} />
-                    {deviceLoading ? '...' : t('settings.removeDevice', 'Chiqarish')}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
-                    {t('settings.pushDisabled', 'Bu qurilmada bildirishnomalar yoqilmagan.')}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleEnablePush}
-                    disabled={deviceLoading}
-                    style={{
-                      padding: '12px', borderRadius: 14, background: '#16A34A', color: '#fff',
-                      border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                    }}
-                  >
-                    {deviceLoading ? '...' : `🔔 ${t('settings.enablePush', 'Bildirishnomalarni yoqish')}`}
-                  </button>
-                  {pushUnsupportedReason() && (
-                    <div style={{ fontSize: 12, color: '#B45309', background: '#FEF3C7', padding: 10, borderRadius: 12, fontWeight: 600 }}>
-                      {pushUnsupportedReason()}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </ModalCard>
-        </ModalOverlay>
-      )}
-
       {/* 0C. About App Modal */}
       {modalType === 'about' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Ilova haqida" onClose={() => setModalType(null)} maxWidth={480}>
+          <ModalCard title={t('pm.aboutTitle')} onClose={() => setModalType(null)} maxWidth={480}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
               {/* Brand Header */}
@@ -1816,16 +1651,16 @@ export default function ProfileView({
       {/* 1. Change Username Modal */}
       {modalType === 'username' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Change Username" onClose={() => setModalType(null)}>
+          <ModalCard title={t('pm.usernameTitle')} onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <label style={{ fontSize: '13px', fontWeight: 700, color: '#64748B' }}>
-                Your Name / Nickname
+                {t('pm.usernameLabel')}
               </label>
               <input
                 type="text"
                 value={tempUsername}
                 onChange={(e) => setTempUsername(e.target.value)}
-                placeholder="Enter new username"
+                placeholder={t('pm.usernamePh')}
                 style={{
                   width: '100%',
                   padding: '12px 14px',
@@ -1921,11 +1756,11 @@ export default function ProfileView({
                 <div style={{ display: 'flex', gap: 10 }}>
                   <div style={{ flex: 1, padding: 12, borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0', textAlign: 'center' }}>
                     <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>{referral.invited_count ?? 0}</div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>Taklif qilinganlar</div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{t('pm.invited')}</div>
                   </div>
                   <div style={{ flex: 1, padding: 12, borderRadius: 14, background: '#FFFBEB', border: '1px solid #FDE68A', textAlign: 'center' }}>
                     <div style={{ fontSize: '20px', fontWeight: 700, color: '#B45309' }}>{referral.total_coins_earned ?? 0}</div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>Olingan tangalar</div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{t('pm.coinsEarned')}</div>
                   </div>
                 </div>
 
@@ -1962,16 +1797,16 @@ export default function ProfileView({
       {/* 2. Coupon Code Modal */}
       {modalType === 'coupon' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Enter Coupon Code" onClose={() => setModalType(null)}>
+          <ModalCard title={t('pm.couponTitle')} onClose={() => setModalType(null)}>
             <form onSubmit={handleApplyCoupon} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-                Have a promotional voucher or student code? Enter it below to unlock premium perks.
+                {t('pm.couponDesc')}
               </p>
               <input
                 type="text"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="e.g. TIBCASE2026"
+                placeholder={t('pm.couponPh')}
                 style={{
                   width: '100%',
                   padding: '12px 14px',
@@ -2052,10 +1887,10 @@ export default function ProfileView({
       {/* 4. Rate Us Modal */}
       {modalType === 'rate' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Rate TibStation AI" onClose={() => setModalType(null)}>
+          <ModalCard title={t('pm.rateTitle')} onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
               <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
-                How would you rate your clinical learning experience?
+                {t('pm.rateQuestion')}
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -2076,7 +1911,7 @@ export default function ProfileView({
               <button
                 onClick={() => {
                   setModalType(null);
-                  showToast('❤️ Thank you for your feedback!');
+                  showToast('❤️ ' + t('pm.rateThanks'));
                 }}
                 style={{
                   width: '100%',
@@ -2091,7 +1926,7 @@ export default function ProfileView({
                   boxShadow: 'var(--shadow-sm)',
                 }}
               >
-                Submit Rating
+                {t('pm.rateSubmit')}
               </button>
             </div>
           </ModalCard>
@@ -2101,16 +1936,16 @@ export default function ProfileView({
       {/* 5. Feedback Modal */}
       {modalType === 'feedback' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Send Feedback" onClose={() => setModalType(null)}>
+          <ModalCard title={t('pm.feedbackTitle')} onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-                Tell us about any clinical bugs, suggestions, or features you want to see!
+                {t('pm.feedbackDesc')}
               </p>
               <textarea
                 rows={4}
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="Write your suggestions here..."
+                placeholder={t('pm.feedbackPh')}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -2128,7 +1963,7 @@ export default function ProfileView({
                   if (!feedbackText.trim()) return;
                   setModalType(null);
                   setFeedbackText('');
-                  showToast('Message sent! Thank you for helping us improve.');
+                  showToast(t('pm.feedbackSent'));
                 }}
                 style={{
                   padding: '12px',
@@ -2142,7 +1977,7 @@ export default function ProfileView({
                   boxShadow: 'var(--shadow-sm)',
                 }}
               >
-                Send Feedback
+                {t('pm.feedbackTitle')}
               </button>
             </div>
           </ModalCard>
@@ -2152,13 +1987,13 @@ export default function ProfileView({
       {/* 6. Terms of Use */}
       {modalType === 'terms' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Terms of Use" onClose={() => setModalType(null)}>
+          <ModalCard title={t('pm.termsTitle')} onClose={() => setModalType(null)}>
             <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, maxHeight: 300, overflowY: 'auto' }}>
               <p>
-                <strong>1. Educational Purpose:</strong> TibStation AI is an interactive medical simulator designed exclusively for training medical students and healthcare professionals. It does not replace real clinical judgement or hospital protocols.
+                <strong>{t('pm.terms1h')}</strong> {t('pm.terms1')}
               </p>
               <p>
-                <strong>2. Virtual Cases:</strong> All patient data and scenarios are synthesized for clinical decision training and respect medical confidentiality.
+                <strong>{t('pm.terms2h')}</strong> {t('pm.terms2')}
               </p>
             </div>
           </ModalCard>
@@ -2168,10 +2003,10 @@ export default function ProfileView({
       {/* 7. Privacy Policy */}
       {modalType === 'privacy' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Privacy Policy" onClose={() => setModalType(null)}>
+          <ModalCard title={t('pm.privacyTitle')} onClose={() => setModalType(null)}>
             <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, maxHeight: 300, overflowY: 'auto' }}>
               <p>
-                <strong>Privacy & Safety:</strong> We take your account privacy seriously. Your clinical scores, XP, and test answers are securely stored and never shared with unauthorized third parties.
+                <strong>{t('pm.privacyH')}</strong> {t('pm.privacy')}
               </p>
             </div>
           </ModalCard>
@@ -2181,7 +2016,7 @@ export default function ProfileView({
       {/* 8. Delete Account Confirmation */}
       {modalType === 'delete' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Delete Account" onClose={() => setModalType(null)}>
+          <ModalCard title={t('pm.deleteTitle')} onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'center' }}>
               <div style={{ color: '#EF4444', display: 'flex', justifyContent: 'center' }}>
                 <AlertCircle size={44} />
@@ -2240,13 +2075,13 @@ export default function ProfileView({
               {loadingLevels ? (
                 <div style={{ textAlign: 'center', padding: '30px 16px', color: '#16A34A', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                   <RefreshCw size={24} className="animate-spin" />
-                  <span style={{ fontSize: '13px', fontWeight: 700 }}>Darajalar yuklanmoqda...</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700 }}>{t('pm.levelsLoading')}</span>
                 </div>
               ) : levelsList.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 16px', color: '#64748B' }}>
                   <Award size={36} style={{ opacity: 0.4, marginBottom: 10 }} />
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#0F172A' }}>
-                    Darajalar mavjud emas
+                    {t('pm.levelsEmpty')}
                   </p>
                   <p style={{ margin: '6px 0 0 0', fontSize: '13px' }}>
                     API orqali hozircha darajalar ro'yxati taqdim etilmagan.

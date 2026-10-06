@@ -16,7 +16,7 @@ import PatientAvatar from '../components/features/PatientAvatar';
 import ClinicalHintModal from '../components/modals/ClinicalHintModal';
 import { useTranslation } from '../i18n.jsx';
 import { api, isSessionNotActiveError } from '../api';
-import { onPlaybackChange, playBase64Audio, speakText, startMicRecorder, stopPlayback } from '../utils/audioRecord';
+import { onPlaybackChange, playBase64Audio, startMicRecorder, stopPlayback } from '../utils/audioRecord';
 
 const PATIENT_VOICE_KEY = 'tibcase_patient_voice';
 
@@ -138,7 +138,6 @@ export default function CaseSimulationRoom({
     // later replies keep being voiced because voiceEnabledRef follows this toggle.
     const lastPatient = [...messages].reverse().find((m) => m.sender !== 'user' && m.text);
     if (lastPatient?.audioBase64) playBase64Audio(lastPatient.audioBase64, lastPatient.audioMime || 'audio/wav');
-    else if (lastPatient?.text) speakText(lastPatient.text);
   };
 
   useEffect(() => {
@@ -205,13 +204,10 @@ export default function CaseSimulationRoom({
     return `${m}:${s}`;
   };
 
-  const playReplyAudio = useCallback((audioBase64, audioMime, fallbackText) => {
+  const playReplyAudio = useCallback((audioBase64, audioMime) => {
     if (!voiceEnabledRef.current) return;
-    if (audioBase64) {
-      playBase64Audio(audioBase64, audioMime || 'audio/wav');
-      return;
-    }
-    if (fallbackText) speakText(fallbackText);
+    // Voice comes only from the backend (audio_base64); no browser TTS fallback.
+    if (audioBase64) playBase64Audio(audioBase64, audioMime || 'audio/wav');
   }, []);
 
   const handleReplay = (msg) => {
@@ -303,7 +299,7 @@ export default function CaseSimulationRoom({
       }]);
 
       if (!errorText || replyAudio) {
-        playReplyAudio(replyAudio, replyMime, errorText ? '' : replyText);
+        playReplyAudio(replyAudio, replyMime);
       }
     }
 

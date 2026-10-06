@@ -69,16 +69,6 @@ export function playBase64Audio(base64, mime = 'audio/wav') {
   return audio.play().catch(() => notifyPlayback(false));
 }
 
-export function speakText(text) {
-  if (!text || typeof window === 'undefined' || !window.speechSynthesis) return;
-  stopPlayback();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.onstart = () => notifyPlayback(true);
-  utterance.onend = () => notifyPlayback(false);
-  utterance.onerror = () => notifyPlayback(false);
-  window.speechSynthesis.speak(utterance);
-}
-
 export async function startMicRecorder() {
   if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
     throw new Error('Mikrofon ushbu brauzerda qo‘llab-quvvatlanmaydi');
