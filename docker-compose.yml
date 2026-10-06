@@ -13,5 +13,5 @@ services:
         VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
         VITE_FIREBASE_VAPID_KEY: ${VITE_FIREBASE_VAPID_KEY:-}
     ports:
-      - "80:80"
+      - "${PORT:-8080}:80"
     restart: unless-stopped

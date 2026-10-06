@@ -1,0 +1,11 @@
+# Serverda: sudo apt install caddy  ->  /etc/caddy/Caddyfile ga ko'chiring, domenlarni almashtiring,
+# DNS A-yozuvlari serverga qaratilgan bo'lsin, so'ng: sudo systemctl reload caddy
+# HTTPS sertifikatlarini Caddy o'zi oladi va yangilaydi.
+
+tibcase.example.uz {
+	reverse_proxy localhost:8080   # tibcase.web (docker compose, PORT=8080)
+}
+
+admin.tibcase.example.uz {
+	reverse_proxy localhost:3000   # tibcase.admin (docker compose, PORT=3000)
+}
