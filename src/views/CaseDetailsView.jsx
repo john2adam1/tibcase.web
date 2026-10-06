@@ -45,13 +45,20 @@ export default function CaseDetailsView({
     }
   };
 
+  const getDifficultyLabel = (diff) => {
+    if (!diff) return null;
+    const d = String(diff).toLowerCase();
+    if (d.includes('easy') || d.includes('oson') || d.includes('легк')) return t('modal.easy', 'Oson');
+    if (d.includes('medium') || d.includes('orta') || d.includes("o'rta") || d.includes('средн')) return t('modal.medium', "O'rta");
+    if (d.includes('hard') || d.includes('qiyin') || d.includes('сложн')) return t('modal.hard', 'Qiyin');
+    return diff.charAt(0).toUpperCase() + diff.slice(1);
+  };
+
   const displayTitle = caseItem.title || '';
   const displayCategory = caseItem.category_name || '';
-  const displayDifficulty = caseItem.difficulty
-    ? (caseItem.difficulty.charAt(0).toUpperCase() + caseItem.difficulty.slice(1))
-    : null;
+  const displayDifficulty = getDifficultyLabel(caseItem.difficulty);
   const displayDuration = caseItem.expected_duration_minutes
-    ? `${caseItem.expected_duration_minutes} min`
+    ? `${caseItem.expected_duration_minutes} ${t('fav.min', 'daq')}`
     : null;
   const displayAnamnesis = caseItem.chief_complaint || caseItem.subtitle || '';
 

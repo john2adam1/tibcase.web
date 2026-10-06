@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const PALETTE = [
   ['#FEE2E2', '#B91C1C'],
@@ -19,12 +19,24 @@ function getInitials(name) {
   return (first + second).toUpperCase();
 }
 
-// Telegram-style avatar: colored circle with the user's initials (no photo upload).
-export default function UserAvatar({ name, size = 76, style }) {
+// Avatar: uploaded photo (src) if present and loads, otherwise a Telegram-style colored circle with initials.
+export default function UserAvatar({ name, src, size = 76, style }) {
+  const [failedSrc, setFailedSrc] = useState('');
   const key = String(name || '');
   let hash = 0;
   for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   const [bg, fg] = PALETTE[hash % PALETTE.length];
+
+  if (src && failedSrc !== src) {
+    return (
+      <img
+        src={src}
+        alt={key}
+        onError={() => setFailedSrc(src)}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, display: 'block', ...style }}
+      />
+    );
+  }
 
   return (
     <div

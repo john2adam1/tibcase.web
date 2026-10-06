@@ -54,7 +54,6 @@ export default function ProfileView({
   const lang = appLang || 'uz';
   const [currentScreen, setCurrentScreen] = useState('profile'); // 'profile' | 'settings'
   const [activeTab, setActiveTab] = useState('completed'); // 'completed' | 'ongoing'
-  const [copiedId, setCopiedId] = useState(false);
   const [levelsList, setLevelsList] = useState([]);
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [localLimit, setLocalLimit] = useState(userLimit || null);
@@ -82,10 +81,14 @@ export default function ProfileView({
       api.getCompletedSimulations().catch(() => ({ sessions: [], count: 0 })),
       api.getOngoingSimulations().catch(() => ({ sessions: [], count: 0 })),
       api.getUserLimit().catch(() => null),
-    ]).then(([comp, ong, freshLimit]) => {
+      api.getLevels().catch(() => []),
+    ]).then(([comp, ong, freshLimit, freshLevels]) => {
       if (mounted) {
         setCompletedSessions(comp?.sessions || []);
         setOngoingSessions(ong?.sessions || []);
+        if (Array.isArray(freshLevels) && freshLevels.length > 0) {
+          setLevelsList(freshLevels);
+        }
         if (freshLimit) {
           setLocalLimit(freshLimit);
           if (onRefreshLimit) onRefreshLimit();
@@ -337,15 +340,6 @@ export default function ProfileView({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const userIdString = user?.id ? String(user.id) : '';
-
-  const handleCopyUserId = () => {
-    navigator.clipboard?.writeText(userIdString);
-    setCopiedId(true);
-    showToast('User ID copied to clipboard!');
-    setTimeout(() => setCopiedId(false), 2200);
-  };
-
   const handleSaveUsername = async () => {
     if (!tempUsername.trim()) return;
     setSaveLoading(true);
@@ -436,6 +430,34 @@ export default function ProfileView({
     if (lang === 'uz') return '🇺🇿 Oʻzbek';
     if (lang === 'ru') return '🇷🇺 Русский';
     return '🇺🇸 English';
+  };
+
+  const getTranslatedLevelTitle = (lvl) => {
+    if (!lvl) return '';
+    if (typeof lvl.title === 'object' && lvl.title !== null) {
+      return lvl.title[lang] || lvl.title.uz || lvl.title.ru || lvl.title.en || '';
+    }
+    const slug = (lvl.slug || '').toLowerCase();
+    const raw = (typeof lvl.title === 'string' ? lvl.title : '').toLowerCase();
+    if (slug === 'beginner' || raw.includes('boshlang')) return t('level.beginner', lvl.title || "Boshlang'ich");
+    if (slug === 'student' || raw.includes('talab') || raw.includes('студент')) return t('level.student', lvl.title || 'Talaba');
+    if (slug === 'intern' || raw.includes('intern') || raw.includes('интерн')) return t('level.intern', lvl.title || 'Intern');
+    if (slug === 'resident' || raw.includes('rezident') || raw.includes('ординат')) return t('level.resident', lvl.title || 'Rezident');
+    if (slug === 'doctor' || raw.includes('shifokor') || raw.includes('врач')) return t('level.doctor', lvl.title || 'Shifokor');
+    if (slug === 'specialist' || raw.includes('mutaxassis') || raw.includes('специалист')) return t('level.specialist', lvl.title || 'Mutaxassis');
+    if (slug === 'expert' || raw.includes('ekspert') || raw.includes('эксперт')) return t('level.expert', lvl.title || 'Ekspert');
+    if (slug === 'master' || slug === 'professor' || raw.includes('professor') || raw.includes('профессор')) return t('level.master', lvl.title || 'Professor');
+    return lvl.title || '';
+  };
+
+  const getTranslatedSpecialization = (spec) => {
+    if (!spec) return '';
+    const s = String(spec).toLowerCase().trim();
+    if (s === 'student' || s === 'talaba' || s.includes('студент')) return t('profile.student', 'Tibbiyot talabasi');
+    if (s === 'doctor' || s === 'shifokor' || s.includes('врач')) return t('profile.doctor', 'Shifokor');
+    if (s === 'resident' || s === 'rezident' || s.includes('ординатор')) return t('profile.resident', 'Rezident');
+    if (s === 'intern' || s.includes('интерн')) return t('profile.intern', 'Intern');
+    return spec;
   };
 
   return (
@@ -544,7 +566,7 @@ export default function ProfileView({
                 justifyContent: 'space-between',
                 gap: 16,
               }}>
-                <UserAvatar name={user?.name} size={96} />
+                <UserAvatar name={user?.name} src={user?.image_url} size={96} />
 
                   {/* User Name & Subtitle */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -560,7 +582,7 @@ export default function ProfileView({
                     {user?.name || ''}
                   </h2>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    {currentLevelObj?.title && (
+                    {currentLevelObj && (
                       <span style={{
                         fontSize: '12px',
                         fontWeight: 700,
@@ -573,12 +595,12 @@ export default function ProfileView({
                         alignItems: 'center',
                         gap: 4
                       }}>
-                        <Zap size={12} /> {currentLevelObj.title}
+                        <Zap size={12} /> {getTranslatedLevelTitle(currentLevelObj)}
                       </span>
                     )}
                     {user?.specialization && (
                       <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>
-                        {user.specialization}
+                        {getTranslatedSpecialization(user.specialization)}
                       </span>
                     )}
                   </div>
@@ -609,7 +631,7 @@ export default function ProfileView({
                   {currentLevelObj?.badge_image_url ? (
                     <img
                       src={currentLevelObj.badge_image_url}
-                      alt={currentLevelObj.title || 'Badge'}
+                      alt={getTranslatedLevelTitle(currentLevelObj) || 'Badge'}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
@@ -632,7 +654,7 @@ export default function ProfileView({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '14.5px' }}>
-                        {t('profile.level')} {user?.level ?? 1}{currentLevelObj?.title ? `: ${currentLevelObj.title}` : ''}
+                        {t('profile.level')} {user?.level ?? 1}{currentLevelObj ? `: ${getTranslatedLevelTitle(currentLevelObj)}` : ''}
                       </span>
                     </div>
                     {currentLevelObj?.slug && (
@@ -662,7 +684,7 @@ export default function ProfileView({
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, textAlign: 'right' }}>
                     <span style={{ fontWeight: 700, color: '#64748B', fontSize: '13.5px' }}>
                       {nextLevelObj 
-                        ? `${t('profile.level')} ${nextLevelObj.level_number}${nextLevelObj.title ? `: ${nextLevelObj.title}` : ''}`
+                        ? `${t('profile.level')} ${nextLevelObj.level_number}${nextLevelObj ? `: ${getTranslatedLevelTitle(nextLevelObj)}` : ''}`
                         : `${t('profile.level')} ${(user?.level ?? 1) + 1}`}
                     </span>
                     {nextLevelObj?.slug && (
@@ -821,7 +843,9 @@ export default function ProfileView({
                   <Coins size={24} color="#CA8A04" strokeWidth={2.4} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>Tangalar</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>
+                    {t('profile.coins', 'Tangalar')}
+                  </div>
                   <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>{user?.coins || 0}</div>
                 </div>
               </div>
@@ -883,7 +907,7 @@ export default function ProfileView({
                         color: isSub ? '#16A34A' : (rem > 0 ? '#0F172A' : '#DC2626'),
                         lineHeight: 1.1
                       }}>
-                        {isSub ? 'Cheksiz' : `${rem}/${tot}`}
+                        {isSub ? t('profile.unlimited', 'Cheksiz') : `${rem}/${tot}`}
                       </div>
                       <div style={{
                         fontSize: '11px',
@@ -894,7 +918,7 @@ export default function ProfileView({
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
                       }}>
-                        {isSub ? 'PRO faol' : (rem > 0 ? 'ta qoldi' : 'Tugagan')}
+                        {isSub ? t('profile.proActive', 'PRO faol') : (rem > 0 ? `${rem} ${t('profile.remainingAttempts', 'ta qoldi')}` : t('profile.limitExhausted', 'Tugagan'))}
                       </div>
                     </div>
                   </div>
@@ -960,11 +984,11 @@ export default function ProfileView({
                       borderRadius: 99,
                       border: '1px solid #FCD34D',
                     }}>
-                      Ommabop
+                      {t('profile.popular', 'Ommabop')}
                     </span>
                   </div>
                   <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600, marginTop: 2 }}>
-                    Klinik keyslar va simulyatsiyalar uchun tanga paketlari
+                    {t('profile.buyCoinsDesc', 'Klinik keyslar va simulyatsiyalar uchun tanga paketlari')}
                   </div>
                 </div>
               </div>
@@ -1005,25 +1029,25 @@ export default function ProfileView({
               <Divider />
               <SettingsListItem
                 icon={<ActivityIcon size={20} color="#0F172A" strokeWidth={2} />}
-                label="Faollik"
+                label={t('settings.activity', 'Faollik')}
                 onClick={() => onNavigate && onNavigate('activity')}
               />
               <Divider />
               <SettingsListItem
                 icon={<Trophy size={20} color="#0F172A" strokeWidth={2} />}
-                label="Reyting"
+                label={t('settings.rating', 'Reyting')}
                 onClick={() => onNavigate && onNavigate('leaderboard')}
               />
               <Divider />
               <SettingsListItem
                 icon={<CalendarDays size={20} color="#0F172A" strokeWidth={2} />}
-                label="O'quv rejasi"
+                label={t('settings.studyPlan', "O'quv rejasi")}
                 onClick={() => onNavigate && onNavigate('study_plan')}
               />
               <Divider />
               <SettingsListItem
                 icon={<Bell size={20} color="#0F172A" strokeWidth={2} />}
-                label="Bildirishnomalar"
+                label={t('settings.notifications', 'Bildirishnomalar')}
                 onClick={() => onNavigate && onNavigate('notifications')}
               />
               <Divider />
@@ -1035,7 +1059,7 @@ export default function ProfileView({
               <Divider />
               <SettingsListItem
                 icon={<Tag size={20} color="#0F172A" strokeWidth={2} />}
-                label="Promokod"
+                label={t('settings.couponCode', 'Promokod')}
                 onClick={() => setModalType('coupon')}
               />
               <Divider />
@@ -1209,22 +1233,22 @@ export default function ProfileView({
             }}>
               <SettingsListItem
                 icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
-                label="Ma'lumot"
-                subtitle="Profil va shaxsiy ma'lumotlar"
+                label={t('settings.info', "Ma'lumot")}
+                subtitle={t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 onClick={handleOpenProfileInfo}
               />
               <Divider />
               <SettingsListItem
                 icon={<Smartphone size={20} color="#0F172A" strokeWidth={2} />}
-                label="Qurilmalar"
-                subtitle="Push-token va seanslar"
+                label={t('settings.devices', "Qurilmalar")}
+                subtitle={t('settings.devicesDesc', "Push-token va seanslar")}
                 onClick={handleOpenDevices}
               />
               <Divider />
               <SettingsListItem
                 icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
-                label="Ilova haqida"
-                subtitle="Versiya, FAQ va kontaktlar"
+                label={t('settings.about', "Ilova haqida")}
+                subtitle={t('settings.aboutDesc', "Versiya, FAQ va kontaktlar")}
                 onClick={handleOpenAbout}
               />
             </div>
@@ -1275,7 +1299,7 @@ export default function ProfileView({
                 }}
               >
                 <LogOut size={18} />
-                Chiqish
+                {t('settings.logOut', 'Chiqish')}
               </button>
             )}
 
@@ -1301,11 +1325,29 @@ export default function ProfileView({
       {/* 0A. Profile Info Modal */}
       {modalType === 'profile_info' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Ma'lumotlarim va Profil" onClose={() => setModalType(null)} maxWidth={460}>
+          <ModalCard title={t('settings.info', "Ma'lumotlarim va Profil")} onClose={() => setModalType(null)} maxWidth={460}>
             <form onSubmit={handleSaveProfileInfo} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
-                <UserAvatar name={profileForm.name || user?.name} size={84} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <UserAvatar name={profileForm.name || user?.name} src={profileForm.imagePreview} size={84} />
+                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', cursor: 'pointer' }}>
+                  {profileForm.imagePreview ? t('profile.changePhoto', "Rasmni almashtirish") : t('profile.uploadPhoto', "Rasm yuklash")}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        showToast("⚠️ Rasm hajmi 5 MB dan oshmasligi kerak");
+                        return;
+                      }
+                      setProfileForm((prev) => ({ ...prev, imageFile: file, imagePreview: URL.createObjectURL(file) }));
+                    }}
+                  />
+                </label>
               </div>
 
               {/* Readonly Badges Strip */}
@@ -1320,7 +1362,7 @@ export default function ProfileView({
                 textAlign: 'center',
               }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Daraja</div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('profile.level', 'Daraja')}</div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>⭐ {user?.level || 1}</div>
                 </div>
                 <div>
@@ -1328,11 +1370,11 @@ export default function ProfileView({
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>⚡ {user?.xp || 0}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Tangalar</div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('profile.coins', 'Tangalar')}</div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#F59E0B' }}>🪙 {user?.coins || 0}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Streak</div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('nav.streak', 'Streak')}</div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#EA580C' }}>🔥 {user?.streak_count || 0}d</div>
                 </div>
               </div>
@@ -1340,7 +1382,7 @@ export default function ProfileView({
               {/* Ism Field */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  Ism va familiya
+                  {t('settings.yourName', 'Ism va familiya')}
                 </label>
                 <input
                   type="text"
@@ -1365,7 +1407,7 @@ export default function ProfileView({
               {/* Telefon Field */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  Telefon raqam
+                  {t('auth.phoneLabel', 'Telefon raqam')}
                 </label>
                 <input
                   type="tel"
@@ -1389,7 +1431,7 @@ export default function ProfileView({
               {/* Email Field */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  Elektron pochta (Email)
+                  {t('auth.emailLabel', 'Elektron pochta (Email)')}
                 </label>
                 <input
                   type="email"
@@ -1413,7 +1455,7 @@ export default function ProfileView({
               {/* Til Select */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
-                  Ilova tili
+                  {t('profile.language', 'Ilova tili')}
                 </label>
                 <select
                   value={profileForm.language}
@@ -1442,37 +1484,6 @@ export default function ProfileView({
                 </select>
               </div>
 
-              {/* User ID copy */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: '#F1F5F9',
-                borderRadius: 12,
-                fontSize: '12px',
-                color: '#64748B',
-              }}>
-                <span>ID: <code style={{ color: '#0F172A', fontWeight: 700 }}>{user?.id || '—'}</code></span>
-                <button
-                  type="button"
-                  onClick={handleCopyUserId}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#2563EB',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontWeight: 700,
-                    fontSize: '11px',
-                  }}
-                >
-                  <Copy size={13} /> {copiedId ? 'Nusxalandi!' : 'Nusxa olish'}
-                </button>
-              </div>
-
               {/* Submit Button */}
               <button
                 type="submit"
@@ -1496,7 +1507,7 @@ export default function ProfileView({
                 }}
               >
                 {saveLoading ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} strokeWidth={3} />}
-                {saveLoading ? 'Saqlanmoqda...' : "O'zgarishlarni saqlash"}
+                {saveLoading ? t('studyPlan.saving', 'Saqlanmoqda...') : t('profile.saveChanges', "O'zgarishlarni saqlash")}
               </button>
             </form>
           </ModalCard>
@@ -1506,10 +1517,10 @@ export default function ProfileView({
       {/* 0B. Devices Modal */}
       {modalType === 'devices' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title="Qurilmalar" onClose={() => setModalType(null)} maxWidth={420}>
+          <ModalCard title={t('settings.devices', 'Qurilmalar')} onClose={() => setModalType(null)} maxWidth={420}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>
-                Ulangan qurilmalar: {deviceToken ? 1 : 0}
+                {t('settings.connectedDevices', 'Ulangan qurilmalar')}: {deviceToken ? 1 : 0}
               </div>
 
               {deviceToken ? (
@@ -1524,7 +1535,7 @@ export default function ProfileView({
                     <Laptop size={20} strokeWidth={2.2} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Shu qurilma</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{t('settings.thisDevice', 'Shu qurilma')}</div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginTop: 2 }}>
                       {getDeviceInfo().browser} · {getDeviceInfo().os}
                     </div>
@@ -1540,13 +1551,13 @@ export default function ProfileView({
                     }}
                   >
                     <Trash2 size={14} />
-                    {deviceLoading ? '...' : 'Chiqarish'}
+                    {deviceLoading ? '...' : t('settings.removeDevice', 'Chiqarish')}
                   </button>
                 </div>
               ) : (
                 <>
                   <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
-                    Bu qurilmada bildirishnomalar yoqilmagan.
+                    {t('settings.pushDisabled', 'Bu qurilmada bildirishnomalar yoqilmagan.')}
                   </div>
                   <button
                     type="button"
@@ -1557,7 +1568,7 @@ export default function ProfileView({
                       border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer',
                     }}
                   >
-                    {deviceLoading ? '...' : '🔔 Bildirishnomalarni yoqish'}
+                    {deviceLoading ? '...' : `🔔 ${t('settings.enablePush', 'Bildirishnomalarni yoqish')}`}
                   </button>
                   {pushUnsupportedReason() && (
                     <div style={{ fontSize: 12, color: '#B45309', background: '#FEF3C7', padding: 10, borderRadius: 12, fontWeight: 600 }}>
@@ -2285,7 +2296,7 @@ export default function ProfileView({
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <span style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
-                                {lvl.title || `${t('profile.level')} ${lvl.level_number}`}
+                                {getTranslatedLevelTitle(lvl) || `${t('profile.level')} ${lvl.level_number}`}
                               </span>
                               {isCurrent && (
                                 <span style={{

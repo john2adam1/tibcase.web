@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 25 1160 235" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&amp;display=swap');
+      .logo-text {
+        font-family: 'Montserrat', 'Arial Black', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 900;
+        fill: #16A34A;
+      }
+    </style>
+  </defs>
+
+  <!-- 1. "T" HARFI VA UNGA AYLANIB CHIQAYOTGAN ILON -->
+  <g id="letter-T-with-snake">
+    <!-- Asosiy "T" harfi -->
+    <path d="M 60 70 L 150 70 L 150 100 L 120 100 L 120 210 L 90 210 L 90 100 L 60 100 Z" fill="#16A34A"/>
+    
+    <!-- Oq kontur (Ilon T harfiga qo'shilib ketmasligi uchun toza 3D ajratish) -->
+    <path d="M 105 235 
+             C 85 220, 80 195, 105 180 
+             C 130 165, 130 140, 105 130 
+             C 80 120, 85 90, 115 80 
+             C 135 73, 140 55, 125 45 
+             C 110 38, 95 45, 95 55" 
+          fill="none" 
+          stroke="#FFFFFF" 
+          stroke-width="18" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+
+    <!-- T ustuni bo'ylab aylanib chiqqan Ilon tanasi -->
+    <path d="M 105 235 
+             C 85 220, 80 195, 105 180 
+             C 130 165, 130 140, 105 130 
+             C 80 120, 85 90, 115 80 
+             C 135 73, 140 55, 125 45 
+             C 110 38, 95 45, 95 55" 
+          fill="none" 
+          stroke="#16A34A" 
+          stroke-width="12" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+          
+    <!-- Ilon boshi (T harfi ustiga chiqqan) -->
+    <polygon points="95,45 80,58 98,64" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" fill="#16A34A"/>
+    <!-- Ilon ko'zi -->
+    <circle cx="91" cy="54" r="2.5" fill="#FFFFFF"/>
+    <circle cx="91" cy="54" r="1.2" fill="#0F172A"/>
+    <!-- Ilon tili (qizil nozik ayrili tilcha) -->
+    <path d="M 80 58 L 68 62 M 71 61 L 66 57" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- 2. "IB" HARFLARI -->
+  <text x="160" y="210" class="logo-text" font-size="140" letter-spacing="4">IB</text>
+
+  <!-- 3. GEOLOKATSIYA (PIN) VA ICHIDAGI "S" HARFI -->
+  <g id="station-pin" transform="translate(370, 45)">
+    <!-- Xuddi IELTS STATION'dagidek pastga qaragan Pin shakli -->
+    <path d="M 75 0 
+             C 116.4 0, 150 33.6, 150 75 
+             C 150 110, 105 155, 75 185 
+             C 45 155, 0 110, 0 75 
+             C 0 33.6, 33.6 0, 75 0 Z" 
+          fill="#16A34A"/>
+    
+    <!-- Pin ichidagi oq "S" harfi -->
+    <text x="75" y="105" 
+          text-anchor="middle" 
+          font-family="'Montserrat', 'Arial Black', sans-serif" 
+          font-weight="900" 
+          font-size="95" 
+          fill="#FFFFFF">S</text>
+  </g>
+
+  <!-- 4. "TATION" SO'ZI (Oxiridagi N harfi endi to'liq va keng sig'dirilgan) -->
+  <text x="540" y="210" class="logo-text" font-size="140" letter-spacing="4">TATION</text>
+</svg>

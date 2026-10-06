@@ -1,6 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="16" fill="#16A34A"/>
-  <path d="M26 14h12a2 2 0 0 1 2 2v10h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H40v10a2 2 0 0 1-2 2H26a2 2 0 0 1-2-2V38H14a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h10V16a2 2 0 0 1 2-2Z" fill="#fff" opacity=".16"/>
-  <path d="M10 33h12l4-10 7 20 5-14 3 4h13" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="50" cy="15" r="4" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <rect width="256" height="256" rx="64" fill="#FFFFFF"/>
+  <rect x="2" y="2" width="252" height="252" rx="62" stroke="#E2E8F0" stroke-width="3"/>
+  <rect x="2" y="2" width="252" height="252" rx="62" stroke="#16A34A" stroke-opacity="0.25" stroke-width="1.5"/>
+
+  <!-- Left: T with snake (scaled to fit) -->
+  <g transform="translate(-18, 12) scale(0.92)">
+    <path d="M 60 70 L 150 70 L 150 100 L 120 100 L 120 210 L 90 210 L 90 100 L 60 100 Z" fill="#16A34A"/>
+    <path d="M 105 235 C 85 220, 80 195, 105 180 C 130 165, 130 140, 105 130 C 80 120, 85 90, 115 80 C 135 73, 140 55, 125 45 C 110 38, 95 45, 95 55" 
+          fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 105 235 C 85 220, 80 195, 105 180 C 130 165, 130 140, 105 130 C 80 120, 85 90, 115 80 C 135 73, 140 55, 125 45 C 110 38, 95 45, 95 55" 
+          fill="none" stroke="#16A34A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <polygon points="95,45 80,58 98,64" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" fill="#16A34A"/>
+    <circle cx="91" cy="54" r="2.5" fill="#FFFFFF"/>
+    <circle cx="91" cy="54" r="1.2" fill="#0F172A"/>
+    <path d="M 80 58 L 68 62 M 71 61 L 66 57" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Right: Pin with S -->
+  <g transform="translate(136, 42) scale(0.72)">
+    <path d="M 75 0 C 116.4 0, 150 33.6, 150 75 C 150 110, 105 155, 75 185 C 45 155, 0 110, 0 75 C 0 33.6, 33.6 0, 75 0 Z" fill="#16A34A"/>
+    <text x="75" y="105" text-anchor="middle" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="95" fill="#FFFFFF">S</text>
+  </g>
 </svg>

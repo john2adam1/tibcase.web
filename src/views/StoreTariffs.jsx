@@ -413,12 +413,12 @@ export default function StoreTariffs({
                         fontWeight: 700,
                         textTransform: 'uppercase',
                       }}>
-                        {isCoinPkg ? `🪙 ${t('store.coinPackage', 'Tanga paketi')}` : '👑 Cheksiz Obuna'}
+                        {isCoinPkg ? `🪙 ${t('store.coinPackage', 'Tanga paketi')}` : t('store.unlimitedSub', '👑 Cheksiz Obuna')}
                       </span>
 
                       {tariff.duration > 0 && (
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Clock size={13} /> {tariff.duration} oy
+                          <Clock size={13} /> {tariff.duration} {t('store.month', 'oy')}
                         </span>
                       )}
                     </div>
@@ -513,7 +513,7 @@ export default function StoreTariffs({
                     onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(2px)'; }}
                     onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <span>{isCoinPkg ? t('store.buyCoinsBtn', 'Tangalarni sotib olish') : 'Obunani faollashtirish'}</span>
+                    <span>{isCoinPkg ? t('store.buyCoinsBtn', 'Tangalarni sotib olish') : t('store.activateSub', 'Obunani faollashtirish')}</span>
                     <ChevronRight size={16} strokeWidth={2.4} />
                   </button>
                 </div>
@@ -568,17 +568,17 @@ export default function StoreTariffs({
             </div>
 
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
-              To'lov tizimini tanlang
+              {t('store.choosePaymentSystem', "To'lov tizimini tanlang")}
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 20px 0', lineHeight: 1.4 }}>
-              <strong>{selectedTariff?.name}</strong> uchun to'lov summasi: <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
+              <strong>{selectedTariff?.name}</strong> • {t('store.paymentAmount', "To'lov summasi:")} <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { name: 'Payme', color: '#00CCCC', label: "Payme orqali to'lash" },
-                { name: 'Click', color: '#0073FF', label: "Click orqali to'lash" },
-                { name: 'Uzum Bank', color: '#7000FF', label: "Uzum Bank orqali to'lash" },
+                { name: 'Payme', color: '#00CCCC' },
+                { name: 'Click', color: '#0073FF' },
+                { name: 'Uzum Bank', color: '#7000FF' },
               ].map((paySystem) => (
                 <button
                   key={paySystem.name}
@@ -597,6 +597,7 @@ export default function StoreTariffs({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    gap: 12,
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#22C55E'; }}
@@ -610,7 +611,7 @@ export default function StoreTariffs({
                       background: paySystem.color,
                       display: 'inline-block'
                     }} />
-                    <span>{paySystem.label}</span>
+                    <span>{lang === 'ru' ? `${t('store.payVia')} ${paySystem.name}` : `${paySystem.name} ${t('store.payVia')}`}</span>
                   </span>
                   <ChevronRight size={16} color="#94A3B8" />
                 </button>
@@ -630,7 +631,7 @@ export default function StoreTariffs({
                 cursor: 'pointer',
               }}
             >
-              Bekor qilish
+              {t('common.cancel', 'Bekor qilish')}
             </button>
           </div>
         </div>

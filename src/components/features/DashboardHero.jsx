@@ -56,7 +56,7 @@ export default function DashboardHero({ user, categories = [], banners = [], onO
           {banner.description && <p style={{ fontSize: 16, opacity: 0.9, maxWidth: 520, lineHeight: 1.5 }}>{banner.description}</p>}
           {banner.link_url && (
             <a href={banner.link_url} target="_blank" rel="noreferrer" style={{ color: '#fff', fontSize: 14, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-              Batafsil <ExternalLink size={13} />
+              {t('common.more', 'Batafsil')} <ExternalLink size={13} />
             </a>
           )}
           {count > 1 && (

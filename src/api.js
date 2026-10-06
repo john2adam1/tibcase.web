@@ -289,7 +289,13 @@ export const api = {
 
   /** Get levels list */
   getLevels: async () => {
-    return await request('/web/level');
+    try {
+      const res = await request('/mobile/level');
+      return extractList(res);
+    } catch {
+      const res = await request('/web/level');
+      return extractList(res);
+    }
   },
 
   /** Get user profile */
@@ -595,7 +601,13 @@ export const api = {
   getNotifications: async (isRead) => {
     const query = isRead !== undefined ? `?is_read=${isRead}` : '';
     const res = await request(`/mobile/notification/user${query}`);
-    return res;
+    const items = extractList(res);
+    return {
+      notifications: items,
+      items,
+      count: typeof res?.count === 'number' ? res.count : items.length,
+      raw: res,
+    };
   },
 
   /** Mark notification as read */

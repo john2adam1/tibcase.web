@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /simulation/
+Disallow: /admin/
+Disallow: /api/
+
+# Host
+Host: https://tibstation.uz
+
+# Sitemap
+Sitemap: https://tibstation.uz/sitemap.xml

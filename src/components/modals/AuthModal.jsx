@@ -9,8 +9,6 @@ import {
   ExternalLink,
   RefreshCw,
   Phone,
-  ArrowUp,
-  MessageSquare,
   ClipboardPaste
 } from 'lucide-react';
 import { api, setStoredUser, setToken, setRefreshToken } from '../../api';
@@ -570,7 +568,7 @@ export default function AuthModal({
 
         {/* Brand Logo */}
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <img src="/logo.svg" alt="TibStation AI" width={56} height={56} style={{ borderRadius: 16, display: 'block', margin: '0 auto 12px' }} />
+          <img src="/logo-full.svg" alt="TibStation" style={{ height: 46, width: 'auto', maxWidth: 220, display: 'block', margin: '0 auto 16px' }} />
 
           <h3 style={{
             fontSize: '1.35rem',
@@ -744,137 +742,34 @@ export default function AuthModal({
           </div>
         ) : (
           <form onSubmit={handleConfirmCode} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Telegram bot guidance & button (phone login) */}
+            {/* Telegram bot button (phone login) */}
             {resolveAuthType() === 'telegram' && (
-              isInsideTelegram ? (
-                /* Inside Telegram Mini App: Visual 3-step guide + [ ∨ ] pointer + close to bot button */
-                <div style={{
-                  background: 'linear-gradient(135deg, rgba(0, 136, 204, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%)',
-                  borderRadius: 18,
-                  border: '1.5px solid rgba(0, 136, 204, 0.3)',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                  position: 'relative',
-                }}>
-                  {/* Top animated badge pointing to Telegram header [ ∨ ] */}
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    background: '#0088cc',
-                    color: '#ffffff',
-                    padding: '6px 14px',
-                    borderRadius: 20,
-                    fontSize: '0.8rem',
-                    fontWeight: 800,
-                    letterSpacing: '0.01em',
-                    alignSelf: 'center',
-                    boxShadow: '0 2px 8px rgba(0, 136, 204, 0.35)',
-                    animation: 'pulse 2.2s infinite',
-                  }}>
-                    <ArrowUp size={14} style={{ animation: 'bounceUp 1.2s infinite' }} />
-                    <span>{t('auth.tgHeaderHint')}</span>
-                  </div>
-
-                  <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#0F172A', fontWeight: 800, fontSize: '0.9rem' }}>
-                      <MessageSquare size={17} color="#0088cc" />
-                      <span>{t('auth.tgStepTitle')}</span>
-                    </div>
-                    <ol style={{
-                      margin: 0,
-                      paddingLeft: 20,
-                      fontSize: '0.83rem',
-                      color: '#334155',
-                      lineHeight: 1.45,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4
-                    }}>
-                      <li>
-                        <strong>{t('auth.tgStep1')}</strong> {t('auth.tgStep1Sub')}
-                      </li>
-                      <li>
-                        <strong>{t('auth.tgStep2')}</strong>
-                      </li>
-                      <li>
-                        <strong>{t('auth.tgStep3')}</strong>
-                      </li>
-                    </ol>
-                  </div>
-
-                  {/* Direct action button to close webapp and switch to bot */}
-                  <button
-                    type="button"
-                    onClick={handleOpenTelegramBot}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      minHeight: 46,
-                      padding: '10px 16px',
-                      borderRadius: 14,
-                      background: '#0088cc',
-                      color: '#FFFFFF',
-                      fontWeight: 700,
-                      fontSize: '0.88rem',
-                      border: 'none',
-                      cursor: 'pointer',
-                      boxShadow: 'var(--shadow-sm)',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <Send size={15} />
-                    <span>{t('auth.tgCloseToBotBtn')}</span>
-                  </button>
-                </div>
-              ) : (
-                /* Regular browser (Chrome / Safari): direct link to Telegram */
-                <div style={{
-                  background: 'rgba(0, 136, 204, 0.06)',
-                  borderRadius: 18,
-                  border: '1px solid rgba(0, 136, 204, 0.25)',
-                  padding: '14px 16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'stretch',
-                  textAlign: 'center',
-                  gap: 12,
-                }}>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#0F172A', fontWeight: 600, lineHeight: 1.45 }}>
-                    {t('auth.botOtpHint')}
-                  </p>
-                  <a
-                    href={TELEGRAM_BOT_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleOpenTelegramBot}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      minHeight: 48,
-                      padding: '12px 18px',
-                      borderRadius: 14,
-                      background: '#0088cc',
-                      color: '#FFFFFF',
-                      fontWeight: 700,
-                      fontSize: '0.92rem',
-                      textDecoration: 'none',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  >
-                    <Send size={16} />
-                    <span>{t('auth.openBotBtn')}</span>
-                    <ExternalLink size={15} />
-                  </a>
-                </div>
-              )
+              <button
+                type="button"
+                onClick={handleOpenTelegramBot}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  minHeight: 48,
+                  padding: '12px 18px',
+                  borderRadius: 14,
+                  background: 'linear-gradient(135deg, #0088cc 0%, #0284c7 100%)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                }}
+              >
+                <Send size={16} />
+                <span>{t('auth.openBotBtn')}</span>
+                <ExternalLink size={15} />
+              </button>
             )}
 
             {/* Info Message (e.g. resend success) */}

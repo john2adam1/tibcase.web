@@ -31,6 +31,7 @@ import StoreTariffs from './views/StoreTariffs';
 import BottomNavBar from './components/layout/BottomNavBar';
 import Sidebar from './components/layout/Sidebar.jsx';
 import TabletHeader from './components/layout/TabletHeader.jsx';
+import PushBanner from './components/common/PushBanner.jsx';
 
 // Modals
 import AuthModal from './components/modals/AuthModal';
@@ -135,7 +136,7 @@ export default function App() {
     let cancelled = false;
     autoEnablePush();
     onForegroundPush(() => {
-      api.getNotifications().then((res) => setNotifications(res?.notifications || [])).catch(() => {});
+      api.getNotifications().then((res) => setNotifications(res?.notifications || res?.items || [])).catch(() => {});
     }).then((u) => { if (cancelled) u(); else unsub = u; }).catch(() => {});
     return () => { cancelled = true; unsub(); };
   }, [isAuthenticated]);
@@ -289,7 +290,7 @@ export default function App() {
           if (aboutsData && aboutsData.length) setAbouts(aboutsData);
           if (contactsData && contactsData.length) setContacts(contactsData);
           if (bannersData && bannersData.length) setBanners(bannersData);
-          if (notifData) setNotifications(notifData?.notifications || []);
+          if (notifData) setNotifications(notifData?.notifications || notifData?.items || []);
         }
       } catch (err) {
         console.warn('Data load handled:', err.message);
@@ -350,7 +351,7 @@ export default function App() {
     setShowLandingGate(false);
     localStorage.setItem('tibcase_authenticated', 'true');
     setCurrentView('cases');
-    showToast(`Xush kelibsiz, ${loggedInUser.name || ''}!`);
+    showToast(`${t('auth.welcomeBackUser', 'Xush kelibsiz')}, ${loggedInUser.name || ''}!`);
 
     // Refresh full profile & daily limit from API
     try {
@@ -488,7 +489,7 @@ export default function App() {
 
   const handleStartSimulationFromHome = async ({ categoryId }) => {
     try {
-      showToast("Klinik keys tayyorlanmoqda...");
+      showToast(t('sim.preparingCase', 'Klinik keys tayyorlanmoqda...'));
       const randomRes = await api.getRandomCase({ categoryId });
       const targetCase = randomRes?.data || randomRes || null;
 
@@ -508,7 +509,7 @@ export default function App() {
     const skipFinishApi = Boolean(result?.skipFinishApi || result?.sessionEnded);
 
     try {
-      showToast("Simulyatsiya yakunlanmoqda...");
+      showToast(t('sim.finishingSim', 'Simulyatsiya yakunlanmoqda...'));
 
       let finishResult = result?.finish_result || null;
       try {
@@ -535,7 +536,7 @@ export default function App() {
       }
 
       // 2. AI Debriefing hisobotini olish
-      showToast("AI Debriefing hisoboti tayyorlanmoqda...");
+      showToast(t('sim.preparingDebrief', 'AI Debriefing hisoboti tayyorlanmoqda...'));
       let debrief = null;
       if (hasRealSession) {
         try {
@@ -636,6 +637,8 @@ export default function App() {
           onOpenLogin={() => (isAuthenticated ? setShowLandingGate(false) : setAuthModalOpen(true))}
           isAuthenticated={isAuthenticated}
           partners={partners}
+          onLangChange={handleLangChange}
+          lang={lang}
         />
 
         {/* Login / Auth Modal */}
@@ -692,6 +695,8 @@ export default function App() {
             unreadCount={notifications.filter(n => !n.is_read).length}
           />
         )}
+
+        {currentView !== 'simulation' && <PushBanner />}
 
         {/* Internal Views */}
         <main style={{ flex: 1, width: '100%' }}>
@@ -810,7 +815,7 @@ export default function App() {
             onRefreshNotifications={async () => {
               try {
                 const res = await api.getNotifications();
-                if (res) setNotifications(res?.notifications || []);
+                if (res) setNotifications(res?.notifications || res?.items || []);
               } catch { /* silent */ }
             }}
           />
@@ -984,10 +989,10 @@ export default function App() {
                   </div>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: '#0F172A' }}>
-                      Tanga orqali davom etish
+                      {t('limitModal.continueWithCoins', 'Tanga orqali davom etish')}
                     </h3>
                     <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#64748B', fontWeight: 600 }}>
-                      Bugungi bepul urinishlar limiti tugagan (0/3)
+                      {t('limitModal.freeLimitExhausted', 'Bugungi bepul urinishlar limiti tugagan')} (0/3)
                     </p>
                   </div>
                 </div>
@@ -1002,28 +1007,28 @@ export default function App() {
                   gap: 10,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>Tanlangan keys:</span>
+                    <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.selectedCase', 'Tanlangan keys:')}</span>
                     <span style={{ color: '#0F172A', fontWeight: 700, maxWidth: 240, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {limitModal.caseItem?.title || 'Klinik keys'}
+                      {limitModal.caseItem?.title || t('case.title', 'Klinik keys')}
                     </span>
                   </div>
                   <div style={{ width: '100%', height: 1, background: '#E2E8F0' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>Keys narxi:</span>
+                    <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.casePrice', 'Keys narxi:')}</span>
                     <span style={{ color: '#D97706', fontWeight: 700 }}>
-                      🪙 {limitModal.caseCost} tanga
+                      🪙 {limitModal.caseCost} {t('nav.coins', 'tanga')}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>Sizning balansingiz:</span>
+                    <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.yourBalance', 'Sizning balansingiz:')}</span>
                     <span style={{ color: '#16A34A', fontWeight: 700 }}>
-                      🪙 {limitModal.userCoins} tanga (qoladi: {limitModal.userCoins - limitModal.caseCost})
+                      🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')} ({t('limitModal.remaining', 'qoladi:')} {limitModal.userCoins - limitModal.caseCost})
                     </span>
                   </div>
                 </div>
 
                 <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
-                  Ushbu keysni hisobingizdagi tangalarni sarflab yechishingiz yoki cheksiz keyslar uchun Premium obunaga o'tishingiz mumkin.
+                  {t('limitModal.continueWithCoinsDesc', "Ushbu keysni hisobingizdagi tangalarni sarflab yechishingiz yoki cheksiz keyslar uchun Premium obunaga o'tishingiz mumkin.")}
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
@@ -1037,7 +1042,7 @@ export default function App() {
                         if (!ok) return;
                         setIsPreparingCase(true);
                         api.getUserProfile().then(p => { if (p) { setUser(p); setStoredUser(p); } }).catch(() => {});
-                        showToast(`🪙 ${cost} tanga sarflandi. Simulyatsiya boshlandi!`);
+                        showToast(`🪙 ${cost} ${t('sim.spentCoins', 'tanga sarflandi. Simulyatsiya boshlandi!')}`);
                       });
                     }}
                     style={{
@@ -1057,7 +1062,7 @@ export default function App() {
                       gap: 8,
                     }}
                   >
-                    <span>🪙 {limitModal.caseCost} Tanga sarflab boshlash</span>
+                    <span>🪙 {limitModal.caseCost} {t('limitModal.startWithCoins', 'Tanga sarflab boshlash')}</span>
                   </button>
 
                   <button
@@ -1083,7 +1088,7 @@ export default function App() {
                     }}
                   >
                     <Crown size={16} />
-                    <span>👑 Cheksiz kirish (Premium Obunalar)</span>
+                    <span>{t('limitModal.unlimitedPremium', '👑 Cheksiz kirish (Premium Obunalar)')}</span>
                   </button>
                 </div>
               </div>
@@ -1106,10 +1111,10 @@ export default function App() {
                   </div>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: '#0F172A' }}>
-                      Bepul limit va tangalar tugadi
+                      {t('limitModal.outOfLimitAndCoins', 'Bepul limit va tangalar tugadi')}
                     </h3>
                     <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#DC2626', fontWeight: 700 }}>
-                      Keysni ochish uchun Premium yoki tanga kerak
+                      {t('limitModal.needCoinsOrPremium', 'Keysni ochish uchun Premium yoki tanga kerak')}
                     </p>
                   </div>
                 </div>
@@ -1123,13 +1128,13 @@ export default function App() {
                   color: '#991B1B',
                   lineHeight: 1.5,
                 }}>
-                  Bugungi bepul <strong>3 ta urinish</strong> limitingiz tugagan. Ushbu keys narxi <strong>🪙 {limitModal.caseCost} tanga</strong>, sizda esa hozir <strong>🪙 {limitModal.userCoins} tanga</strong> mavjud.
+                  {t('limitModal.outOfCoinsMessage', 'Bugungi bepul urinishlar limitingiz tugagan. Ushbu keys narxi:')} <strong>🪙 {limitModal.caseCost} {t('nav.coins', 'tanga')}</strong>, {t('limitModal.youHave', 'sizda esa hozir:')} <strong>🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')}</strong>.
                 </div>
 
                 {/* Recommendations */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Tavsiya etiladigan yechimlar:
+                    {t('limitModal.recommendedSolutions', 'Tavsiya etiladigan yechimlar:')}
                   </div>
 
                   <div
@@ -1166,10 +1171,10 @@ export default function App() {
                       </div>
                       <div>
                         <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
-                          Premium Obuna xarid qilish
+                          {t('limitModal.buyPremium', 'Premium Obuna xarid qilish')}
                         </div>
                         <div style={{ fontSize: '12px', color: '#16A34A', fontWeight: 700 }}>
-                          Barcha keyslarga 100% cheksiz kirish
+                          {t('limitModal.unlimitedAllCases', 'Barcha keyslarga 100% cheksiz kirish')}
                         </div>
                       </div>
                     </div>
@@ -1209,10 +1214,10 @@ export default function App() {
                       </div>
                       <div>
                         <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
-                          Tanga paketi sotib olish
+                          {t('limitModal.buyCoins', 'Tanga paketi sotib olish')}
                         </div>
                         <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600 }}>
-                          50, 150 yoki 500 tanga paketlari
+                          {t('limitModal.coinPackages', '50, 150 yoki 500 tanga paketlari')}
                         </div>
                       </div>
                     </div>
@@ -1235,7 +1240,7 @@ export default function App() {
                       cursor: 'pointer',
                     }}
                   >
-                    Yopish
+                    {t('common.close', 'Yopish')}
                   </button>
 
                   <button
@@ -1261,7 +1266,7 @@ export default function App() {
                       gap: 6,
                     }}
                   >
-                    <span>Tariflarni ko'rish</span>
+                    <span>{t('limitModal.viewTariffs', "Tariflarni ko'rish")}</span>
                     <ChevronRight size={16} />
                   </button>
                 </div>

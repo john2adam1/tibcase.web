@@ -1,0 +1,25 @@
+{
+  "name": "TibStation AI — Virtual Klinik Simulyator",
+  "short_name": "TibStation",
+  "description": "Tibbiyot talabalari va shifokorlar uchun real vaqtdagi klinik keyslar simulyatori va sun'iy intellektli tibbiy murabbiy.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#16A34A",
+  "categories": ["education", "medical"],
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

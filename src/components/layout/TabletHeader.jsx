@@ -23,9 +23,8 @@ export default function TabletHeader({ onToggleSidebar, onOpenNotifications, unr
         <Menu size={22} strokeWidth={2} />
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, userSelect: 'none' }}>
-        <img src="/logo.svg" alt="TibStation AI" width={28} height={28} style={{ borderRadius: 8, display: 'block' }} />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>TibStation <span style={{ color: 'var(--accent)' }}>AI</span></span>
+      <div style={{ display: 'flex', alignItems: 'center', userSelect: 'none' }}>
+        <img src="/logo-full.svg" alt="TibStation" style={{ height: 26, width: 'auto', display: 'block' }} />
       </div>
 
       <button id="btn-open-notifications" className="ui-icon-btn" onClick={onOpenNotifications} aria-label="Notifications" style={{ border: 'none' }}>

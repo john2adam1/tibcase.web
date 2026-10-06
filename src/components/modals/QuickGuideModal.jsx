@@ -7,11 +7,13 @@ import {
   Lightbulb,
   FlaskConical,
 } from 'lucide-react';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function QuickGuideModal({
   onProceed,
   onSkip
 }) {
+  const { t } = useTranslation();
   return (
     <div style={{
       position: 'fixed',
@@ -52,10 +54,10 @@ export default function QuickGuideModal({
           </div>
           <div>
             <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
-              Tezkor Qo'llanma
+              {t('guide.title', "Tezkor Qo'llanma")}
             </h2>
             <p style={{ fontSize: '13px', color: '#64748B', fontWeight: 600, margin: '2px 0 0 0' }}>
-              Bemorga tashxis qo'yish va simulyatsiyadan foydalanish
+              {t('guide.subtitle', "Bemorga tashxis qo'yish va simulyatsiyadan foydalanish")}
             </p>
           </div>
         </div>
@@ -86,7 +88,7 @@ export default function QuickGuideModal({
             e.currentTarget.style.boxShadow = '0 3px 0 #E2E8F0';
           }}
         >
-          O'tkazib yuborish
+          {t('guide.skip', "O'tkazib yuborish")}
         </button>
       </div>
 
@@ -119,7 +121,7 @@ export default function QuickGuideModal({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '13px', fontWeight: 700 }}>
             <Activity size={17} strokeWidth={2.4} />
-            <span>BEMOR HOLATI: BARQAROR</span>
+            <span>{t('guide.patientStatus', 'BEMOR HOLATI: BARQAROR')}</span>
           </div>
 
           {/* Vitals Pills */}
@@ -214,7 +216,7 @@ export default function QuickGuideModal({
             maxWidth: '88%',
           }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}>
-              👤 Bemor
+              👤 {t('guide.patientLabel', 'Bemor')}
             </span>
             <div style={{
               background: '#F8FAFC',
@@ -226,7 +228,7 @@ export default function QuickGuideModal({
               border: '1px solid #E2E8F0',
               lineHeight: 1.45,
             }}>
-              "...tez o'rnimdan turganimda to'satdan boshim aylanib ketdi, ko'nglim ayniyapti va ko'kragimda biroz og'irlik sezilyapti."
+              {t('guide.patientSpeech', "\"...tez o'rnimdan turganimda to'satdan boshim aylanib ketdi, ko'nglim ayniyapti va ko'kragimda biroz og'irlik sezilyapti.\"")}
             </div>
           </div>
 
@@ -240,7 +242,7 @@ export default function QuickGuideModal({
             maxWidth: '90%',
           }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', display: 'flex', alignItems: 'center', gap: 4 }}>
-              👨‍⚕️ Siz (Shifokor)
+              👨‍⚕️ {t('guide.doctorLabel', 'Siz (Shifokor)')}
             </span>
             <div style={{
               display: 'flex',
@@ -257,7 +259,7 @@ export default function QuickGuideModal({
                 lineHeight: 1.5,
                 boxShadow: 'var(--shadow-sm)',
               }}>
-                Qon tahlillarini buyuramiz: umumiy qon tahlili, biokimyo, TSH va C-reaktiv oqsil. Bemorga og'riqsizlantiruvchi va qusishga qarshi dori berilsin.
+                {t('guide.doctorSpeech', "Qon tahlillarini buyuramiz: umumiy qon tahlili, biokimyo, TSH va C-reaktiv oqsil. Bemorga og'riqsizlantiruvchi va qusishga qarshi dori berilsin.")}
               </div>
               <div style={{
                 width: 32,
@@ -286,7 +288,7 @@ export default function QuickGuideModal({
             maxWidth: '92%',
           }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#4338CA', display: 'flex', alignItems: 'center', gap: 4 }}>
-              🧪 Tahlilxona va Hamshira
+              🧪 {t('guide.labLabel', 'Tahlilxona va Hamshira')}
             </span>
             <div style={{
               display: 'flex',
@@ -318,7 +320,7 @@ export default function QuickGuideModal({
                 fontWeight: 600,
                 lineHeight: 1.5,
               }}>
-                Laboratoriya buyurtmasi qabul qilindi. UQT, biokimyo va EKG tekshiruvlari boshlandi. Buyurilgan preparatlar bemorga yuborildi.
+                {t('guide.labSpeech', "Laboratoriya buyurtmasi qabul qilindi. UQT, biokimyo va EKG tekshiruvlari boshlandi. Buyurilgan preparatlar bemorga yuborildi.")}
               </div>
             </div>
           </div>
@@ -342,7 +344,7 @@ export default function QuickGuideModal({
         }}>
           <Lightbulb size={18} color="#16A34A" style={{ flexShrink: 0, marginTop: 1 }} />
           <span>
-            <strong>Maslahat:</strong> Har bir qadamda bemorning hayotiy ko'rsatkichlari (vital signs) o'zgarishini kuzatib boring va xalqaro klinik protokollar asosida to'g'ri qaror qabul qiling.
+            <strong>{t('guide.tipLabel', 'Maslahat:')}</strong> {t('guide.tipDesc', "Har bir qadamda bemorning hayotiy ko'rsatkichlari (vital signs) o'zgarishini kuzatib boring va xalqaro klinik protokollar asosida to'g'ri qaror qabul qiling.")}
           </span>
         </div>
 
@@ -377,7 +379,7 @@ export default function QuickGuideModal({
             e.currentTarget.style.boxShadow = '0 4px 0 #15803D, 0 10px 24px rgba(34, 197, 94, 0.35)';
           }}
         >
-          <span>Simulyatsiyani boshlash</span>
+          <span>{t('guide.startSimulation', 'Simulyatsiyani boshlash')}</span>
           <ChevronRight size={20} strokeWidth={2.5} />
         </button>
       </div>

@@ -26,8 +26,8 @@ export default function LogoutConfirmModal({
 
   if (!isOpen) return null;
 
-  const displayName = user?.name || user?.phone_number || user?.email || 'Foydalanuvchi';
-  const roleDisplay = user?.role === 'admin' ? 'Administrator' : 'Foydalanuvchi';
+  const displayName = user?.name || user?.phone_number || user?.email || t('auth.user', 'Foydalanuvchi');
+  const roleDisplay = user?.role === 'admin' ? t('auth.admin', 'Administrator') : t('auth.user', 'Foydalanuvchi');
 
   return (
     <div
@@ -205,7 +205,7 @@ export default function LogoutConfirmModal({
               border: '1px solid #A7F3D0'
             }}
           >
-            Faol
+            {t('auth.activeStatus', 'Faol')}
           </span>
         </div>
 

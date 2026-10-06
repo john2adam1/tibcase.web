@@ -62,10 +62,9 @@ export default function Sidebar({
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px' }}>
-          <div onClick={() => handleNavClick('cases')} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-            <img src="/logo.svg" alt="TibStation AI" width={44} height={44} style={{ borderRadius: 12, display: 'block' }} />
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>TibStation <span style={{ color: 'var(--accent)' }}>AI</span></span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', minHeight: 48 }}>
+          <div onClick={() => handleNavClick('cases')} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <img src="/logo-full.svg" alt="TibStation" style={{ height: 42, width: 'auto', maxWidth: 215, display: 'block', objectFit: 'contain' }} />
           </div>
           <button
             className="sidebar-close-btn"

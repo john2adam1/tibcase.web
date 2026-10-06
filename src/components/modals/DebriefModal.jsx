@@ -38,7 +38,7 @@ export default function DebriefModal({
       }
     } else {
       navigator.clipboard?.writeText(`${text}\n${window.location.origin}`);
-      alert('Natija nusxalandi!');
+      alert(t('debrief.copiedAlert', 'Natija nusxalandi!'));
     }
   };
 
@@ -83,7 +83,7 @@ export default function DebriefModal({
         {/* Floating Close Button */}
         <button
           onClick={onClose}
-          title="Yopish"
+          title={t('common.close', 'Yopish')}
           style={{
             position: 'absolute',
             top: 20,
@@ -186,7 +186,7 @@ export default function DebriefModal({
               fontWeight: 700,
               color: isSuccess ? '#16A34A' : '#B45309',
             }}>
-              {score >= 90 ? "A'lo natija" : score >= 75 ? "Qoniqarli" : "Xatolar mavjud"}
+              {score >= 90 ? t('debrief.excellent', "A'lo natija") : score >= 75 ? t('debrief.satisfactory', 'Qoniqarli') : t('debrief.hasErrors', 'Xatolar mavjud')}
             </div>
           </div>
 
@@ -204,7 +204,7 @@ export default function DebriefModal({
             justifyContent: 'center',
           }}>
             <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              To'plangan XP
+              {t('debrief.earnedXp', "To'plangan XP")}
             </div>
             <div style={{
               fontSize: '26px',
@@ -221,7 +221,7 @@ export default function DebriefModal({
               <span>+{xp}</span>
             </div>
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369A1' }}>
-              Tajriba ochkosi
+              {t('debrief.xpDesc', 'Tajriba ochkosi')}
             </div>
           </div>
 
@@ -239,7 +239,7 @@ export default function DebriefModal({
             justifyContent: 'center',
           }}>
             <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              Mukofot Tangalar
+              {t('debrief.rewardCoins', 'Mukofot Tangalar')}
             </div>
             <div style={{
               fontSize: '26px',
@@ -256,7 +256,7 @@ export default function DebriefModal({
               <span>+{coins}</span>
             </div>
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#B45309' }}>
-              Hamyonga qo'shildi
+              {t('debrief.addedToWallet', "Hamyonga qo'shildi")}
             </div>
           </div>
         </div>
@@ -390,7 +390,7 @@ export default function DebriefModal({
                 marginBottom: 6,
               }}>
                 <Stethoscope size={18} color="#2563EB" strokeWidth={2.2} />
-                <span>Klinik protokol va tavsiyalar:</span>
+                <span>{t('debrief.protocolNotes', 'Klinik protokol va tavsiyalar:')}</span>
               </div>
               <p style={{
                 margin: 0,
@@ -459,7 +459,7 @@ export default function DebriefModal({
 
           <button
             onClick={handleShare}
-            title="Natijani ulashish"
+            title={t('debrief.shareResult', 'Natijani ulashish')}
             style={{
               width: 48,
               height: 48,

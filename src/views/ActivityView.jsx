@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Activity as ActivityIcon, CalendarDays, TrendingUp } from 'lucide-react';
 import { api } from '../api';
+import { useTranslation } from '../i18n.jsx';
 
 export default function ActivityView({ onBack }) {
+  const { t } = useTranslation();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('day'); // day, week, month
@@ -67,7 +69,7 @@ export default function ActivityView({ onBack }) {
           textAlign: 'center',
           paddingRight: 40,
         }}>
-          Faollik
+          {t('activity.title', 'Faollik')}
         </h1>
       </div>
 
@@ -80,9 +82,9 @@ export default function ActivityView({ onBack }) {
         marginBottom: 24,
       }}>
         {[
-          { id: 'day', label: 'Kunlik' },
-          { id: 'week', label: 'Haftalik' },
-          { id: 'month', label: 'Oylik' }
+          { id: 'day', label: t('activity.daily', 'Kunlik') },
+          { id: 'week', label: t('activity.weekly', 'Haftalik') },
+          { id: 'month', label: t('activity.monthly', 'Oylik') }
         ].map(f => (
           <button
             key={f.id}
@@ -107,7 +109,9 @@ export default function ActivityView({ onBack }) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 40 }}>Loading...</div>
+        <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 40 }}>
+          {t('common.loading', 'Yuklanmoqda...')}
+        </div>
       ) : activities.length === 0 ? (
         <div style={{
           display: 'flex',
@@ -130,10 +134,10 @@ export default function ActivityView({ onBack }) {
             <ActivityIcon size={32} color="#94A3B8" strokeWidth={2} />
           </div>
           <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 8px 0' }}>
-            Hozircha bo'sh
+            {t('activity.empty', "Hozircha bo'sh")}
           </h3>
           <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
-            Ushbu davr uchun faollik mavjud emas
+            {t('activity.emptyDesc', 'Ushbu davr uchun faollik mavjud emas')}
           </p>
         </div>
       ) : (

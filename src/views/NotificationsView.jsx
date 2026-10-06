@@ -25,7 +25,8 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
       setLoading(true);
       setLoadError('');
       const res = await api.getNotifications();
-      setNotifications(res?.notifications || []);
+      const list = Array.isArray(res?.notifications) ? res.notifications : (Array.isArray(res?.items) ? res.items : []);
+      setNotifications(list);
     } catch (err) {
       console.error('Failed to load notifications', err);
       setLoadError(err?.message || 'Xatolik');

@@ -8,6 +8,15 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getDifficultyLabel = (diff) => {
+    if (!diff) return '';
+    const d = String(diff).toLowerCase();
+    if (d.includes('easy') || d.includes('oson') || d.includes('легк')) return t('modal.easy', 'Oson');
+    if (d.includes('medium') || d.includes('orta') || d.includes("o'rta") || d.includes('средн')) return t('modal.medium', "O'rta");
+    if (d.includes('hard') || d.includes('qiyin') || d.includes('сложн')) return t('modal.hard', 'Qiyin');
+    return diff.charAt(0).toUpperCase() + diff.slice(1);
+  };
+
   const fetchFavorites = async () => {
     try {
       setLoading(true);
@@ -75,7 +84,7 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 40 }}>Loading...</div>
+        <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 40 }}>{t('common.loading', 'Yuklanmoqda...')}</div>
       ) : cases.length === 0 ? (
         <div style={{
           display: 'flex',
@@ -165,7 +174,7 @@ export default function FavoritesView({ onBack, onSelectCase, onToggleFavorite }
                     color: c.difficulty === 'hard' ? '#EF4444' : c.difficulty === 'medium' ? '#F59E0B' : '#10B981',
                     textTransform: 'capitalize'
                   }}>
-                    {c.difficulty}
+                    {getDifficultyLabel(c.difficulty)}
                   </span>
                 </div>
               </div>
