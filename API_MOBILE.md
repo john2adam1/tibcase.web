@@ -4,7 +4,7 @@
 > (`scripts/gen_api_doc.py` skripti orqali — qo'lda tahrirlamang, backend o'zgarsa qayta
 > generatsiya qilinadi: `swag init -g api/api.go -o api/docs && python3 scripts/gen_api_doc.py`).
 >
-> - **Base URL:** deploy qilingan domen (masalan `https://dev-medic.axadjonovsardorbek.uz`), path'lar shu yerda ko'rsatilganidek qo'shiladi (masalan `/mobile/category`).
+> - **Base URL:** deploy qilingan domen (masalan `https://dev.tibstation.uz`), path'lar shu yerda ko'rsatilganidek qo'shiladi (masalan `/mobile/category`).
 > - **Auth:** login/OTP oqimi orqali (`POST /mobile/auth/google` yoki `/mobile/auth/user/otp/*`) olingan `access_token`ni `Authorization: Bearer <access_token>` header bilan yuboring. Token muddati tugasa (`401 "access token expired"`), `POST /auth/token/refresh` ga `{"refresh_token": "..."}` yuborib yangi juft token oling (bu endpoint `/mobile` ostida emas, root'da).
 > - **Til:** ko'p javoblarda matnlar tilga bog'liq bo'lsa, `Accept-Language: uz|ru|en` header yuboriladi (default `uz`).
 > - **Pagination:** ro'yxat endpointlari odatda `limit`, `page` query parametr oladi.

@@ -11,9 +11,29 @@ import {
   ChevronRight,
   ChevronLeft,
   Clock,
+  Copy,
+  ExternalLink,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
+
+/**
+ * Open payment or external link safely across standard browsers and Telegram Mini App
+ */
+function openPaymentGatewayUrl(url) {
+  if (!url) return;
+  const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+  if (tg && typeof tg.openLink === 'function') {
+    tg.openLink(url);
+    return;
+  }
+  const w = window.open(url, '_blank');
+  if (!w) {
+    window.location.href = url;
+  }
+}
 
 export default function StoreTariffs({
   tariffs: initialTariffs = [],
@@ -23,16 +43,42 @@ export default function StoreTariffs({
   onBack,
   initialTab = 'all',
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [tariffsList, setTariffsList] = useState(initialTariffs || []);
   const [loading, setLoading] = useState(false);
+
+  // Tab filtering: 'all' | 'subscription' | 'coin_package'
+  const [activeCategory, setActiveCategory] = useState(() => {
+    if (initialTab === 'coins') return 'coin_package';
+    if (initialTab === 'subscriptions') return 'subscription';
+    return initialTab || 'all';
+  });
 
   const [promocode, setPromocode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoResult, setPromoResult] = useState(null);
+
+  // Payment checkout states
   const [selectedTariff, setSelectedTariff] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentProvider, setPaymentProvider] = useState('click'); // 'click' | 'inpay'
+  const [coinsToUse, setCoinsToUse] = useState('');
+
+  // Payment link modal (for URL redirect & copy fallback)
+  const [payLinkModal, setPayLinkModal] = useState({
+    open: false,
+    url: '',
+    orderId: '',
+    provider: 'click',
+  });
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  // Immediate success modal (e.g., just_paid = true)
+  const [successModal, setSuccessModal] = useState({
+    open: false,
+    message: '',
+  });
 
   // Load tariffs directly from API
   useEffect(() => {
@@ -96,45 +142,118 @@ export default function StoreTariffs({
 
   const handleBuy = (tariff) => {
     setSelectedTariff(tariff);
+    setCoinsToUse('');
+    setPaymentProvider('click');
     setPaymentModalOpen(true);
   };
 
-  const handleSimulatePayment = async () => {
+  const handleProcessPayment = async () => {
     if (!selectedTariff) return;
     setPaymentLoading(true);
-    try {
-      const result = await api.subscribe(selectedTariff.id, 0);
 
-      // Backend returns the payment (Click) URL
-      const payUrl = typeof result === 'string' ? result : result?.url;
-      if (payUrl && /^https?:\/\//.test(payUrl)) {
-        window.open(payUrl, '_blank', 'noopener,noreferrer');
+    const isCoinPkg = selectedTariff.kind === 'coin_package' || (!selectedTariff.duration && (selectedTariff.coins ?? 0) > 0);
+    const parsedCoins = isCoinPkg ? 0 : Math.max(0, Math.min(Number(coinsToUse) || 0, user?.coins || 0));
+
+    try {
+      const result = await api.subscribe(selectedTariff.id, parsedCoins, paymentProvider);
+
+      // Close checkout selector modal
+      setPaymentModalOpen(false);
+
+      // 1. Direct activation (e.g. fully paid with coins or instant backend credit)
+      if (result?.just_paid) {
+        const msg = isCoinPkg
+          ? t('store.justPaidCoins', "Tangalar hisobga qo'shildi!")
+          : t('store.justPaidSub', "To'liq tangadan to'landi — obuna faollashdi!");
+        setSuccessModal({ open: true, message: msg });
+
+        // Refresh user profile & limit
+        try {
+          const fresh = await api.getUserProfile();
+          if (fresh && onUserUpdate) onUserUpdate(fresh);
+        } catch {
+          // ignore
+        }
+        return;
       }
 
-      setPaymentModalOpen(false);
-      // Sync real balance/subscription from backend
+      // 2. Gateway URL payment
+      const payUrl = typeof result === 'string' ? result : result?.url;
+      const orderId = result?.order_id || '';
+
+      if (payUrl) {
+        // If inPAY, open immediately as per user-panel pattern
+        openPaymentGatewayUrl(payUrl);
+
+        // Also open payment link dialog for quick copy or manual revisit
+        setPayLinkModal({
+          open: true,
+          url: payUrl,
+          orderId,
+          provider: paymentProvider,
+        });
+      } else if (orderId) {
+        setSuccessModal({
+          open: true,
+          message: `${t('store.orderCreated', 'Buyurtma yaratildi')}: #${orderId}`,
+        });
+      }
+
+      // Refresh user profile in background
       try {
         const fresh = await api.getUserProfile();
         if (fresh && onUserUpdate) onUserUpdate(fresh);
       } catch {
-        // keep current profile
+        // ignore
       }
     } catch (err) {
-      alert(err?.message || "Xatolik yuz berdi");
+      alert(err?.message || "To'lov jarayonida xatolik yuz berdi");
     } finally {
       setPaymentLoading(false);
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('uz-UZ').format(price) + " so'm";
+  const handleCopyPayLink = async () => {
+    if (!payLinkModal.url) return;
+    try {
+      await navigator.clipboard.writeText(payLinkModal.url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    } catch {
+      // fallback copy
+      const el = document.createElement('textarea');
+      el.value = payLinkModal.url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    }
   };
 
-  // Exclusively show coin tariffs
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('uz-UZ').format(Math.max(0, price || 0)) + " so'm";
+  };
+
+  // Filter tariffs by selected tab
   const displayedTariffs = tariffsList.filter((t) => {
-    if (t.kind === 'subscription' || (t.duration && t.duration > 0 && !t.coins)) return false;
-    return t.kind === 'coin_package' || (t.coins && t.coins > 0) || !t.duration;
+    const isCoinPkg = t.kind === 'coin_package' || (!t.duration && (t.coins ?? 0) > 0);
+    const isSub = t.kind === 'subscription' || (t.duration && t.duration > 0 && !t.coins);
+
+    if (activeCategory === 'coin_package') {
+      return isCoinPkg;
+    }
+    if (activeCategory === 'subscription') {
+      return isSub;
+    }
+    return true; // 'all'
   });
+
+  // Calculate remaining payment amount inside checkout modal
+  const isSelectedCoinPkg = selectedTariff?.kind === 'coin_package' || (!selectedTariff?.duration && (selectedTariff?.coins ?? 0) > 0);
+  const currentEnteredCoins = isSelectedCoinPkg ? 0 : Math.max(0, Math.min(Number(coinsToUse) || 0, user?.coins || 0));
+  const remainingPayAmount = Math.max(0, (selectedTariff?.price || 0) - currentEnteredCoins);
 
   return (
     <div style={{
@@ -192,14 +311,14 @@ export default function StoreTariffs({
             marginBottom: 10,
           }}>
             <Coins size={14} />
-            <span>{t('store.badge', 'Tanga tariflari')}</span>
+            <span>{t('store.badge', 'Tariflar va To\'lov')}</span>
           </div>
 
           <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0F172A', margin: '4px 0 6px 0', letterSpacing: '-0.02em' }}>
-            {t('store.coinTariffsTitle', 'Tanga tariflari')}
+            {t('store.coinTariffsTitle', 'Tariflar va Obuna')}
           </h1>
           <p style={{ color: '#64748B', fontSize: '14px', maxWidth: 560, margin: '0 auto', lineHeight: 1.5 }}>
-            {t('store.coinTariffsSubtitle', 'Klinik keyslar yechish va tibbiy simulyatsiyalardan cheklovlarsiz foydalanish uchun tanga paketini tanlang.')}
+            {t('store.coinTariffsSubtitle', 'Klinik keyslar yechish va tibbiy simulyatsiyalardan cheklovlarsiz foydalanish uchun o\'zingizga mos tarifni tanlang.')}
           </p>
 
           {/* User Current Balance Card */}
@@ -225,6 +344,47 @@ export default function StoreTariffs({
               <span>{(user?.has_subscription || userLimit?.has_subscription) ? 'PRO Obuna faol' : `Bepul tarif (${userLimit?.remaining ?? '-'}/${userLimit?.total ?? '-'} limit)`}</span>
             </div>
           </div>
+        </div>
+
+        {/* Category Tabs: Barchasi | Obuna | Tangalar */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 8,
+          marginBottom: 24,
+          flexWrap: 'wrap',
+        }}>
+          {[
+            { id: 'all', label: t('store.tabAll', 'Barchasi'), icon: Sparkles },
+            { id: 'subscription', label: t('store.tabSubscriptions', '👑 Premium Obuna'), icon: ShieldCheck },
+            { id: 'coin_package', label: t('store.tabCoins', '🪙 Tanga paketlari'), icon: Coins },
+          ].map((tab) => {
+            const isActive = activeCategory === tab.id;
+            return (
+              <button
+                key={tab.id}
+                id={`tab-store-${tab.id}`}
+                onClick={() => setActiveCategory(tab.id)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '9px 18px',
+                  borderRadius: 14,
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  border: isActive ? '1.5px solid #16A34A' : '1px solid #E2E8F0',
+                  background: isActive ? '#DCFCE7' : '#FFFFFF',
+                  color: isActive ? '#15803D' : '#475569',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Promocode Redemption Banner */}
@@ -257,6 +417,7 @@ export default function StoreTariffs({
 
             <form onSubmit={handleRedeemPromo} style={{ display: 'flex', gap: 10, flex: 1, minWidth: 220, maxWidth: 420, width: '100%' }}>
               <input
+                id="input-promocode"
                 type="text"
                 placeholder="Masalan: TIB2026"
                 value={promocode}
@@ -274,6 +435,7 @@ export default function StoreTariffs({
                 }}
               />
               <button
+                id="btn-redeem-promo"
                 type="submit"
                 disabled={promoLoading || !promocode.trim()}
                 style={{
@@ -330,7 +492,7 @@ export default function StoreTariffs({
           </div>
         )}
 
-        {/* Tariffs Cards Grid */}
+        {/* Tariffs Empty State */}
         {!loading && displayedTariffs.length === 0 && (
           <div style={{
             background: '#FFFFFF',
@@ -343,14 +505,15 @@ export default function StoreTariffs({
           }}>
             <Coins size={36} style={{ marginBottom: 12, opacity: 0.5 }} />
             <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
-              {t('store.coinsEmpty', 'Tanga tariflari mavjud emas')}
+              {t('store.tariffsEmpty', 'Hozircha tariflar mavjud emas.')}
             </h3>
             <p style={{ fontSize: '13px', margin: 0 }}>
-              Hozirda sotuvda tanga paketlari mavjud emas.
+              Tez orada yangi tariflar va imtiyozlar qo'shiladi.
             </p>
           </div>
         )}
 
+        {/* Tariffs Cards Grid */}
         {!loading && displayedTariffs.length > 0 && (
           <div style={{
             display: 'grid',
@@ -360,7 +523,7 @@ export default function StoreTariffs({
           }}>
             {displayedTariffs.map((tariff) => {
               const isCoinPkg = tariff.kind === 'coin_package' || (!tariff.duration && (tariff.coins ?? 0) > 0);
-              const isPopular = false;
+              const isPopular = tariff.duration >= 3;
 
               return (
                 <div
@@ -368,9 +531,9 @@ export default function StoreTariffs({
                   style={{
                     background: '#FFFFFF',
                     borderRadius: 18,
-                    border: isPopular ? '2.5px solid #22C55E' : '1px solid #E2E8F0',
-                    boxShadow: isPopular ? '0 12px 30px rgba(34, 197, 94, 0.18), 0 4px 0 #16A34A' : '0 4px 0 #E2E8F0',
-                    padding: '26px 22px',
+                    border: isPopular ? '2px solid #22C55E' : '1px solid #E2E8F0',
+                    boxShadow: isPopular ? '0 12px 30px rgba(34, 197, 94, 0.15), 0 4px 0 #16A34A' : '0 4px 0 #E2E8F0',
+                    padding: '24px 22px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -384,7 +547,7 @@ export default function StoreTariffs({
                   {isPopular && (
                     <div style={{
                       position: 'absolute',
-                      top: -13,
+                      top: -12,
                       left: '50%',
                       transform: 'translateX(-50%)',
                       background: '#16A34A',
@@ -397,7 +560,7 @@ export default function StoreTariffs({
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
                     }}>
-                      Eng ommabop
+                      Eng tavsiya etilgan
                     </div>
                   )}
 
@@ -428,7 +591,7 @@ export default function StoreTariffs({
                     </h3>
 
                     {/* Price block */}
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
                       <span style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A' }}>
                         {formatPrice(tariff.price)}
                       </span>
@@ -436,7 +599,7 @@ export default function StoreTariffs({
 
                     {/* Description */}
                     <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 16px 0', lineHeight: 1.5, fontWeight: 500 }}>
-                      {tariff.description || "Klinik simulyator uchun to'liq imtiyozlar paketi."}
+                      {tariff.description || (isCoinPkg ? "Klinik keyslarni ochish uchun oltin tangalar to'plami." : "Klinik simulyator uchun to'liq imtiyozlar paketi.")}
                     </p>
 
                     {/* Features list */}
@@ -452,11 +615,11 @@ export default function StoreTariffs({
                         <>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
-                            <span>+{tariff.coins} ta oltin Tanga darhol qo'shiladi</span>
+                            <span>+{tariff.coins} ta oltin Tanga hisobingizga qo'shiladi</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
-                            <span>Limit tugaganida keyslarni ochish uchun ishlatiladi</span>
+                            <span>Kunlik limit tugaganda keyslarni mustaqil ochish</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
@@ -475,7 +638,7 @@ export default function StoreTariffs({
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
-                            <span>AI Debriefing va xalqaro protokol tahlillari</span>
+                            <span>AI Debriefing va to'liq tibbiy xatolar tahlili</span>
                           </div>
                           {tariff.coins > 0 && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#D97706', fontWeight: 700 }}>
@@ -490,6 +653,7 @@ export default function StoreTariffs({
 
                   {/* Buy Button */}
                   <button
+                    id={`btn-buy-tariff-${tariff.id}`}
                     onClick={() => handleBuy(tariff)}
                     style={{
                       width: '100%',
@@ -524,14 +688,16 @@ export default function StoreTariffs({
 
       </div>
 
-      {/* Payment Gateway Modal */}
+      {/* ============================================================
+          CHECKOUT & PAYMENT PROVIDER SELECTION MODAL
+          ============================================================ */}
       {paymentModalOpen && (
         <div
           onClick={() => setPaymentModalOpen(false)}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.55)',
+            background: 'rgba(15, 23, 42, 0.6)',
             backdropFilter: 'blur(6px)',
             zIndex: 120,
             display: 'flex',
@@ -544,13 +710,301 @@ export default function StoreTariffs({
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
-              maxWidth: 420,
+              maxWidth: 440,
               background: '#FFFFFF',
-              borderRadius: 18,
+              borderRadius: 20,
               border: '1px solid #E2E8F0',
-              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.2)',
-              padding: '26px 22px',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
+              padding: '24px 22px',
+              textAlign: 'left',
+              position: 'relative',
+            }}
+          >
+            {/* Close Cross Button */}
+            <button
+              onClick={() => setPaymentModalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: '#F1F5F9',
+                border: 'none',
+                borderRadius: '50%',
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#64748B',
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              background: '#DCFCE7',
+              color: '#15803D',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 14,
+            }}>
+              <CreditCard size={24} strokeWidth={2.2} />
+            </div>
+
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
+              {t('store.choosePaymentSystem', "To'lov tizimini tanlang")}
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0' }}>
+              Tarif: <strong style={{ color: '#0F172A' }}>{selectedTariff?.name}</strong> • Narxi: <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
+            </p>
+
+            {/* Optional Coins Usage (Allowed for Subscriptions) */}
+            {!isSelectedCoinPkg && (
+              <div style={{
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: 14,
+                padding: '12px 14px',
+                marginBottom: 16,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <label htmlFor="input-coins-used" style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                    {t('store.coinsUsageLabel', 'Tangalardan foydalanish (ixtiyoriy):')}
+                  </label>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#D97706' }}>
+                    🪙 {user?.coins ?? 0} tanga
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    id="input-coins-used"
+                    type="number"
+                    min={0}
+                    max={user?.coins || 0}
+                    placeholder="Masalan: 50"
+                    value={coinsToUse}
+                    onChange={(e) => setCoinsToUse(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '9px 12px',
+                      borderRadius: 10,
+                      border: '1px solid #CBD5E1',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      outline: 'none',
+                      background: '#FFFFFF',
+                    }}
+                  />
+                  {user?.coins > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setCoinsToUse(String(Math.min(user?.coins || 0, Math.floor(selectedTariff?.price || 0))))}
+                      style={{
+                        padding: '9px 12px',
+                        borderRadius: 10,
+                        border: '1px solid #CBD5E1',
+                        background: '#FFFFFF',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: '#D97706',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Barchasi
+                    </button>
+                  )}
+                </div>
+                {currentEnteredCoins > 0 && (
+                  <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#16A34A', fontWeight: 600 }}>
+                    {remainingPayAmount <= 0
+                      ? "✓ To'liq tangalardan to'lanadi (0 so'm naqd to'lov)"
+                      : `- ${formatPrice(currentEnteredCoins)} chegirma. To'lovga: ${formatPrice(remainingPayAmount)}`}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Payment Providers List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+              {[
+                {
+                  id: 'click',
+                  name: 'Click',
+                  badge: 'Click Up & Web',
+                  color: '#0073FF',
+                  desc: 'Uzcard, Humo va Click hamyon orqali'
+                },
+                {
+                  id: 'inpay',
+                  name: 'inPAY',
+                  badge: 'Tezkor to\'lov',
+                  color: '#16A34A',
+                  desc: 'Bank kartalari va xalqaro to\'lovlar'
+                },
+              ].map((prov) => {
+                const isSelected = paymentProvider === prov.id;
+                return (
+                  <div
+                    key={prov.id}
+                    id={`provider-option-${prov.id}`}
+                    onClick={() => setPaymentProvider(prov.id)}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 14,
+                      background: isSelected ? '#F0FDF4' : '#FFFFFF',
+                      border: isSelected ? '2px solid #16A34A' : '1px solid #E2E8F0',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        background: prov.color,
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: '13px',
+                      }}>
+                        {prov.name[0]}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
+                            {prov.name}
+                          </span>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: 6,
+                            background: '#F1F5F9',
+                            color: '#64748B',
+                          }}>
+                            {prov.badge}
+                          </span>
+                        </div>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>
+                          {prov.desc}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      border: isSelected ? '6px solid #16A34A' : '2px solid #CBD5E1',
+                      background: '#FFFFFF',
+                      boxSizing: 'border-box',
+                    }} />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Proceed to Payment Action Button */}
+            <button
+              id="btn-confirm-payment"
+              onClick={handleProcessPayment}
+              disabled={paymentLoading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: 16,
+                background: '#16A34A',
+                boxShadow: '0 4px 0 #15803D',
+                border: 'none',
+                color: '#FFFFFF',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: paymentLoading ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {paymentLoading ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  <span>Bog'lanmoqda...</span>
+                </>
+              ) : remainingPayAmount <= 0 ? (
+                <span>🪙 Tangalar orqali faollashtirish</span>
+              ) : (
+                <span>
+                  💳 {formatPrice(remainingPayAmount)} · {paymentProvider === 'click' ? 'Click' : 'inPAY'} orqali to'lash
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setPaymentModalOpen(false)}
+              style={{
+                width: '100%',
+                marginTop: 10,
+                padding: '10px',
+                background: 'transparent',
+                border: 'none',
+                color: '#64748B',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                textAlign: 'center',
+              }}
+            >
+              {t('common.cancel', 'Bekor qilish')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          PAYMENT LINK MODAL (URL & COPY ACTION)
+          ============================================================ */}
+      {payLinkModal.open && (
+        <div
+          onClick={() => setPayLinkModal({ open: false, url: '', orderId: '', provider: 'click' })}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 130,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 440,
+              background: '#FFFFFF',
+              borderRadius: 20,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
+              padding: '24px 22px',
               textAlign: 'center',
+              position: 'relative',
             }}
           >
             <div style={{
@@ -564,65 +1018,95 @@ export default function StoreTariffs({
               justifyContent: 'center',
               margin: '0 auto 14px auto',
             }}>
-              <CreditCard size={26} strokeWidth={2.2} />
+              <ExternalLink size={26} strokeWidth={2.2} />
             </div>
 
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
-              {t('store.choosePaymentSystem', "To'lov tizimini tanlang")}
+              {t('store.payLinkModalTitle', "To'lov havolasi")}
             </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 20px 0', lineHeight: 1.4 }}>
-              <strong>{selectedTariff?.name}</strong> • {t('store.paymentAmount', "To'lov summasi:")} <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
+            <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+              {t('store.payLinkModalDesc', "To'lovni xavfsiz yakunlash uchun quyidagi havola orqali to'lov tizimi oynasiga o'ting:")}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { name: 'Payme', color: '#00CCCC' },
-                { name: 'Click', color: '#0073FF' },
-                { name: 'Uzum Bank', color: '#7000FF' },
-              ].map((paySystem) => (
-                <button
-                  key={paySystem.name}
-                  onClick={() => handleSimulatePayment(paySystem.name)}
-                  disabled={paymentLoading}
-                  style={{
-                    padding: '14px',
-                    borderRadius: 16,
-                    background: '#FFFFFF',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: 'var(--shadow-sm)',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    color: '#0F172A',
-                    cursor: paymentLoading ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#22C55E'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      background: paySystem.color,
-                      display: 'inline-block'
-                    }} />
-                    <span>{lang === 'ru' ? `${t('store.payVia')} ${paySystem.name}` : `${paySystem.name} ${t('store.payVia')}`}</span>
-                  </span>
-                  <ChevronRight size={16} color="#94A3B8" />
-                </button>
-              ))}
-            </div>
+            {payLinkModal.orderId && (
+              <div style={{
+                display: 'inline-block',
+                background: '#F1F5F9',
+                padding: '4px 10px',
+                borderRadius: 8,
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#475569',
+                marginBottom: 14,
+              }}>
+                Buyurtma: #{payLinkModal.orderId}
+              </div>
+            )}
+
+            {/* Direct Link Open Button */}
+            <button
+              id="btn-open-payment-link"
+              onClick={() => openPaymentGatewayUrl(payLinkModal.url)}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: 16,
+                background: '#16A34A',
+                boxShadow: '0 4px 0 #15803D',
+                border: 'none',
+                color: '#FFFFFF',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginBottom: 10,
+              }}
+            >
+              <span>{t('store.proceedToPay', "To'lovga o'tish")}</span>
+              <ExternalLink size={16} />
+            </button>
+
+            {/* Copy Link Button */}
+            <button
+              id="btn-copy-payment-link"
+              onClick={handleCopyPayLink}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 14,
+                background: '#FFFFFF',
+                border: '1px solid #CBD5E1',
+                color: linkCopied ? '#16A34A' : '#334155',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginBottom: 14,
+              }}
+            >
+              {linkCopied ? (
+                <>
+                  <Check size={16} color="#16A34A" strokeWidth={2.5} />
+                  <span>{t('store.linkCopied', 'Havola nusxalandi!')}</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={16} />
+                  <span>{t('store.copyLink', 'Havolani nusxalash')}</span>
+                </>
+              )}
+            </button>
 
             <button
-              onClick={() => setPaymentModalOpen(false)}
+              onClick={() => setPayLinkModal({ open: false, url: '', orderId: '', provider: 'click' })}
               style={{
-                marginTop: 16,
-                padding: '10px 20px',
+                padding: '8px 16px',
                 background: 'transparent',
                 border: 'none',
                 color: '#64748B',
@@ -631,11 +1115,84 @@ export default function StoreTariffs({
                 cursor: 'pointer',
               }}
             >
-              {t('common.cancel', 'Bekor qilish')}
+              {t('common.cancel', 'Yopish')}
             </button>
           </div>
         </div>
       )}
+
+      {/* ============================================================
+          PAYMENT SUCCESS MODAL (DIRECT ACTIVATION)
+          ============================================================ */}
+      {successModal.open && (
+        <div
+          onClick={() => setSuccessModal({ open: false, message: '' })}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 130,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 400,
+              background: '#FFFFFF',
+              borderRadius: 20,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
+              padding: '28px 22px',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: '#DCFCE7',
+              color: '#16A34A',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto',
+            }}>
+              <CheckCircle2 size={32} strokeWidth={2.5} />
+            </div>
+
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 8px 0' }}>
+              Muvaffaqiyatli!
+            </h3>
+            <p style={{ fontSize: '14px', color: '#475569', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+              {successModal.message}
+            </p>
+
+            <button
+              onClick={() => setSuccessModal({ open: false, message: '' })}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 14,
+                background: '#16A34A',
+                border: 'none',
+                color: '#FFFFFF',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Tushunarli
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -19,7 +19,10 @@ RUN npm run build
 
 # ---- serve ----
 FROM nginx:1.27-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# nginx image renders *.template with envsubst at start ($BACKEND_HOST); nginx vars ($host...) are untouched
+ENV BACKEND_HOST=prod.tibstation.uz
+ENV NGINX_ENVSUBST_FILTER=BACKEND_
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 HEALTHCHECK CMD wget -qO- http://127.0.0.1/ >/dev/null || exit 1

@@ -2,19 +2,19 @@
   "rewrites": [
     {
       "source": "/mobile/:path*",
-      "destination": "https://dev-medic.axadjonovsardorbek.uz/mobile/:path*"
+      "destination": "https://prod.tibstation.uz/mobile/:path*"
     },
     {
       "source": "/web/:path*",
-      "destination": "https://dev-medic.axadjonovsardorbek.uz/web/:path*"
+      "destination": "https://prod.tibstation.uz/web/:path*"
     },
     {
       "source": "/auth/:path*",
-      "destination": "https://dev-medic.axadjonovsardorbek.uz/auth/:path*"
+      "destination": "https://prod.tibstation.uz/auth/:path*"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://dev-medic.axadjonovsardorbek.uz/api/:path*"
+      "destination": "https://prod.tibstation.uz/api/:path*"
     },
     {
       "source": "/(.*)",

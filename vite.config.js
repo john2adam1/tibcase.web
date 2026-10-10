@@ -8,17 +8,17 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/mobile': {
-        target: 'https://dev-medic.axadjonovsardorbek.uz',
+        target: 'https://dev.tibstation.uz',
         changeOrigin: true,
         secure: false,
       },
       '/web': {
-        target: 'https://dev-medic.axadjonovsardorbek.uz',
+        target: 'https://dev.tibstation.uz',
         changeOrigin: true,
         secure: false,
       },
       '/auth': {
-        target: 'https://dev-medic.axadjonovsardorbek.uz',
+        target: 'https://dev.tibstation.uz',
         changeOrigin: true,
         secure: false,
       },

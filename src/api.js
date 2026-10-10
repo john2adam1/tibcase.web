@@ -210,16 +210,20 @@ async function request(path, options = {}) {
       return data;
     } else {
       const text = await res.text();
+      let parsed = null;
+      try { parsed = text ? JSON.parse(text) : null; } catch {}
       if (!res.ok) {
         if (res.status === 401 && !getRefreshToken() && !path.startsWith('/mobile/auth/')) {
           if (onUnauthorizedCallback) onUnauthorizedCallback();
         }
-        throw new ApiError(text || `Xatolik: ${res.status}`, {
+        const errorText = parsed?.error?.details || parsed?.error?.message || (typeof parsed?.error === 'string' ? parsed.error : null) || parsed?.message || text || `Xatolik: ${res.status}`;
+        throw new ApiError(errorText, {
           status: res.status,
-          code: text.includes('session_not_active') ? 'session_not_active' : '',
+          code: extractErrorCode(parsed) || (text.includes('session_not_active') ? 'session_not_active' : ''),
+          data: parsed,
         });
       }
-      return text;
+      return parsed !== null ? parsed : text;
     }
   } catch (err) {
     console.error(`API Error [${path}]:`, err.message);
@@ -243,7 +247,7 @@ export function extractList(json) {
 }
 
 // WebSocket brauzerda Vercel rewrite orqali o'tmaydi, shuning uchun to'g'ridan-to'g'ri backendga ulanadi.
-const API_ORIGIN = import.meta.env.VITE_API_BASE || 'https://dev-medic.axadjonovsardorbek.uz';
+const API_ORIGIN = import.meta.env.VITE_API_BASE || 'https://prod.tibstation.uz';
 
 export const api = {
 
@@ -573,10 +577,10 @@ export const api = {
   // ===================== SUBSCRIPTION =====================
 
   /** Subscribe to a tariff */
-  subscribe: async (tariffId, coinsUsed = 0) => {
+  subscribe: async (tariffId, coinsUsed = 0, provider = 'click') => {
     return await request('/mobile/subscription', {
       method: 'POST',
-      body: { tariff_id: tariffId, coins_used: coinsUsed },
+      body: { tariff_id: tariffId, coins_used: coinsUsed, provider },
     });
   },
 

@@ -11,7 +11,7 @@ trigger: always_on
 ## 2. API Contract & Documentation Compliance
 - Before executing any development or bug-fixing task, always cross-reference and align with:
   1. The local API specification file: `API_MOBILE.md`
-  2. The Swagger documentation: `https://dev-medic.axadjonovsardorbek.uz/api/swagger/index.html`
+  2. The local Swagger specification: `swagger.json` (and online Swagger: `https://dev-medic.axadjonovsardorbek.uz/api/swagger/index.html`)
 - Strictly adhere to documented endpoint paths, HTTP methods, headers, request payloads, and response structures.
 - Do NOT generate fake, mock, or hardcoded fallback data. All rendered data must strictly reflect live backend API responses.
 - Properly handle data states (loading, empty, error) natively according to the API response contracts.

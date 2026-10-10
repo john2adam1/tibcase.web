@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        VITE_API_BASE: ${VITE_API_BASE:-https://dev-medic.axadjonovsardorbek.uz}
+        VITE_API_BASE: ${VITE_API_BASE:-https://prod.tibstation.uz}
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
         VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
         VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
@@ -12,6 +12,8 @@ services:
         VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
         VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
         VITE_FIREBASE_VAPID_KEY: ${VITE_FIREBASE_VAPID_KEY:-}
+    environment:
+      BACKEND_HOST: ${BACKEND_HOST:-prod.tibstation.uz}
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped

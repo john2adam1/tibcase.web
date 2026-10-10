@@ -90,10 +90,6 @@ export default function CaseSimulationRoom({
       : []
   ));
 
-  const [isFinished, setIsFinished] = useState(false);
-  const [finalScore, setFinalScore] = useState(0);
-  const [earnedXp, setEarnedXp] = useState(0);
-  const [earnedCoins, setEarnedCoins] = useState(0);
 
   const chatBottomRef = useRef(null);
   const recorderRef = useRef(null);
@@ -219,15 +215,11 @@ export default function CaseSimulationRoom({
     if (sessionEndedRef.current && !extra.force) return;
     sessionEndedRef.current = true;
     setSessionEnded(true);
-    setIsFinished(true);
     setRecording(false);
 
     const score = finishResult?.final_score ?? extra.score ?? 0;
     const xp = finishResult?.xp_earned ?? extra.xp ?? 0;
     const coins = finishResult?.coins_earned ?? extra.coins ?? 0;
-    setFinalScore(score);
-    setEarnedXp(xp);
-    setEarnedCoins(coins);
 
     if (onFinishCase) {
       onFinishCase({
@@ -733,67 +725,6 @@ export default function CaseSimulationRoom({
         onClose={() => setHintModalOpen(false)}
         hintText={t('sim.hintDefault')}
       />
-
-      {isFinished && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)',
-          backdropFilter: 'blur(8px)', zIndex: 130, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: 16,
-        }}>
-          <div
-            className="responsive-modal-card"
-            style={{
-              width: '100%', maxWidth: 420, background: '#FFFFFF', borderRadius: 18,
-              border: '1px solid #E2E8F0', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
-              padding: '26px 20px', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', textAlign: 'center', gap: 16, boxSizing: 'border-box',
-            }}
-          >
-            <div style={{
-              width: 68, height: 68, borderRadius: '50%', background: '#FEF3C7',
-              border: '1px solid #FDE68A', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', color: '#D97706',
-            }}>
-              <Award size={36} strokeWidth={2.4} />
-            </div>
-
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
-                {t('sim.caseCompleted')}
-              </h2>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#64748B', margin: 0 }}>
-                {caseItem?.title || t('sim.headerCase')}
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, width: '100%' }}>
-              <div style={{ padding: '12px 6px', borderRadius: 16, background: '#DCFCE7', border: '1px solid #86EFAC' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, color: '#166534' }}>{t('sim.score')}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#16A34A' }}>{finalScore}%</div>
-              </div>
-              <div style={{ padding: '12px 6px', borderRadius: 16, background: '#FEF3C7', border: '1px solid #FDE68A' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, color: '#92400E' }}>{t('sim.xp')}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#D97706' }}>+{earnedXp}</div>
-              </div>
-              <div style={{ padding: '12px 6px', borderRadius: 16, background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, color: '#1E40AF' }}>{t('sim.coins', 'COIN')}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#2563EB' }}>+{earnedCoins}</div>
-              </div>
-            </div>
-
-            <button
-              onClick={onExitSimulation}
-              style={{
-                width: '100%', minHeight: 48, borderRadius: 16,
-                background: '#16A34A', border: 'none', color: '#FFFFFF',
-                fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              {t('sim.continue')}
-            </button>
-          </div>
-        </div>
-      )}
 
       <style>{`
         @keyframes sim-typing { 0%,100% { transform: translateY(0); opacity: 0.4; } 50% { transform: translateY(-4px); opacity: 1; } }

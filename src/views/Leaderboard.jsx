@@ -7,6 +7,9 @@ import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
 import { useAsync } from '../hooks/useAsync';
 import AsyncState from '../components/common/AsyncState';
+import UserAvatar from '../components/common/UserAvatar';
+
+const imgOf = (u) => u?.image_url || u?.image || u?.avatar_url || '';
 
 export default function Leaderboard({ onBack }) {
   const { t } = useTranslation();
@@ -164,21 +167,7 @@ export default function Leaderboard({ onBack }) {
               order: 1,
             }}>
               <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥈</div>
-              <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                margin: '0 auto 10px',
-                background: '#E2E8F0',
-                border: '1px solid #CBD5E1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#475569',
-                fontWeight: 700,
-              }}>
-                {items[1].name.charAt(0)}
-              </div>
+              <UserAvatar name={items[1].name} src={imgOf(items[1])} size={48} style={{ margin: '0 auto 10px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }} />
               <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[1].name}</div>
               <div style={{
                 fontSize: '16px',
@@ -203,22 +192,7 @@ export default function Leaderboard({ onBack }) {
               transform: 'translateY(-10px)',
             }}>
               <div style={{ fontSize: '2.2rem', marginBottom: 4 }}>👑</div>
-              <div style={{
-                width: 58,
-                height: 58,
-                borderRadius: '50%',
-                margin: '0 auto 10px',
-                background: '#FEF08A',
-                border: '2.5px solid #FACC15',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#B45309',
-                fontWeight: 700,
-                fontSize: '18px',
-              }}>
-                {items[0].name.charAt(0)}
-              </div>
+              <UserAvatar name={items[0].name} src={imgOf(items[0])} size={58} style={{ margin: '0 auto 10px', border: '2.5px solid #FACC15', boxSizing: 'border-box' }} />
               <div style={{ fontWeight: 700, fontSize: '15px', color: '#0F172A', marginBottom: 2 }}>{items[0].name}</div>
               <div style={{
                 fontSize: '18px',
@@ -242,21 +216,7 @@ export default function Leaderboard({ onBack }) {
               order: 3,
             }}>
               <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥉</div>
-              <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                margin: '0 auto 10px',
-                background: '#FFEDD5',
-                border: '1px solid #FDBA74',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#C2410C',
-                fontWeight: 700,
-              }}>
-                {items[2].name.charAt(0)}
-              </div>
+              <UserAvatar name={items[2].name} src={imgOf(items[2])} size={48} style={{ margin: '0 auto 10px', border: '1px solid #FDBA74', boxSizing: 'border-box' }} />
               <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[2].name}</div>
               <div style={{
                 fontSize: '16px',
@@ -281,6 +241,7 @@ export default function Leaderboard({ onBack }) {
           justifyContent: 'space-between',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <UserAvatar name={me.name} src={imgOf(me)} size={34} />
             <div style={{
               width: 34,
               height: 34,
@@ -343,6 +304,7 @@ export default function Leaderboard({ onBack }) {
                   #{item.rank}
                 </span>
 
+                <UserAvatar name={item.name} src={imgOf(item)} size={36} />
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
                     {item.name}
