@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Coins, Zap, Layers, ExternalLink } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
+import Skeleton from '../common/Skeleton.jsx';
 
-function Stat({ icon: Icon, value, label, onClick }) {
+function Stat({ icon: Icon, value, label, onClick, loading }) {
   return (
     <button type="button" className="ui-card ui-card-press ui-stat" onClick={onClick}>
       <Icon size={24} color="var(--accent)" strokeWidth={2} />
-      <b>{value}</b>
+      {loading ? <Skeleton width="56px" height="var(--stat-skel-h)" style={{ margin: '4px 0' }} /> : <b>{value}</b>}
       <span>{label}</span>
     </button>
   );
 }
 
-export default function DashboardHero({ user, categories = [], banners = [], onOpenClinics, onOpenStore, onOpenLeaderboard }) {
+export default function DashboardHero({ user, categories = [], banners = [], loading = false, onOpenClinics, onOpenStore, onOpenLeaderboard }) {
   const { t } = useTranslation();
   const [slide, setSlide] = useState(0);
   const count = banners?.length || 0;
@@ -28,10 +29,14 @@ export default function DashboardHero({ user, categories = [], banners = [], onO
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div className="ui-stats">
-        <Stat icon={Zap} value={`${user?.level ?? 1}`} label={`${t('nav.level', 'Level')} · ${user?.xp ?? 0} XP`} onClick={onOpenLeaderboard} />
-        <Stat icon={Coins} value={user?.coins ?? 0} label={t('nav.coins', 'Tangalar')} onClick={onOpenStore} />
-        <Stat icon={Layers} value={categories?.length ?? 0} label={t('nav.category', "Bo'limlar")} onClick={onOpenClinics} />
+        <Stat loading={loading && !user} icon={Zap} value={`${user?.level ?? 1}`} label={`${t('nav.level', 'Level')} · ${user?.xp ?? 0} XP`} onClick={onOpenLeaderboard} />
+        <Stat loading={loading && !user} icon={Coins} value={user?.coins ?? 0} label={t('nav.coins', 'Tangalar')} onClick={onOpenStore} />
+        <Stat loading={loading} icon={Layers} value={categories?.length ?? 0} label={t('nav.category', "Bo'limlar")} onClick={onOpenClinics} />
       </div>
+
+      {loading && !banner && (
+        <Skeleton height="260px" radius="var(--radius-xl)" />
+      )}
 
       {banner && (
         <div

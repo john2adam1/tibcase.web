@@ -194,6 +194,10 @@ async function request(path, options = {}) {
     }
 
     const contentType = res.headers.get('content-type') || '';
+    // Vercel SPA fallback sometimes returns index.html (200) instead of proxying /mobile/*.
+    if (contentType.includes('text/html')) {
+      throw new ApiError('API HTML qaytardi (proxy/rewrite ishlamadi)', { status: res.status });
+    }
     if (contentType.includes('application/json')) {
       const data = await res.json();
       if (!res.ok) {
@@ -414,8 +418,8 @@ export const api = {
     if (params.difficulty) query.set('difficulty', params.difficulty);
     if (params.status) query.set('status', params.status);
     if (params.search) query.set('search', params.search);
-    if (params.limit) query.set('limit', params.limit);
-    if (params.page) query.set('page', params.page);
+    query.set('limit', String(params.limit || 100));
+    query.set('page', String(params.page || 1));
 
     const res = await request(`/mobile/case?${query.toString()}`);
     return extractList(res).map(localizeItem);
@@ -636,7 +640,7 @@ export const api = {
   /** Get all banners */
   getBanners: async () => {
     const res = await request('/mobile/banner');
-    return res.banners || res.data || [];
+    return extractList(res).map(localizeItem);
   },
 
   /** Get banner by ID */

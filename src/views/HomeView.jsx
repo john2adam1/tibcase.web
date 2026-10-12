@@ -8,6 +8,7 @@ export default function HomeView({
   categories = [],
   banners = [],
   userLimit,
+  loading = false,
   onStartSimulation,
   onOpenClinics,
   onOpenStore,
@@ -29,6 +30,7 @@ export default function HomeView({
         categories={categories}
         banners={banners}
         userLimit={userLimit}
+        loading={loading}
         onOpenClinics={onOpenClinics}
         onOpenStore={onOpenStore}
         onOpenLeaderboard={onOpenLeaderboard}

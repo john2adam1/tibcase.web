@@ -173,6 +173,8 @@ export default function App() {
   const [banners, setBanners] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [userLimit, setUserLimit] = useState(null);
+  // True once the first bulk fetch has settled (success or failure); drives skeleton loaders
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Active Simulation states
   const [activeCase, setActiveCase] = useState(null);
@@ -296,6 +298,8 @@ export default function App() {
         }
       } catch (err) {
         console.warn('Data load handled:', err.message);
+      } finally {
+        if (isMounted) setDataLoaded(true);
       }
     }
 
@@ -712,6 +716,7 @@ export default function App() {
               categories={categories}
               banners={banners}
               userLimit={userLimit}
+              loading={isAuthenticated && !dataLoaded}
               onStartSimulation={handleStartSimulationFromHome}
               onOpenClinics={() => setCurrentView('clinics')}
               onOpenStore={() => setCurrentView('store')}

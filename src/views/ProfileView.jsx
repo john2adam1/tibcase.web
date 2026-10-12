@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Skeleton from '../components/common/Skeleton.jsx';
 import UserAvatar from '../components/common/UserAvatar';
 import { api } from '../api';
 import {
@@ -45,7 +46,8 @@ export default function ProfileView({
   const [currentScreen, setCurrentScreen] = useState('profile'); // 'profile' | 'settings'
   const [activeTab, setActiveTab] = useState('completed'); // 'completed' | 'ongoing'
   const [levelsList, setLevelsList] = useState([]);
-  const [loadingLevels, setLoadingLevels] = useState(false);
+  // Starts true so the first paint never shows fallback (1000 XP) values before levels arrive
+  const [loadingLevels, setLoadingLevels] = useState(true);
   const [localLimit, setLocalLimit] = useState(userLimit || null);
 
   useEffect(() => {
@@ -245,6 +247,7 @@ export default function ProfileView({
   // Level from API response if present
   const currentLevelObj = levelsList.find(l => Number(l.level_number) === userLevelNum) || null;
   const nextLevelObj = levelsList.find(l => Number(l.level_number) === (userLevelNum + 1)) || null;
+  const levelsLoading = loadingLevels && levelsList.length === 0;
 
   let currMinXp = 0;
   let nextTargetXp = 1000;
@@ -382,7 +385,8 @@ export default function ProfileView({
                     {user?.name || ''}
                   </h2>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    {currentLevelObj && (
+                    {levelsLoading && <Skeleton width="84px" height="20px" radius={8} />}
+                    {!levelsLoading && currentLevelObj && (
                       <span style={{
                         fontSize: '12px',
                         fontWeight: 700,
@@ -443,6 +447,19 @@ export default function ProfileView({
               {/* Level and Progress Bar strictly with live API values */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 6 }}>
                 
+                {levelsLoading ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <Skeleton width="120px" height="18px" />
+                      <Skeleton width="96px" height="18px" />
+                    </div>
+                    <Skeleton height="14px" radius={999} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <Skeleton width="110px" height="16px" />
+                      <Skeleton width="150px" height="20px" radius={8} />
+                    </div>
+                  </>
+                ) : (<>
                 {/* Level Numbers & Titles Row */}
                 <div style={{
                   display: 'flex',
@@ -571,6 +588,7 @@ export default function ProfileView({
                     <span>{t('profile.allLevels', 'Barcha darajalar jadvalini ko‘rish')} &gt;</span>
                   </button>
                 )}
+                </>)}
               </div>
             </div>
 

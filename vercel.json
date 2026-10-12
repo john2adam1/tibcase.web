@@ -17,7 +17,7 @@
       "destination": "https://prod.tibstation.uz/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!mobile/|web/|auth/|api/).*)",
       "destination": "/index.html"
     }
   ]
