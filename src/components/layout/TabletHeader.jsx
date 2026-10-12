@@ -19,11 +19,11 @@ export default function TabletHeader({ onToggleSidebar, onOpenNotifications, unr
         boxSizing: 'border-box',
       }}
     >
-      <button id="btn-toggle-tablet-sidebar" className="ui-icon-btn" onClick={onToggleSidebar} aria-label="Menu" style={{ border: 'none' }}>
+      <button id="btn-toggle-tablet-sidebar" className="ui-icon-btn tm-header-menu" onClick={onToggleSidebar} aria-label="Menu" style={{ border: 'none' }}>
         <Menu size={22} strokeWidth={2} />
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', userSelect: 'none' }}>
+      <div className="tm-header-logo" style={{ display: 'flex', alignItems: 'center', userSelect: 'none' }}>
         <img src="/logo-full.svg" alt="TibStation" style={{ height: 26, width: 'auto', display: 'block' }} />
       </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, LayoutGrid, User } from 'lucide-react';
+import { Home, Folder, User } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
 export default function BottomNavBar({ currentView, onSelectView }) {
@@ -7,7 +7,7 @@ export default function BottomNavBar({ currentView, onSelectView }) {
 
   const tabs = [
     { id: 'cases', label: t('nav.home', 'Asosiy'), icon: Home },
-    { id: 'clinics', label: t('nav.category', "Bo'limlar"), icon: LayoutGrid },
+    { id: 'clinics', label: t('nav.casesHub', 'Keyslar'), icon: Folder },
     { id: 'profile', label: t('nav.profile', 'Profil'), icon: User },
   ];
 

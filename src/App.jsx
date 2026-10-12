@@ -21,8 +21,6 @@ import CaseDetailsView from './views/CaseDetailsView';
 import CaseSimulationRoom from './views/CaseSimulationRoom';
 import Leaderboard from './views/Leaderboard';
 import ProfileView from './views/ProfileView';
-import FavoritesView from './views/FavoritesView.jsx';
-import ActivityView from './views/ActivityView.jsx';
 import NotificationsView from './views/NotificationsView.jsx';
 import StudyPlanView from './views/StudyPlanView.jsx';
 import StoreTariffs from './views/StoreTariffs';
@@ -72,6 +70,8 @@ export default function App() {
   const [activeMode, setActiveMode] = useState('clinical'); // 'clinical' | 'citizen'
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [caseDetailBackView, setCaseDetailBackView] = useState('roadmap');
+  const [casesHubSubTab, setCasesHubSubTab] = useState('categories');
+  const [notificationsBackView, setNotificationsBackView] = useState('cases');
 
   // Initialize Telegram Web App SDK & closing confirmation
   useEffect(() => {
@@ -108,7 +108,9 @@ export default function App() {
         setCurrentView('cases');
       } else if (currentView === 'simulation') {
         setCurrentView('cases');
-      } else if (['favorites', 'activity', 'notifications', 'study_plan', 'leaderboard', 'store', 'tariffs'].includes(currentView)) {
+      } else if (currentView === 'notifications') {
+        setCurrentView(notificationsBackView || 'cases');
+      } else if (['study_plan', 'leaderboard', 'store', 'tariffs'].includes(currentView)) {
         setCurrentView('profile');
       } else if (currentView === 'profile') {
         setCurrentView('cases');
@@ -127,7 +129,7 @@ export default function App() {
     return () => {
       tg.BackButton.offClick(handleTelegramBack);
     };
-  }, [currentView, sidebarOpen]);
+  }, [currentView, sidebarOpen, notificationsBackView, caseDetailBackView]);
 
   // Foreground push: refresh the in-app notification list when a message arrives
   useEffect(() => {
@@ -691,7 +693,10 @@ export default function App() {
         {currentView !== 'simulation' && (
           <TabletHeader
             onToggleSidebar={() => setSidebarOpen(true)}
-            onOpenNotifications={() => setCurrentView('notifications')}
+            onOpenNotifications={() => {
+              if (currentView !== 'notifications') setNotificationsBackView(currentView);
+              setCurrentView('notifications');
+            }}
             unreadCount={notifications.filter(n => !n.is_read).length}
           />
         )}
@@ -751,20 +756,39 @@ export default function App() {
               setStoreInitialTab(tab || 'all');
               setCurrentView('store');
             }}
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={(view) => {
+              setCurrentView(view);
+            }}
             lang={lang}
             onLangChange={handleLangChange}
             onLogout={handleLogout}
           />
         )}
 
-        {/* Clinics / All Categories View (Only real API categories) */}
+        {/* Clinics / Cases Hub View (Bo'limlar, Sevimlilar, Tarix) */}
         {currentView === 'clinics' && (
           <CategoriesView
             categories={categories}
+            initialSubTab={casesHubSubTab}
             onSelectCategory={(cat) => {
               setSelectedCategory(cat);
               setCurrentView('roadmap');
+            }}
+            onSelectCase={(caseItem) => {
+              setCaseDetailBackView('clinics');
+              setSelectedDetailCase(caseItem);
+              setCurrentView('case-details');
+            }}
+            onOpenDebrief={async (sessionId) => {
+              try {
+                const res = await api.getDebrief(sessionId);
+                if (res) setDebriefData(res);
+              } catch (err) {
+                console.error('Debrief load error:', err);
+              }
+            }}
+            onStartCase={(caseItem) => {
+              checkLimitAndStartCase(caseItem);
             }}
             onBack={() => setCurrentView('cases')}
           />
@@ -785,7 +809,7 @@ export default function App() {
         )}
 
         {/* Case Details View (Real API case data) */}
-        {currentView === 'case-details' && (
+        {currentView === 'case-details' && (selectedDetailCase || cases[0]) && (
           <CaseDetailsView
             caseItem={selectedDetailCase || cases[0]}
             onStartCase={() => checkLimitAndStartCase(selectedDetailCase || cases[0])}
@@ -795,23 +819,9 @@ export default function App() {
         )}
 
         {/* --- New Profile Inner Views --- */}
-        {currentView === 'favorites' && (
-          <FavoritesView 
-            onBack={() => setCurrentView('profile')}
-            onSelectCase={(c) => {
-              setCaseDetailBackView('favorites');
-              setSelectedDetailCase({ ...c, is_favorite: true });
-              setCurrentView('case-details');
-            }}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        )}
-        {currentView === 'activity' && (
-          <ActivityView onBack={() => setCurrentView('profile')} />
-        )}
         {currentView === 'notifications' && (
           <NotificationsView
-            onBack={() => setCurrentView('profile')}
+            onBack={() => setCurrentView(notificationsBackView || 'cases')}
             onRefreshNotifications={async () => {
               try {
                 const res = await api.getNotifications();
@@ -1300,7 +1310,12 @@ export default function App() {
       {currentView !== 'simulation' && (
         <BottomNavBar
           currentView={currentView}
-          onSelectView={(view) => setCurrentView(view)}
+          onSelectView={(view) => {
+            if (view === 'clinics') {
+              setCasesHubSubTab('categories');
+            }
+            setCurrentView(view);
+          }}
         />
       )}
     </div>

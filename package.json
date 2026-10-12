@@ -1,14 +1,14 @@
 {
-  "name": "temp-app",
+  "name": "tibcase-web",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "swagger:update": "curl -s https://dev-medic.axadjonovsardorbek.uz/api/swagger/doc.json | python3 -m json.tool > swagger.json"
+    "swagger:update": "curl -s https://prod.tibstation.uz/api/swagger/doc.json | python3 -m json.tool > swagger.json"
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.5",

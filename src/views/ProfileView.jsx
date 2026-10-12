@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import UserAvatar from '../components/common/UserAvatar';
 import { api } from '../api';
 import {
-  Settings,
   Trophy,
   ChevronLeft,
   ChevronRight,
-  Share2,
-  Tag,
   Globe,
-  Copy,
   Trash2,
   Sparkles,
   Award,
@@ -21,12 +17,9 @@ import {
   Coins,
   ShieldAlert,
   ShieldCheck,
-  Activity as ActivityIcon,
-  Bell,
   Info,
   LogOut,
   CalendarDays,
-  Bookmark,
   Phone,
   ExternalLink,
   HelpCircle,
@@ -66,7 +59,6 @@ export default function ProfileView({
   const [ongoingSessions, setOngoingSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [promoLoading, setPromoLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
 
   // Load completed/ongoing simulations, levels and real daily limit from API
@@ -103,7 +95,6 @@ export default function ProfileView({
   // Sub-modals for Settings
   const [modalType, setModalType] = useState(null); // 'profile_info' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete' | 'levels_guide'
   const [tempUsername, setTempUsername] = useState(user?.name || '');
-  const [couponCode, setCouponCode] = useState('');
   const [feedbackText, setFeedbackText] = useState('');
   const [userRating, setUserRating] = useState(5);
   const [toastMessage, setToastMessage] = useState(null);
@@ -188,51 +179,6 @@ export default function ProfileView({
   const [faqList, setFaqList] = useState([]);
   const [expandedFaq, setExpandedFaq] = useState(null);
 
-  // Referral (GET /mobile/referral)
-  const [referral, setReferral] = useState(null);
-  const [referralLoading, setReferralLoading] = useState(false);
-  const [referralError, setReferralError] = useState('');
-  const [copiedReferral, setCopiedReferral] = useState(false);
-
-  const handleOpenReferral = async () => {
-    setModalType('referral');
-    setReferralLoading(true);
-    setReferralError('');
-    try {
-      const res = await api.getReferral();
-      setReferral(res || null);
-    } catch (err) {
-      setReferralError(err?.message || t('common.error', 'Xatolik yuz berdi'));
-    } finally {
-      setReferralLoading(false);
-    }
-  };
-
-  const handleCopyReferral = async () => {
-    if (!referral?.referral_code) return;
-    try {
-      await navigator.clipboard.writeText(referral.referral_code);
-      setCopiedReferral(true);
-      setTimeout(() => setCopiedReferral(false), 2000);
-    } catch {
-      showToast(referral.referral_code);
-    }
-  };
-
-  const handleShareReferral = async () => {
-    if (!referral?.referral_code) return;
-    const text = `TibStation AI: ${t('settings.referral', "Do'stlarni taklif qilish")} — ${referral.referral_code}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'TibStation AI', text, url: window.location.origin });
-      } catch {
-        // user cancelled
-      }
-    } else {
-      handleCopyReferral();
-    }
-  };
-
   const handleOpenAbout = () => {
     setModalType('about');
     setAboutLoading(true);
@@ -271,29 +217,6 @@ export default function ProfileView({
       showToast(err.message || 'Error');
     } finally {
       setSaveLoading(false);
-    }
-  };
-
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    if (!couponCode.trim()) return;
-    setPromoLoading(true);
-    try {
-      const res = await api.redeemPromocode(couponCode.trim());
-      const coinsAdded = res?.coins_added;
-      showToast(coinsAdded != null ? `🎉 +${coinsAdded} ${t('settings.coins')}!` : '🎉');
-      try {
-        const fresh = await api.getUserProfile();
-        if (fresh && onUserUpdate) onUserUpdate(fresh);
-      } catch {
-        // keep current profile
-      }
-      setCouponCode('');
-      setModalType(null);
-    } catch (err) {
-      showToast('⚠️ ' + (err.message || t('pm.invalidPromo')));
-    } finally {
-      setPromoLoading(false);
     }
   };
 
@@ -404,16 +327,13 @@ export default function ProfileView({
         {currentScreen === 'profile' && (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
 
-            {/* Header: Title + Settings Button */}
+            {/* Header */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              position: 'relative',
+              justifyContent: 'center',
               padding: '8px 4px 18px 4px',
             }}>
-              <div style={{ width: 44 }} /> {/* placeholder for centering */}
-
               <h1 style={{
                 fontSize: '26px',
                 fontWeight: 700,
@@ -424,43 +344,6 @@ export default function ProfileView({
               }}>
                 {t('profile.title')}
               </h1>
-
-              {/* Gold Settings Gear Button */}
-              <button
-                id="btn-settings-toggle"
-                onClick={() => {
-                  const el = document.getElementById('profile-settings-group');
-                  if (el) {
-                    el.scrollIntoView({ behavior: 'smooth' });
-                  } else {
-                    setCurrentScreen('settings');
-                  }
-                }}
-                title={t('profile.settings')}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
-                  border: '1px solid #FCD34D',
-                  boxShadow: 'var(--shadow-sm)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = 'translateY(2px)';
-                  e.currentTarget.style.boxShadow = '0 1px 0 #F59E0B';
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 3px 0 #F59E0B, 0 6px 14px rgba(245, 158, 11, 0.15)';
-                }}
-              >
-                <Settings size={22} color="#D97706" strokeWidth={2.4} />
-              </button>
             </div>
 
             {/* Profile Main Card */}
@@ -574,26 +457,10 @@ export default function ProfileView({
                         {t('profile.level')} {user?.level ?? 1}{currentLevelObj ? `: ${getTranslatedLevelTitle(currentLevelObj)}` : ''}
                       </span>
                     </div>
-                    {currentLevelObj?.slug && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          color: '#0284C7',
-                          background: '#E0F2FE',
-                          padding: '1px 7px',
-                          borderRadius: 6,
-                          border: '1px solid #BAE6FD',
-                          fontFamily: 'monospace',
-                        }}>
-                          #{currentLevelObj.slug}
-                        </span>
-                        {currentLevelObj.required_xp > 0 && (
-                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
-                            • {currentLevelObj.required_xp} XP
-                          </span>
-                        )}
-                      </div>
+                    {currentLevelObj?.required_xp > 0 && (
+                      <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
+                        {currentLevelObj.required_xp} XP
+                      </span>
                     )}
                   </div>
 
@@ -604,26 +471,10 @@ export default function ProfileView({
                         ? `${t('profile.level')} ${nextLevelObj.level_number}${nextLevelObj ? `: ${getTranslatedLevelTitle(nextLevelObj)}` : ''}`
                         : `${t('profile.level')} ${(user?.level ?? 1) + 1}`}
                     </span>
-                    {nextLevelObj?.slug && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        {nextLevelObj.required_xp > 0 && (
-                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
-                            {nextLevelObj.required_xp} XP •
-                          </span>
-                        )}
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          color: '#64748B',
-                          background: '#F1F5F9',
-                          padding: '1px 7px',
-                          borderRadius: 6,
-                          border: '1px solid #E2E8F0',
-                          fontFamily: 'monospace',
-                        }}>
-                          #{nextLevelObj.slug}
-                        </span>
-                      </div>
+                    {nextLevelObj?.required_xp > 0 && (
+                      <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
+                        {nextLevelObj.required_xp} XP
+                      </span>
                     )}
                   </div>
                 </div>
@@ -843,89 +694,6 @@ export default function ProfileView({
               })()}
             </div>
 
-            {/* Dedicated "Tanga sotib olish" Container */}
-            <div
-              id="btn-buy-coins-profile"
-              onClick={() => onOpenStore && onOpenStore('coins')}
-              style={{
-                marginTop: 14,
-                width: '100%',
-                background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
-                borderRadius: 18,
-                border: '1px solid #FDE68A',
-                boxShadow: 'var(--shadow-sm)',
-                padding: '16px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                boxSizing: 'border-box',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 0 #F59E0B, 0 14px 28px rgba(245, 158, 11, 0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 0 #F59E0B, 0 10px 20px rgba(245, 158, 11, 0.12)';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: 15,
-                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  boxShadow: 'var(--shadow-sm)',
-                  fontSize: '22px',
-                  flexShrink: 0,
-                }}>
-                  🪙
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: '15.5px', fontWeight: 700, color: '#92400E' }}>
-                      {t('profile.coinTariffs', 'Tanga sotib olish')}
-                    </span>
-                    <span style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      background: '#FDE68A',
-                      color: '#B45309',
-                      padding: '2px 8px',
-                      borderRadius: 99,
-                      border: '1px solid #FCD34D',
-                    }}>
-                      {t('profile.popular', 'Ommabop')}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600, marginTop: 2 }}>
-                    {t('profile.buyCoinsDesc', 'Klinik keyslar va simulyatsiyalar uchun tanga paketlari')}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{
-                width: 34,
-                height: 34,
-                borderRadius: 12,
-                background: '#FFFFFF',
-                border: '1px solid #FDE68A',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#D97706',
-                flexShrink: 0,
-              }}>
-                <ChevronRight size={19} strokeWidth={2.5} />
-              </div>
-            </div>
-
             {/* Menu List */}
             <div style={{
               background: '#FFFFFF',
@@ -938,18 +706,51 @@ export default function ProfileView({
               marginTop: 18,
               marginBottom: 24,
             }}>
-              <SettingsListItem
-                icon={<Bookmark size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('fav.title', 'Saqlangan keyslar')}
-                onClick={() => onNavigate && onNavigate('favorites')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<ActivityIcon size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.activity', 'Faollik')}
-                onClick={() => onNavigate && onNavigate('activity')}
-              />
-              <Divider />
+              {/* Highlighted: Tanga sotib olish (top of the list) */}
+              <div
+                id="btn-buy-coins-profile"
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenStore && onOpenStore('coins')}
+                onKeyDown={(e) => { if (e.key === 'Enter') onOpenStore && onOpenStore('coins'); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: '16px 18px',
+                  cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+                  borderBottom: '1px solid #FDE68A',
+                  transition: 'filter 0.15s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.97)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.filter = 'none'; }}
+              >
+                <div style={{
+                  width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                  color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Coins size={22} strokeWidth={2.2} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '15.5px', fontWeight: 800, color: '#92400E' }}>
+                      {t('profile.coinTariffs', 'Tanga sotib olish')}
+                    </span>
+                    <span style={{
+                      fontSize: '10px', fontWeight: 800, color: '#FFFFFF', background: '#EA580C',
+                      padding: '2px 8px', borderRadius: 99, letterSpacing: 0.3,
+                    }}>
+                      {t('profile.popular', 'Ommabop')}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600, marginTop: 2 }}>
+                    {t('profile.buyCoinsDesc', 'Klinik keyslar va simulyatsiyalar uchun tanga paketlari')}
+                  </div>
+                </div>
+                <ChevronRight size={20} strokeWidth={2.6} color="#D97706" />
+              </div>
               <SettingsListItem
                 icon={<Trophy size={20} color="#0F172A" strokeWidth={2} />}
                 label={t('settings.rating', 'Reyting')}
@@ -961,33 +762,9 @@ export default function ProfileView({
                 label={t('settings.studyPlan', "O'quv rejasi")}
                 onClick={() => onNavigate && onNavigate('study_plan')}
               />
-              <Divider />
-              <SettingsListItem
-                icon={<Bell size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.notifications', 'Bildirishnomalar')}
-                onClick={() => onNavigate && onNavigate('notifications')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<Coins size={20} color="#D97706" strokeWidth={2} />}
-                label={t('profile.coinTariffs', 'Tanga sotib olish')}
-                onClick={() => onOpenStore && onOpenStore('coins')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<Tag size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.couponCode', 'Promokod')}
-                onClick={() => setModalType('coupon')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<Share2 size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.referral', "Do'stlarni taklif qilish")}
-                onClick={handleOpenReferral}
-              />
             </div>
 
-            {/* Settings Group 1: Ma'lumot, Qurilmalar, Ilova haqida */}
+            {/* Settings Group 1: Ma'lumot, Ilova haqida */}
             <div id="profile-settings-group" style={{
               background: '#FFFFFF',
               borderRadius: 18,
@@ -1693,153 +1470,6 @@ export default function ProfileView({
         </ModalOverlay>
       )}
 
-      {/* Referral Modal */}
-      {modalType === 'referral' && (
-        <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title={t('settings.referral', "Do'stlarni taklif qilish")} onClose={() => setModalType(null)}>
-            {referralLoading ? (
-              <p style={{ textAlign: 'center', color: '#64748B', fontSize: '14px', margin: 0 }}>...</p>
-            ) : referralError ? (
-              <p style={{ textAlign: 'center', color: '#DC2626', fontSize: '14px', fontWeight: 600, margin: 0 }}>{referralError}</p>
-            ) : referral ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {(referral.referrer_reward != null || referral.referred_reward != null) && (
-                  <p style={{ fontSize: '13px', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
-                    {referral.referrer_reward != null && `Har bir taklif uchun siz +${referral.referrer_reward} tanga olasiz. `}
-                    {referral.referred_reward != null && `Taklif qilingan do'stingiz +${referral.referred_reward} tanga oladi.`}
-                  </p>
-                )}
-
-                <div style={{
-                  padding: '14px',
-                  borderRadius: 16,
-                  background: '#F0FDF4',
-                  border: '2px dashed #86EFAC',
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', marginBottom: 4 }}>
-                    {t('auth.referralLabel', 'Taklif kodi')}
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 700, letterSpacing: '0.12em', color: '#15803D', wordBreak: 'break-all' }}>
-                    {referral.referral_code || '--'}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={handleCopyReferral}
-                    disabled={!referral.referral_code}
-                    style={{
-                      flex: 1, minHeight: 48, borderRadius: 14, border: '1px solid #E2E8F0', background: '#FFFFFF',
-                      color: '#0F172A', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    }}
-                  >
-                    <Copy size={15} /> {copiedReferral ? 'Nusxalandi!' : 'Nusxa olish'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleShareReferral}
-                    disabled={!referral.referral_code}
-                    style={{
-                      flex: 1, minHeight: 48, borderRadius: 14, border: 'none',
-                      background: '#16A34A', color: '#fff',
-                      fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    }}
-                  >
-                    <Share2 size={15} /> Ulashish
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <div style={{ flex: 1, padding: 12, borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>{referral.invited_count ?? 0}</div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{t('pm.invited')}</div>
-                  </div>
-                  <div style={{ flex: 1, padding: 12, borderRadius: 14, background: '#FFFBEB', border: '1px solid #FDE68A', textAlign: 'center' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 700, color: '#B45309' }}>{referral.total_coins_earned ?? 0}</div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{t('pm.coinsEarned')}</div>
-                  </div>
-                </div>
-
-                {Array.isArray(referral.invited) && referral.invited.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
-                    {referral.invited.map((item, idx) => (
-                      <div key={idx} style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10,
-                        padding: '10px 12px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #E2E8F0',
-                      }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-                          {item.joined_at && (
-                            <div style={{ fontSize: '11px', color: '#94A3B8' }}>{new Date(item.joined_at).toLocaleDateString()}</div>
-                          )}
-                        </div>
-                        {item.coins_given != null && (
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', flexShrink: 0 }}>+{item.coins_given}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '13px', margin: 0 }}>
-                    Hozircha hech kim taklif qilinmagan
-                  </p>
-                )}
-              </div>
-            ) : null}
-          </ModalCard>
-        </ModalOverlay>
-      )}
-
-      {/* 2. Coupon Code Modal */}
-      {modalType === 'coupon' && (
-        <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title={t('pm.couponTitle')} onClose={() => setModalType(null)}>
-            <form onSubmit={handleApplyCoupon} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-                {t('pm.couponDesc')}
-              </p>
-              <input
-                type="text"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                placeholder={t('pm.couponPh')}
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: 14,
-                  border: '1px solid #E2E8F0',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  color: '#0F172A',
-                  boxSizing: 'border-box',
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  padding: '12px',
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                {promoLoading ? '...' : t('store.activate')}
-              </button>
-            </form>
-          </ModalCard>
-        </ModalOverlay>
-      )}
-
       {/* 3. Language Selection Modal */}
       {modalType === 'language' && (
         <ModalOverlay onClose={() => setModalType(null)}>
@@ -2147,18 +1777,6 @@ export default function ProfileView({
                                 </span>
                               )}
                             </div>
-                            {lvl.slug && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                                <span style={{
-                                  fontSize: '11px',
-                                  fontWeight: 700,
-                                  color: '#0284C7',
-                                  fontFamily: 'monospace',
-                                }}>
-                                  #{lvl.slug}
-                                </span>
-                              </div>
-                            )}
                           </div>
                         </div>
 

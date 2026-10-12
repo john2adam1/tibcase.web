@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import {
   ArrowRight,
@@ -45,7 +45,6 @@ export default function AuthModal({
   const [step, setStep] = useState('input'); // 'input' | 'otp'
   const [authMethod, setAuthMethod] = useState('telegram'); // 'telegram' | 'email' (default to Telegram/phone)
   const [identifier, setIdentifier] = useState('+998');
-  const [referralCode, setReferralCode] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -53,11 +52,6 @@ export default function AuthModal({
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
   const [resendTimer, setResendTimer] = useState(60);
-
-  const referralCodeRef = useRef(referralCode);
-  useEffect(() => {
-    referralCodeRef.current = referralCode;
-  }, [referralCode]);
 
   // Clean close handler that resets local states and triggers onClose callback
   const handleClose = useCallback(() => {
@@ -97,7 +91,6 @@ export default function AuthModal({
           if (!isExpired && parsed?.step === 'otp' && parsed?.identifier) {
             setIdentifier(parsed.identifier);
             if (parsed.authMethod) setAuthMethod(parsed.authMethod);
-            if (parsed.referralCode) setReferralCode(parsed.referralCode);
             setStep('otp');
             return;
           } else if (isExpired) {
@@ -200,7 +193,7 @@ export default function AuthModal({
 
     try {
       // POST /mobile/auth/google
-      const res = await api.loginWithGoogle(idToken, referralCodeRef.current.trim());
+      const res = await api.loginWithGoogle(idToken);
 
       if (res?.access_token) {
         setToken(res.access_token);
@@ -254,7 +247,6 @@ export default function AuthModal({
         step: 'otp',
         identifier: cleanId,
         authMethod: type,
-        referralCode: referralCode.trim(),
         timestamp: Date.now()
       };
       sessionStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
@@ -313,7 +305,7 @@ export default function AuthModal({
     setInfoMsg('');
 
     try {
-      const res = await api.confirmOtp(cleanId, cleanCode, referralCodeRef.current.trim(), type);
+      const res = await api.confirmOtp(cleanId, cleanCode, type);
 
       const token = res?.access_token || res?.token || (typeof res === 'string' ? res : null);
       if (token) {
@@ -376,7 +368,6 @@ export default function AuthModal({
         step: 'otp',
         identifier: cleanId,
         authMethod: type,
-        referralCode: referralCodeRef.current.trim(),
         timestamp: Date.now()
       };
       sessionStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
@@ -607,31 +598,6 @@ export default function AuthModal({
 
         {step === 'input' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Referral code (optional) — applies to both Google and phone/email login */}
-            <div>
-              <label htmlFor="auth-referral-code" style={{
-                display: 'block',
-                fontSize: '0.8rem',
-                color: '#64748B',
-                marginBottom: 6,
-                fontWeight: 700,
-              }}>
-                {t('auth.referralLabel')}
-              </label>
-              <input
-                id="auth-referral-code"
-                type="text"
-                autoCapitalize="characters"
-                autoComplete="off"
-                placeholder={t('auth.referralPlaceholder')}
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value.trim())}
-                style={inputStyle}
-                onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
-              />
-            </div>
-
             {/* 1. Official Google Sign-In via @react-oauth/google */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
               <MemoizedGoogleLogin

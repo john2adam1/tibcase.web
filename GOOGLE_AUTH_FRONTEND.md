@@ -15,7 +15,7 @@ tug'ilsa o'sha faylga qarang, u aynan shu oqim bo'yicha ishlaydi.
    o'shani qo'shing. Masalan:
    - `https://tibcaseweb.vercel.app`
    - `http://localhost:5173` (local dev uchun)
-   - `https://dev.tibstation.uz` (agar shu domendan ham test qilsangiz)
+   - `https://tibstation.uz` / `https://prod.tibstation.uz`
 
    > Muhim: origin ro'yxatiga kiritilmagan domendan ochsangiz, Google
    > **"no registered origin" / "Ошибка 401: invalid_client"** deb bloklaydi.

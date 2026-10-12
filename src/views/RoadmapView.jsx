@@ -50,36 +50,45 @@ const ml = (v) => {
 const ZIGZAG = [0, 56, 0, -56];
 
 export default function RoadmapView({ category, onSelectNode, onBack }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [topics, setTopics] = useState([]);
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   const categoryId = category?.id;
 
   useEffect(() => {
     let isMounted = true;
     async function load() {
-      if (!categoryId) return;
-      try {
-        setLoading(true);
-        const [topicsData, casesData] = await Promise.all([
-          api.getTopics(categoryId),
-          api.getCases({ category_id: categoryId, limit: 100 }),
-        ]);
-        if (isMounted) {
-          setTopics(topicsData || []);
-          setCases(casesData || []);
-        }
-      } catch (err) {
-        console.error('Roadmap data load error:', err);
-      } finally {
-        if (isMounted) setLoading(false);
+      // Kategoriya yo'q bo'lsa (masalan, sahifa yangilanganda) cheksiz "yuklanmoqda" holatida qolmasin
+      if (!categoryId) {
+        setLoading(false);
+        return;
       }
+      setLoading(true);
+      setError('');
+      // Mavzular yiqilsa ham keyslar ko'rinaversin (ular "boshqa" bo'limga tushadi); faqat keyslar yiqilsa xato ko'rsatiladi.
+      const [topicsRes, casesRes] = await Promise.allSettled([
+        api.getTopics(categoryId),
+        api.getAllCases({ category_id: categoryId }),
+      ]);
+      if (!isMounted) return;
+      if (topicsRes.status === 'fulfilled') setTopics(topicsRes.value || []);
+      else console.error('Topics load error:', topicsRes.reason);
+      if (casesRes.status === 'fulfilled') {
+        setCases(casesRes.value || []);
+      } else {
+        console.error('Cases load error:', casesRes.reason);
+        setError(casesRes.reason?.message || t('common.error', 'Xatolik yuz berdi'));
+      }
+      setLoading(false);
     }
     load();
     return () => { isMounted = false; };
-  }, [categoryId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId, reloadKey, lang]);
 
   const categoryName = String(ml(category?.title || category?.name) || '');
   const categoryTitle = categoryName
@@ -149,12 +158,37 @@ export default function RoadmapView({ category, onSelectNode, onBack }) {
         </div>
 
         {loading && (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8', fontSize: 15, fontWeight: 700 }}>
-            {t('roadmap.loading', 'Mavzular yuklanmoqda...')}
+          <div aria-busy="true" aria-label={t('roadmap.loading', 'Mavzular yuklanmoqda...')} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <div style={{ height: 84, borderRadius: 18, background: '#FFEDD5', animation: 'pulse 1.5s infinite' }} />
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, transform: `translateX(${ZIGZAG[i]}px)` }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#F1F5F9', animation: 'pulse 1.5s infinite' }} />
+                <div style={{ width: 110, height: 12, borderRadius: 6, background: '#F1F5F9', animation: 'pulse 1.5s infinite' }} />
+              </div>
+            ))}
           </div>
         )}
 
-        {!loading && sections.length === 0 && (
+        {!loading && error && (
+          <div style={{
+            background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 18, padding: '28px 20px',
+            textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#B91C1C' }}>{error}</div>
+            <button
+              type="button"
+              onClick={() => setReloadKey((k) => k + 1)}
+              style={{
+                padding: '9px 20px', borderRadius: 10, border: '1px solid #FCA5A5', background: '#FFFFFF',
+                color: '#B91C1C', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              {t('common.retry', 'Qayta urinish')}
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && sections.length === 0 && (
           <div style={{
             background: '#FFFFFF', borderRadius: 18, border: '1px solid #E2E8F0', boxShadow: 'var(--shadow-sm)',
             padding: '36px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
@@ -177,7 +211,7 @@ export default function RoadmapView({ category, onSelectNode, onBack }) {
             }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: '#FED7AA', textTransform: 'uppercase', marginBottom: 4 }}>
-                  {sIdx + 1}. {t('roadmap.section', 'SECTION')} · {section.cases.length} case
+                  {sIdx + 1}. {t('roadmap.section', 'SECTION')} · {section.cases.filter(isDone).length}/{section.cases.length} case
                 </div>
                 <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', wordBreak: 'break-word' }}>
                   {section.title.toUpperCase()}
@@ -244,6 +278,20 @@ export default function RoadmapView({ category, onSelectNode, onBack }) {
                           {subtitle}
                         </span>
                       )}
+                      {c.difficulty && (() => {
+                        const d = String(c.difficulty).toLowerCase();
+                        const hard = d.includes('hard') || d.includes('qiyin');
+                        const easy = d.includes('easy') || d.includes('oson');
+                        return (
+                          <span style={{
+                            alignSelf: 'center', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                            background: hard ? '#FEE2E2' : easy ? '#DCFCE7' : '#FEF3C7',
+                            color: hard ? '#B91C1C' : easy ? '#15803D' : '#B45309',
+                          }}>
+                            {hard ? t('modal.hard', 'Qiyin') : easy ? t('modal.easy', 'Oson') : t('modal.medium', "O'rta")}
+                          </span>
+                        );
+                      })()}
                     </span>
                   </button>
                 );

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Home,
+  Folder,
   LayoutGrid,
   User,
   LogOut,
@@ -26,8 +27,8 @@ export default function Sidebar({
     },
     {
       id: 'clinics',
-      label: t('nav.category', "Bo'limlar"),
-      icon: LayoutGrid
+      label: t('nav.casesHub', 'Keyslar'),
+      icon: Folder
     },
     {
       id: 'profile',

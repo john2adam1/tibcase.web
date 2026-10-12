@@ -146,7 +146,18 @@ input, select, textarea {
     z-index: 45;
   }
 
+  /* Desktop: sidebar is persistent, so the header only carries the notification bell on the right */
   .tablet-mobile-header {
+    display: flex !important;
+    justify-content: flex-end !important;
+    height: auto !important;
+    padding: 0 0 12px 0 !important;
+    background: var(--bg-main) !important;
+    border-bottom: none !important;
+  }
+
+  .tablet-mobile-header .tm-header-menu,
+  .tablet-mobile-header .tm-header-logo {
     display: none !important;
   }
 

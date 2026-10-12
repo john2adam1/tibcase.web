@@ -246,6 +246,25 @@ export function extractList(json) {
   return [];
 }
 
+// Backend baʼzan matnni {uz,ru,en} obyekt sifatida qaytaradi (admin modellari). UI esa oddiy satr kutadi.
+export function localizeText(v) {
+  if (v && typeof v === 'object') {
+    const lang = getLang();
+    return v[lang] || v.uz || v.ru || v.en || '';
+  }
+  return v ?? '';
+}
+
+const LOCALIZED_KEYS = ['name', 'title', 'subtitle', 'chief_complaint', 'category_name', 'topic_name', 'description'];
+function localizeItem(item) {
+  if (!item || typeof item !== 'object') return item;
+  const out = { ...item };
+  for (const k of LOCALIZED_KEYS) {
+    if (out[k] && typeof out[k] === 'object') out[k] = localizeText(out[k]);
+  }
+  return out;
+}
+
 // WebSocket brauzerda Vercel rewrite orqali o'tmaydi, shuning uchun to'g'ridan-to'g'ri backendga ulanadi.
 const API_ORIGIN = import.meta.env.VITE_API_BASE || 'https://prod.tibstation.uz';
 
@@ -254,11 +273,8 @@ export const api = {
   // ===================== AUTHENTICATION =====================
 
   /** Google orqali kirish (1 bosqichli) */
-  loginWithGoogle: async (idToken, referralCode = '') => {
+  loginWithGoogle: async (idToken) => {
     const payload = { id_token: idToken };
-    if (referralCode && typeof referralCode === 'string' && referralCode.trim()) {
-      payload.referral_code = referralCode.trim();
-    }
     return await request('/mobile/auth/google', {
       method: 'POST',
       body: payload,
@@ -282,10 +298,10 @@ export const api = {
   },
 
   /** Confirm OTP code (type must be 'email' or 'telegram') */
-  confirmOtp: async (identifier, confirmationCode, referralCode = '', type = 'email') => {
+  confirmOtp: async (identifier, confirmationCode, type = 'email') => {
     return await request('/mobile/auth/user/otp/confirm', {
       method: 'POST',
-      body: { confirmation_code: confirmationCode, identifier, referral_code: referralCode, type },
+      body: { confirmation_code: confirmationCode, identifier, type },
     });
   },
 
@@ -366,28 +382,11 @@ export const api = {
     });
   },
 
-  /** Remove FCM token (logout) */
-  removeDevice: async (fcmToken) => {
-    return await request('/mobile/user/device', {
-      method: 'DELETE',
-      body: { fcm_token: fcmToken },
-    });
-  },
-
-  // ===================== REFERRAL =====================
-
-  /** Get referral info */
-  getReferral: async () => {
-    return await request('/mobile/referral');
-  },
-
   // ===================== CATEGORIES =====================
 
-  /** Get all categories */
-  getCategories: async (audience) => {
-    const query = new URLSearchParams({ limit: 100, page: 1 });
-    if (audience) query.set('audience', audience);
-    return extractList(await request(`/mobile/category?${query.toString()}`));
+  /** Get all categories (swagger: GET /mobile/category, response { categories, count }) */
+  getCategories: async () => {
+    return extractList(await request('/mobile/category')).map(localizeItem);
   },
 
   /** Get single category by ID */
@@ -402,7 +401,7 @@ export const api = {
     const query = new URLSearchParams({ limit, page });
     if (categoryId) query.set('category_id', categoryId);
     const res = await request(`/mobile/topic?${query.toString()}`);
-    return extractList(res);
+    return extractList(res).map(localizeItem);
   },
 
   // ===================== CASES =====================
@@ -419,12 +418,23 @@ export const api = {
     if (params.page) query.set('page', params.page);
 
     const res = await request(`/mobile/case?${query.toString()}`);
-    return extractList(res);
+    return extractList(res).map(localizeItem);
+  },
+
+  /** Barcha sahifalarni yig'ib, to'liq keyslar ro'yxatini qaytaradi (backend limitidan oshib ketganda ham kesilmaydi) */
+  getAllCases: async (params = {}, pageSize = 100, maxPages = 10) => {
+    const all = [];
+    for (let page = 1; page <= maxPages; page += 1) {
+      const chunk = await api.getCases({ ...params, limit: pageSize, page });
+      all.push(...chunk);
+      if (chunk.length < pageSize) break;
+    }
+    return all;
   },
 
   /** Get case detail */
   getCaseDetail: async (id) => {
-    return await request(`/mobile/case/${id}`);
+    return localizeItem(await request(`/mobile/case/${id}`));
   },
 
   /** Get random case */
@@ -433,7 +443,7 @@ export const api = {
     if (categoryId && categoryId !== 'random') query.set('category_id', categoryId);
     if (difficulty) query.set('difficulty', difficulty);
     const qs = query.toString();
-    return await request(`/mobile/case/random${qs ? `?${qs}` : ''}`);
+    return localizeItem(await request(`/mobile/case/random${qs ? `?${qs}` : ''}`));
   },
 
   // ===================== FAVORITES =====================
@@ -441,7 +451,7 @@ export const api = {
   /** Get favorites list */
   getFavorites: async (limit = 50, page = 1) => {
     const res = await request(`/mobile/favorite?limit=${limit}&page=${page}`);
-    return extractList(res);
+    return extractList(res).map(localizeItem);
   },
 
   /** Toggle favorite */
@@ -577,7 +587,7 @@ export const api = {
   // ===================== SUBSCRIPTION =====================
 
   /** Subscribe to a tariff */
-  subscribe: async (tariffId, coinsUsed = 0, provider = 'click') => {
+  subscribe: async (tariffId, coinsUsed = 0, provider = 'inpay') => {
     return await request('/mobile/subscription', {
       method: 'POST',
       body: { tariff_id: tariffId, coins_used: coinsUsed, provider },

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  AlertTriangle,
   Check,
   CheckCircle2,
   Coins,
   CreditCard,
-  Gift,
   ShieldCheck,
   RefreshCw,
   ChevronRight,
@@ -54,15 +52,12 @@ export default function StoreTariffs({
     return initialTab || 'all';
   });
 
-  const [promocode, setPromocode] = useState('');
-  const [promoLoading, setPromoLoading] = useState(false);
-  const [promoResult, setPromoResult] = useState(null);
 
   // Payment checkout states
   const [selectedTariff, setSelectedTariff] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentProvider, setPaymentProvider] = useState('click'); // 'click' | 'inpay'
+  const [paymentProvider, setPaymentProvider] = useState('inpay'); // 'inpay'
   const [coinsToUse, setCoinsToUse] = useState('');
 
   // Payment link modal (for URL redirect & copy fallback)
@@ -70,7 +65,7 @@ export default function StoreTariffs({
     open: false,
     url: '',
     orderId: '',
-    provider: 'click',
+    provider: 'inpay',
   });
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -107,43 +102,10 @@ export default function StoreTariffs({
     return () => { isMounted = false; };
   }, []);
 
-  const handleRedeemPromo = async (e) => {
-    e.preventDefault();
-    if (!promocode.trim()) return;
-
-    setPromoLoading(true);
-    setPromoResult(null);
-
-    try {
-      const res = await api.redeemPromocode(promocode.trim());
-      const coinsAdded = res?.coins_added;
-      setPromoResult({
-        success: true,
-        message: coinsAdded != null
-          ? `Muvaffaqiyatli! Hamyoningizga +${coinsAdded} ta Tanga qo'shildi.`
-          : "Promokod muvaffaqiyatli qo'llandi."
-      });
-      try {
-        const fresh = await api.getUserProfile();
-        if (fresh && onUserUpdate) onUserUpdate(fresh);
-      } catch {
-        // keep current profile
-      }
-      setPromocode('');
-    } catch (err) {
-      setPromoResult({
-        success: false,
-        message: err.message || "Promokod yaroqsiz yoki avval ishlatilgan"
-      });
-    } finally {
-      setPromoLoading(false);
-    }
-  };
-
   const handleBuy = (tariff) => {
     setSelectedTariff(tariff);
     setCoinsToUse('');
-    setPaymentProvider('click');
+    setPaymentProvider('inpay');
     setPaymentModalOpen(true);
   };
 
@@ -155,7 +117,7 @@ export default function StoreTariffs({
     const parsedCoins = isCoinPkg ? 0 : Math.max(0, Math.min(Number(coinsToUse) || 0, user?.coins || 0));
 
     try {
-      const result = await api.subscribe(selectedTariff.id, parsedCoins, paymentProvider);
+      const result = await api.subscribe(selectedTariff.id, parsedCoins, 'inpay');
 
       // Close checkout selector modal
       setPaymentModalOpen(false);
@@ -385,95 +347,6 @@ export default function StoreTariffs({
               </button>
             );
           })}
-        </div>
-
-        {/* Promocode Redemption Banner */}
-        <div style={{
-          background: '#FFFFFF',
-          borderRadius: 18,
-          border: '1px solid #E2E8F0',
-          boxShadow: 'var(--shadow-sm)',
-          padding: '20px 22px',
-          marginBottom: 24,
-        }}>
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 14,
-          }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                <Gift size={20} color="#D97706" />
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                  Promokod bormi?
-                </h3>
-              </div>
-              <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-                Chegirma vaucheri yoki promokodni kiriting va bepul tangalarga ega bo'ling.
-              </p>
-            </div>
-
-            <form onSubmit={handleRedeemPromo} style={{ display: 'flex', gap: 10, flex: 1, minWidth: 220, maxWidth: 420, width: '100%' }}>
-              <input
-                id="input-promocode"
-                type="text"
-                placeholder="Masalan: TIB2026"
-                value={promocode}
-                onChange={(e) => setPromocode(e.target.value.toUpperCase())}
-                style={{
-                  flex: 1,
-                  padding: '12px 14px',
-                  borderRadius: 14,
-                  border: '1px solid #E2E8F0',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  outline: 'none',
-                  textTransform: 'uppercase',
-                  background: '#F8FAFC',
-                }}
-              />
-              <button
-                id="btn-redeem-promo"
-                type="submit"
-                disabled={promoLoading || !promocode.trim()}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: 14,
-                  border: '1px solid #16A34A',
-                  background: '#16A34A',
-                  boxShadow: 'var(--shadow-sm)',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  cursor: promoLoading ? 'default' : 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {promoLoading ? "..." : t("store.activate", "Faollashtirish")}
-              </button>
-            </form>
-          </div>
-
-          {promoResult && (
-            <div style={{
-              marginTop: 14,
-              padding: '10px 14px',
-              borderRadius: 12,
-              fontSize: '13px',
-              fontWeight: 700,
-              background: promoResult.success ? '#DCFCE7' : '#FEE2E2',
-              border: `1px solid ${promoResult.success ? '#86EFAC' : '#FECACA'}`,
-              color: promoResult.success ? '#166534' : '#DC2626',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}>
-              {promoResult.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-              <span>{promoResult.message}</span>
-            </div>
-          )}
         </div>
 
         {/* Loading Spinner */}
@@ -756,8 +629,8 @@ export default function StoreTariffs({
               <CreditCard size={24} strokeWidth={2.2} />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
-              {t('store.choosePaymentSystem', "To'lov tizimini tanlang")}
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px 0' }}>
+              {t('store.confirmPayment', "To'lovni tasdiqlash")}
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0' }}>
               Tarif: <strong style={{ color: '#0F172A' }}>{selectedTariff?.name}</strong> • Narxi: <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
@@ -830,91 +703,73 @@ export default function StoreTariffs({
               </div>
             )}
 
-            {/* Payment Providers List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
-              {[
-                {
-                  id: 'click',
-                  name: 'Click',
-                  badge: 'Click Up & Web',
-                  color: '#0073FF',
-                  desc: 'Uzcard, Humo va Click hamyon orqali'
-                },
-                {
-                  id: 'inpay',
-                  name: 'inPAY',
-                  badge: 'Tezkor to\'lov',
-                  color: '#16A34A',
-                  desc: 'Bank kartalari va xalqaro to\'lovlar'
-                },
-              ].map((prov) => {
-                const isSelected = paymentProvider === prov.id;
-                return (
-                  <div
-                    key={prov.id}
-                    id={`provider-option-${prov.id}`}
-                    onClick={() => setPaymentProvider(prov.id)}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: 14,
-                      background: isSelected ? '#F0FDF4' : '#FFFFFF',
-                      border: isSelected ? '2px solid #16A34A' : '1px solid #E2E8F0',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 12,
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 10,
-                        background: prov.color,
-                        color: '#FFFFFF',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 800,
-                        fontSize: '13px',
-                      }}>
-                        {prov.name[0]}
-                      </div>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
-                            {prov.name}
-                          </span>
-                          <span style={{
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            padding: '2px 6px',
-                            borderRadius: 6,
-                            background: '#F1F5F9',
-                            color: '#64748B',
-                          }}>
-                            {prov.badge}
-                          </span>
-                        </div>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>
-                          {prov.desc}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      border: isSelected ? '6px solid #16A34A' : '2px solid #CBD5E1',
-                      background: '#FFFFFF',
-                      boxSizing: 'border-box',
-                    }} />
+            {/* Dedicated inPAY Gateway Card */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 16px',
+                borderRadius: 14,
+                background: '#F0FDF4',
+                border: '1.5px solid #16A34A',
+                marginBottom: 18,
+                gap: 12,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: '14px',
+                    flexShrink: 0,
+                    boxShadow: '0 3px 10px rgba(22, 163, 74, 0.25)',
+                  }}
+                >
+                  in
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                      inPAY
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        padding: '2px 7px',
+                        borderRadius: 6,
+                        background: '#DCFCE7',
+                        color: '#15803D',
+                      }}
+                    >
+                      Rasmiy to'lov tizimi
+                    </span>
                   </div>
-                );
-              })}
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#475569', lineHeight: 1.35 }}>
+                    Uzcard, Humo, Visa va Mastercard orqali
+                  </p>
+                </div>
+              </div>
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  border: '6px solid #16A34A',
+                  background: '#FFFFFF',
+                  boxSizing: 'border-box',
+                  flexShrink: 0,
+                }}
+              />
             </div>
 
             {/* Proceed to Payment Action Button */}
@@ -949,7 +804,7 @@ export default function StoreTariffs({
                 <span>🪙 Tangalar orqali faollashtirish</span>
               ) : (
                 <span>
-                  💳 {formatPrice(remainingPayAmount)} · {paymentProvider === 'click' ? 'Click' : 'inPAY'} orqali to'lash
+                  💳 {formatPrice(remainingPayAmount)} · inPAY orqali to'lash
                 </span>
               )}
             </button>
