@@ -244,6 +244,10 @@ export default function App() {
       if (!isAuthenticated) return;
 
       try {
+        const warn = (name, fallback) => (err) => {
+          console.warn(`[load:${name}] failed`, { status: err?.status, message: err?.message });
+          return fallback;
+        };
         const [
           profileData,
           catsData,
@@ -257,17 +261,17 @@ export default function App() {
           bannersData,
           notifData
         ] = await Promise.all([
-          api.getUserProfile().catch(() => null),
-          api.getCategories().catch(() => []),
-          api.getCases().catch(() => []),
-          api.getUserLimit().catch(() => null),
-          api.getTariffs().catch(() => []),
-          api.getPartners().catch(() => []),
-          api.getFaqs().catch(() => []),
-          api.getAbout().catch(() => []),
-          api.getContacts().catch(() => []),
-          api.getBanners().catch(() => []),
-          api.getNotifications().catch(() => ({ count: 0, notifications: [] })),
+          api.getUserProfile().catch(warn('profile', null)),
+          api.getCategories().catch(warn('categories', [])),
+          api.getCases().catch(warn('cases', [])),
+          api.getUserLimit().catch(warn('limit', null)),
+          api.getTariffs().catch(warn('tariffs', [])),
+          api.getPartners().catch(warn('partners', [])),
+          api.getFaqs().catch(warn('faqs', [])),
+          api.getAbout().catch(warn('about', [])),
+          api.getContacts().catch(warn('contacts', [])),
+          api.getBanners().catch(warn('banners', [])),
+          api.getNotifications().catch(warn('notifications', { count: 0, notifications: [] })),
         ]);
 
         if (isMounted) {

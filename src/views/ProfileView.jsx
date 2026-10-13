@@ -782,6 +782,42 @@ export default function ProfileView({
               />
             </div>
 
+            {/* Feedback: opens the project's Telegram group */}
+            <a
+              id="btn-profile-feedback"
+              href="https://t.me/+bCWmUnYC7KcyNjgy"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '14px 18px',
+                marginBottom: 24,
+                background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+                border: '1px solid #BAE6FD',
+                borderRadius: 18,
+                boxShadow: '0 4px 0 #BAE6FD',
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'filter 0.15s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.97)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.filter = 'none'; }}
+            >
+              <div style={{
+                width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+                background: 'linear-gradient(135deg, #38BDF8, #0284C7)',
+                color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <MessageCircle size={22} strokeWidth={2.2} />
+              </div>
+              <span style={{ flex: 1, minWidth: 0, fontSize: '14.5px', fontWeight: 800, color: '#075985', lineHeight: 1.3 }}>
+                {t('profile.feedbackBtn', 'Loyihani rivojlantirish uchun feedback yozing')}
+              </span>
+              <ExternalLink size={18} strokeWidth={2.4} color="#0284C7" />
+            </a>
+
             {/* Settings Group 1: Ma'lumot, Ilova haqida */}
             <div id="profile-settings-group" style={{
               background: '#FFFFFF',

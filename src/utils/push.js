@@ -21,6 +21,26 @@ export function pushUnsupportedReason() {
   return '';
 }
 
+/** Reject with a readable error instead of hanging forever (SW install / FCM token calls can stall). */
+function withTimeout(promise, ms, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+/** Resolves once the given registration has an ACTIVE worker (rejects if install fails). */
+function waitForActiveWorker(registration) {
+  return new Promise((resolve, reject) => {
+    const sw = registration.active || registration.waiting || registration.installing;
+    if (!sw) return reject(new Error('Service worker topilmadi'));
+    if (sw.state === 'activated') return resolve(registration);
+    sw.addEventListener('statechange', () => {
+      if (sw.state === 'activated') resolve(registration);
+      else if (sw.state === 'redundant') reject(new Error('Service worker o\'rnatilmadi (firebase-messaging-sw.js yuklanmadi yoki gstatic.com bloklangan)'));
+    });
+  });
+}
+
 /** Ask permission, get FCM token, register it on the backend. Returns the token. */
 export async function enablePush() {
   const reason = pushUnsupportedReason();
@@ -29,15 +49,19 @@ export async function enablePush() {
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') throw new Error('Bildirishnomaga ruxsat berilmadi (brauzer sozlamalarida yoqing)');
 
-  const [{ initializeApp, getApps }, { getMessaging, getToken }] = await Promise.all([
+  const [{ initializeApp, getApps }, { getMessaging, getToken }] = await withTimeout(Promise.all([
     import('firebase/app'),
     import('firebase/messaging'),
-  ]);
+  ]), 15000, 'Firebase kutubxonasi yuklanmadi');
   const app = getApps()[0] || initializeApp(cfg);
   const qs = new URLSearchParams(Object.entries(cfg).filter(([, v]) => v)).toString();
   const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${qs}`);
-  await navigator.serviceWorker.ready;
-  const token = await getToken(getMessaging(app), { vapidKey: VAPID, serviceWorkerRegistration: registration });
+  await withTimeout(waitForActiveWorker(registration), 15000, 'Service worker faollashmadi (firebase-messaging-sw.js ni tekshiring)');
+  const token = await withTimeout(
+    getToken(getMessaging(app), { vapidKey: VAPID, serviceWorkerRegistration: registration }),
+    20000,
+    'FCM token olinmadi (Firebase sozlamalari, VAPID kalit yoki tarmoqni tekshiring)'
+  );
   if (!token) throw new Error('FCM token olinmadi');
 
   await api.registerDevice(token, 'web');

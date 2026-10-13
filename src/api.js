@@ -354,21 +354,18 @@ export const api = {
     return await request('/mobile/user/limit');
   },
 
-  /** Get user activity stats */
+  /**
+   * Get user activity stats.
+   * `activity` = number of FINISHED cases (counted by the backend automatically on
+   * simulation finish; the client must NOT write it — POST /mobile/user/activity is not used).
+   * Zero-activity days are included. Day boundaries are UTC for now (backend will move to UTC+5).
+   */
   getUserActivity: async (type = 'day', params = {}) => {
     const query = new URLSearchParams({ type });
     if (params.date) query.set('date', params.date);
     if (params.from) query.set('from', params.from);
     if (params.to) query.set('to', params.to);
     return await request(`/mobile/user/activity?${query.toString()}`);
-  },
-
-  /** Post user activity */
-  postUserActivity: async (activity) => {
-    return await request('/mobile/user/activity', {
-      method: 'POST',
-      body: { activity },
-    });
   },
 
   /** Get leaderboard / rating */

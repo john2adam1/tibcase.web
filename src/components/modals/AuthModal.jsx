@@ -209,14 +209,24 @@ export default function AuthModal({
 
       handleClose();
     } catch (err) {
-      setErrorMsg(err.message || t('auth.googleError'));
+      const details = err?.data?.error?.details;
+      console.error('[GoogleAuth] /mobile/auth/google failed', {
+        origin: window.location.origin,
+        status: err?.status,
+        code: err?.code,
+        details,
+        message: err?.message,
+      });
+      setErrorMsg(`${err.message || t('auth.googleError')}${details ? ` (${details})` : ''}`);
     } finally {
       setGoogleLoading(false);
     }
   }, [onLoginSuccess, handleClose, t]);
 
   const handleGoogleError = useCallback(() => {
-    setErrorMsg(t('auth.googleError'));
+    // GIS gives no reason here; origin mismatch / blocked script / FedCM are the usual causes.
+    console.error('[GoogleAuth] Google Sign-In failed on GIS side. Origin:', window.location.origin);
+    setErrorMsg(`${t('auth.googleError')} (${window.location.origin})`);
   }, [t]);
 
   // Send OTP (transitions immediately to OTP step & opens Telegram bot)
