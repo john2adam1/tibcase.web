@@ -1,22 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronLeft,
-  Lightbulb,
   ArrowRight,
-  Award,
+  Bookmark,
   Flag,
   Mic,
   Square,
   Volume2,
   VolumeX,
   Clock,
-  MessageSquare,
 } from 'lucide-react';
 import PatientAvatar from '../components/features/PatientAvatar';
-import ClinicalHintModal from '../components/modals/ClinicalHintModal';
 import { useTranslation } from '../i18n.jsx';
-import { api, isSessionNotActiveError } from '../api';
-import { onPlaybackChange, playBase64Audio, startMicRecorder, stopPlayback } from '../utils/audioRecord';
+import { api, isSessionNotActiveError, isInsufficientCoinsError, isDebriefTerminalError } from '../api';
+import { onPlaybackChange, speakReply, startMicRecorder, stopPlayback } from '../utils/audioRecord';
 
 const PATIENT_VOICE_KEY = 'tibcase_patient_voice';
 
@@ -31,22 +28,26 @@ function healthToStatus(percent) {
   return 'improving';
 }
 
+function isVitalPresent(value) {
+  if (value === null || value === undefined || value === '') return false;
+  if (typeof value === 'number' && (Number.isNaN(value) || value === 0)) return false;
+  if (value === '0') return false;
+  return true;
+}
+
 function mergeVitals(prev, raw) {
-  if (!raw || typeof raw !== 'object') return prev;
-  const hr = raw.hr ?? raw.heart_rate;
-  const spo2 = raw.spo2;
-  const rr = raw.rr;
-  const temp = raw.temp ?? raw.temperature;
-  const bp = raw.bp
-    || ((raw.bp_sys != null && raw.bp_dia != null) ? `${raw.bp_sys}/${raw.bp_dia}` : undefined);
-  return {
-    ...prev,
-    ...(hr != null ? { hr } : {}),
-    ...(spo2 != null ? { spo2 } : {}),
-    ...(rr != null ? { rr } : {}),
-    ...(temp != null ? { temp } : {}),
-    ...(bp != null ? { bp } : {}),
-  };
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return prev;
+  const next = { ...prev };
+  Object.entries(raw).forEach(([key, value]) => {
+    if (!isVitalPresent(value) || typeof value === 'object') return;
+    if (key === 'heart_rate') next.hr = value;
+    else if (key === 'temperature') next.temp = value;
+    else next[key] = value;
+  });
+  if (!isVitalPresent(next.bp) && isVitalPresent(raw.bp_sys) && isVitalPresent(raw.bp_dia)) {
+    next.bp = `${raw.bp_sys}/${raw.bp_dia}`;
+  }
+  return next;
 }
 
 function defaultVitalsFromCase(caseItem) {
@@ -57,13 +58,61 @@ function defaultVitalsFromCase(caseItem) {
   );
 }
 
+function asTextList(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => (typeof item === 'string' ? item : item?.text || item?.title || ''))
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  return [];
+}
+
+function formatDebriefChat(debrief, t) {
+  if (!debrief || typeof debrief !== 'object') return '';
+  const lines = [t('sim.aiAnalysisHeading', 'AI tahlili')];
+  const correct = asTextList(debrief.correct_steps);
+  const incorrect = asTextList(debrief.incorrect_steps);
+  const weak = asTextList(debrief.weak_topics);
+  const notes = asTextList(debrief.guideline_notes).join('\n');
+  if (correct.length) {
+    lines.push('', `${t('debrief.correctActions', "To'g'ri qadamlar")}:`);
+    correct.forEach((step) => lines.push(`• ${step}`));
+  }
+  if (incorrect.length) {
+    lines.push('', `${t('debrief.errors', 'Klinik xatolar')}:`);
+    incorrect.forEach((step) => lines.push(`• ${step}`));
+  }
+  if (weak.length) {
+    lines.push('', t('debrief.weakTopics', "Rivojlantirish kerak bo'lgan mavzular:"));
+    weak.forEach((topic) => lines.push(`• ${topic}`));
+  }
+  if (notes) {
+    lines.push('', t('debrief.protocolNotes', 'Klinik protokol va tavsiyalar:'));
+    lines.push(notes);
+  }
+  return lines.length > 1 ? lines.join('\n') : '';
+}
+
 export default function CaseSimulationRoom({
   caseItem,
   onExitSimulation,
-  onFinishCase
+  onFinishCase,
+  onNextCase,
+  onInsufficientCoins,
+  onToast,
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const sessionId = caseItem?.sessionId;
+  const caseId = caseItem?.id || caseItem?.case_id;
+
+  const [saved, setSaved] = useState(() => Boolean(caseItem?.is_favorite));
+  const [savingFavorite, setSavingFavorite] = useState(false);
+
+  useEffect(() => {
+    setSaved(Boolean(caseItem?.is_favorite));
+  }, [caseItem?.id, caseItem?.case_id, caseItem?.is_favorite]);
 
   const [patientStatus, setPatientStatus] = useState(
     healthToStatus(caseItem?.health_percent ?? 0)
@@ -75,13 +124,18 @@ export default function CaseSimulationRoom({
   });
   const [vitals, setVitals] = useState(() => defaultVitalsFromCase(caseItem));
   const [secondsElapsed, setSecondsElapsed] = useState(0);
-  const [questionsCount, setQuestionsCount] = useState(0);
-  const [hintModalOpen, setHintModalOpen] = useState(false);
+  const maxAttempts = typeof caseItem?.max_attempts === 'number' ? caseItem.max_attempts : 1;
+  const [attemptsLeft, setAttemptsLeft] = useState(() => (
+    typeof caseItem?.max_attempts === 'number'
+      ? Math.max(0, caseItem.max_attempts - (caseItem.attempts_used || 0))
+      : maxAttempts
+  ));
   const [inputText, setInputText] = useState('');
-  const [eventType, setEventType] = useState('question');
   const [sending, setSending] = useState(false);
   const [recording, setRecording] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [analysisReady, setAnalysisReady] = useState(false);
+  const [loadingNext, setLoadingNext] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [errorBanner, setErrorBanner] = useState('');
   const [messages, setMessages] = useState(() => (
@@ -97,6 +151,15 @@ export default function CaseSimulationRoom({
   const voiceEnabledRef = useRef(true);
   const sessionEndedRef = useRef(false);
   const sendingRef = useRef(false);
+  const usageRef = useRef({ tokens_used: 0, coins_spent: 0 });
+  const endSeqRef = useRef(false);
+  const analysisDoneRef = useRef(false);
+  const abortRef = useRef(new AbortController());
+
+  useEffect(() => {
+    const ctrl = abortRef.current;
+    return () => ctrl.abort();
+  }, []);
 
   useEffect(() => {
     secondsRef.current = secondsElapsed;
@@ -130,10 +193,14 @@ export default function CaseSimulationRoom({
       stopPlayback();
       return;
     }
-    // Turning voice on: read the patient's complaint (or latest patient line) aloud;
-    // later replies keep being voiced because voiceEnabledRef follows this toggle.
-    const lastPatient = [...messages].reverse().find((m) => m.sender !== 'user' && m.text);
-    if (lastPatient?.audioBase64) playBase64Audio(lastPatient.audioBase64, lastPatient.audioMime || 'audio/wav');
+    const lastSpoken = [...messages].reverse().find((m) => m.sender !== 'user' && m.text && !m.loading);
+    if (!lastSpoken) return;
+    speakReply({
+      audioBase64: lastSpoken.audioBase64,
+      audioMime: lastSpoken.audioMime,
+      text: lastSpoken.text,
+      lang,
+    });
   };
 
   useEffect(() => {
@@ -161,6 +228,10 @@ export default function CaseSimulationRoom({
   useEffect(() => {
     if (!isRealSessionId(sessionId) || sessionEnded) return undefined;
     let ws;
+    const closeWs = (socket) => {
+      if (!socket) return;
+      try { socket.close(); } catch { /* noop */ }
+    };
     try {
       ws = new WebSocket(api.getSimulationWsUrl(sessionId, wsUrlPath));
       ws.onmessage = (ev) => {
@@ -173,7 +244,16 @@ export default function CaseSimulationRoom({
         if (data.vitals) setVitals((prev) => mergeVitals(prev, data.vitals));
       };
     } catch { /* live vitals are optional */ }
-    return () => { try { ws?.close(); } catch { /* noop */ } };
+    return () => {
+      if (!ws) return;
+      ws.onmessage = null;
+      if (ws.readyState === WebSocket.CONNECTING) {
+        ws.addEventListener('open', () => closeWs(ws), { once: true });
+        ws.addEventListener('error', () => closeWs(ws), { once: true });
+        return;
+      }
+      closeWs(ws);
+    };
   }, [sessionId, sessionEnded, wsUrlPath]);
 
   // Wall-clock timer: immune to throttled background tabs and re-renders
@@ -200,40 +280,156 @@ export default function CaseSimulationRoom({
     return `${m}:${s}`;
   };
 
-  const playReplyAudio = useCallback((audioBase64, audioMime) => {
+  const playReplyAudio = useCallback((audioBase64, audioMime, text) => {
     if (!voiceEnabledRef.current) return;
-    // Voice comes only from the backend (audio_base64); no browser TTS fallback.
-    if (audioBase64) playBase64Audio(audioBase64, audioMime || 'audio/wav');
-  }, []);
+    speakReply({ audioBase64, audioMime, text, lang });
+  }, [lang]);
 
-  const handleReplay = (msg) => {
-    if (!msg?.audioBase64) return;
-    playBase64Audio(msg.audioBase64, msg.audioMime || 'audio/wav');
-  };
+  const emitScores = useCallback((finishResult, extra = {}) => {
+    if (!onFinishCase) return;
+    const merged = finishResult || extra.finish_result || null;
+    onFinishCase({
+      reason: extra.reason || 'manual',
+      skipFinishApi: true,
+      skipDebriefWait: true,
+      sessionEnded: true,
+      silent: (extra.reason || 'manual') !== 'insufficient_coins',
+      finish_result: merged,
+      score: merged?.final_score ?? extra.score ?? 0,
+      xp: merged?.xp_earned ?? extra.xp ?? 0,
+      coins: merged?.coins_earned ?? extra.coins ?? 0,
+      tokens_used: merged?.tokens_used ?? extra.tokens_used ?? usageRef.current.tokens_used,
+      coins_spent: merged?.coins_spent ?? extra.coins_spent ?? usageRef.current.coins_spent,
+      time: formatTimer(secondsRef.current),
+    });
+  }, [onFinishCase]);
 
   const completeSession = useCallback((finishResult, extra = {}) => {
-    if (sessionEndedRef.current && !extra.force) return;
+    if (analysisDoneRef.current) {
+      emitScores(finishResult, extra);
+      return;
+    }
+    if (endSeqRef.current) return;
+    endSeqRef.current = true;
     sessionEndedRef.current = true;
     setSessionEnded(true);
     setRecording(false);
 
-    const score = finishResult?.final_score ?? extra.score ?? 0;
-    const xp = finishResult?.xp_earned ?? extra.xp ?? 0;
-    const coins = finishResult?.coins_earned ?? extra.coins ?? 0;
-
-    if (onFinishCase) {
-      onFinishCase({
-        reason: extra.reason || 'manual',
-        skipFinishApi: Boolean(extra.skipFinishApi),
-        sessionEnded: Boolean(extra.sessionEnded),
-        finish_result: finishResult || null,
-        score,
-        xp,
-        coins,
+    const loadingId = 'ai-analysis-loading';
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === loadingId || m.kind === 'debrief')) return prev;
+      return [...prev, {
+        id: loadingId,
+        sender: 'ai',
+        kind: 'debrief',
+        loading: true,
+        text: t('sim.aiAnalyzing', 'AI tahlil qilyapti...'),
         time: formatTimer(secondsRef.current),
+      }];
+    });
+
+    (async () => {
+      let finish = finishResult || null;
+      let debrief = null;
+      let analysisUnavailable = false;
+
+      const finishTask = (!extra.skipFinishApi && isRealSessionId(sessionId))
+        ? api.finishSimulation(sessionId, extra.reason || 'manual', { timeoutMs: 8000 })
+          .then((res) => { if (res) finish = res; })
+          .catch((err) => {
+            if (!isSessionNotActiveError(err) && err?.name !== 'AbortError') {
+              console.warn('finishSimulation:', err?.message);
+            }
+          })
+        : Promise.resolve();
+
+      const debriefTask = isRealSessionId(sessionId)
+        ? api.waitForDebrief(sessionId, {
+          signal: abortRef.current?.signal,
+          delayMs: 2000,
+          timeoutMs: 30000,
+          deadlineMs: 50000,
+        }).then((res) => { debrief = res; }).catch((err) => {
+          if (isDebriefTerminalError(err)) analysisUnavailable = true;
+          else console.warn('waitForDebrief:', err?.message);
+        })
+        : Promise.resolve();
+
+      await Promise.all([finishTask, debriefTask]);
+
+      const analysisText = analysisUnavailable
+        ? t('sim.aiAnalysisEmpty', 'AI tahlili mavjud emas.')
+        : (formatDebriefChat(debrief, t)
+          || extra.eventFeedback
+          || t('sim.aiAnalysisEmpty', 'AI tahlili mavjud emas.'));
+      setMessages((prev) => prev.map((msg) => (
+        msg.id === loadingId
+          ? {
+            ...msg,
+            loading: false,
+            text: analysisText,
+            evaluation: extra.evaluation || msg.evaluation || null,
+          }
+          : msg
+      )));
+      analysisDoneRef.current = true;
+      setAnalysisReady(true);
+      if (analysisText && analysisText !== t('sim.aiAnalysisEmpty', 'AI tahlili mavjud emas.')) {
+        playReplyAudio(extra.replyAudio, extra.replyMime, analysisText);
+      }
+
+      const merged = {
+        ...(finish || {}),
+        ...(debrief ? {
+          final_score: debrief.final_score ?? finish?.final_score,
+          xp_earned: debrief.xp_earned ?? finish?.xp_earned,
+          coins_earned: debrief.coins_earned ?? finish?.coins_earned,
+          tokens_used: debrief.tokens_used ?? finish?.tokens_used,
+          coins_spent: debrief.coins_spent ?? finish?.coins_spent,
+        } : {}),
+      };
+
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, 1200);
+        abortRef.current?.signal?.addEventListener('abort', () => {
+          clearTimeout(timer);
+          resolve();
+        }, { once: true });
       });
-    }
-  }, [onFinishCase]);
+      if (abortRef.current?.signal?.aborted) return;
+
+      emitScores(merged, extra);
+    })();
+  }, [emitScores, playReplyAudio, sessionId, t]);
+
+  // Finish osilib qolsa ham, tayyor debriefni chatga chiqarish
+  useEffect(() => {
+    if (!sessionEnded || !isRealSessionId(sessionId) || analysisDoneRef.current) return undefined;
+    const loading = messages.some((m) => m.id === 'ai-analysis-loading' && m.loading);
+    if (!loading) return undefined;
+    const timer = setTimeout(async () => {
+      if (analysisDoneRef.current) return;
+      try {
+        const debrief = await api.getDebrief(sessionId, { timeoutMs: 30000 });
+        if (analysisDoneRef.current) return;
+        const text = formatDebriefChat(debrief, t)
+          || t('sim.aiAnalysisEmpty', 'AI tahlili mavjud emas.');
+        setMessages((prev) => prev.map((msg) => (
+          msg.id === 'ai-analysis-loading'
+            ? { ...msg, loading: false, text }
+            : msg
+        )));
+        analysisDoneRef.current = true;
+        setAnalysisReady(true);
+        if (text !== t('sim.aiAnalysisEmpty', 'AI tahlili mavjud emas.')) {
+          playReplyAudio('', '', text);
+        }
+      } catch {
+        /* completeSession poll hali ketayotgan bo'lishi mumkin */
+      }
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [sessionEnded, sessionId, messages, t, playReplyAudio]);
 
   // Time limit from backend: auto-finish with reason "timeout"
   useEffect(() => {
@@ -246,9 +442,30 @@ export default function CaseSimulationRoom({
     const response = data?.response || {};
     const transcript = response.transcript;
     const errorText = response.transcribe_error || response.patient_reply_error || response.feedback_error;
-    const replyText = response.patient_reply || response.feedback || errorText || '';
+    const analysisText = response.feedback || response.patient_reply || '';
     const replyAudio = response.reply_audio_base64;
     const replyMime = response.reply_audio_mime || 'audio/wav';
+    const evaluation = data.is_correct === true
+      ? { type: 'correct', badge: t('sim.correctBadge', "To'g'ri javob") }
+      : data.is_correct === false
+        ? { type: 'wrong', badge: t('sim.wrongBadge', "Noto'g'ri javob") }
+        : null;
+    const sessionClosing = Boolean(data.session_ended)
+      || data.is_correct === true
+      || data.attempts_left === 0;
+
+    if (typeof data.tokens_used === 'number' || typeof data.coins_spent === 'number') {
+      usageRef.current = {
+        tokens_used: typeof data.tokens_used === 'number' ? data.tokens_used : usageRef.current.tokens_used,
+        coins_spent: typeof data.coins_spent === 'number' ? data.coins_spent : usageRef.current.coins_spent,
+      };
+    }
+
+    if (typeof data.attempts_left === 'number') {
+      setAttemptsLeft(data.attempts_left);
+    } else if (maxAttempts != null && !response.transcribe_error) {
+      setAttemptsLeft((prev) => (typeof prev === 'number' ? Math.max(0, prev - 1) : prev));
+    }
 
     if (typeof data.health_percent === 'number') {
       setHealthPercent(data.health_percent);
@@ -270,38 +487,46 @@ export default function CaseSimulationRoom({
       }));
     }
 
-    if (!replyText && !replyAudio) {
-      console.warn('[simulation] empty event response', data);
-    }
-    if (replyText || replyAudio || data?.is_correct !== undefined) {
-      const evaluation = data.is_correct === true
-        ? { type: 'correct', badge: t('sim.correctBadge', 'To‘g‘ri qaror') }
-        : data.is_correct === false
-          ? { type: 'wrong', badge: t('sim.wrongBadge', 'Noto‘g‘ri ko‘rsatma') }
-          : null;
-
-      setMessages((prev) => [...prev, {
-        id: `sys-${Date.now()}`,
-        sender: 'system',
-        text: replyText || (data.is_correct ? t('sim.accepted', 'Qabul qilindi') : t('sim.noReply', "Javob kelmadi, boshqacha ifodalab ko'ring")),
+    if (sessionClosing) {
+      completeSession(data.finish_result, {
+        skipFinishApi: Boolean(data.session_ended)
+          || data.is_correct === true
+          || data.attempts_left === 0,
+        sessionEnded: Boolean(data.session_ended),
+        reason: data.session_ended ? undefined : 'manual',
         evaluation,
-        audioBase64: replyAudio || '',
-        audioMime: replyMime,
-        time: formatTimer(secondsRef.current),
-      }]);
-
-      if (!errorText || replyAudio) {
-        playReplyAudio(replyAudio, replyMime);
-      }
+        replyAudio,
+        replyMime,
+        eventFeedback: analysisText,
+      });
+      return;
     }
 
-    if (data.session_ended) {
-      completeSession(data.finish_result, { skipFinishApi: true, sessionEnded: true });
+    const replyText = analysisText || errorText || '';
+    if (!replyText && !replyAudio && data?.is_correct === undefined) {
+      console.warn('[simulation] empty event response', data);
+      return;
     }
-  }, [completeSession, playReplyAudio, t]);
 
-  const sendEvent = useCallback(async ({ text, audio, type = 'question' }) => {
+    setMessages((prev) => [...prev, {
+      id: `sys-${Date.now()}`,
+      sender: 'ai',
+      text: replyText || t('sim.noReply', "Javob kelmadi, boshqacha ifodalab ko'ring"),
+      evaluation,
+      audioBase64: replyAudio || '',
+      audioMime: replyMime,
+      time: formatTimer(secondsRef.current),
+    }]);
+
+    playReplyAudio(replyAudio, replyMime, replyText);
+  }, [completeSession, maxAttempts, playReplyAudio, t]);
+
+  const sendEvent = useCallback(async ({ text, audio }) => {
     if (sessionEndedRef.current || sendingRef.current) return;
+    if (attemptsLeft !== null && attemptsLeft <= 0) {
+      setErrorBanner(t('sim.noAttempts', 'Urinishlar tugadi'));
+      return;
+    }
     if (!isRealSessionId(sessionId)) {
       setErrorBanner(t('sim.noSession', 'Sessiya topilmadi. Simulyatsiyani qaytadan boshlang.'));
       return;
@@ -310,7 +535,6 @@ export default function CaseSimulationRoom({
     setErrorBanner('');
     sendingRef.current = true;
     setSending(true);
-    setQuestionsCount((prev) => prev + 1);
 
     const userMsgId = `usr-${Date.now()}`;
     const userMsg = {
@@ -328,12 +552,24 @@ export default function CaseSimulationRoom({
       : { text };
 
     try {
-      const data = await api.sendSimulationEvent(sessionId, payload, type);
+      // Only `question` events count toward max_attempts on the backend.
+      const data = await api.sendSimulationEvent(sessionId, payload, 'question');
       applyEventResult(data, { userMsgId, userAudio: audio });
     } catch (err) {
       if (isSessionNotActiveError(err)) {
         setErrorBanner(t('sim.alreadyEnded', 'Sessiya allaqachon yakunlangan'));
         completeSession(null, { skipFinishApi: true, sessionEnded: true });
+      } else if (isInsufficientCoinsError(err)) {
+        const message = t('sim.insufficientCoins', 'Tangalar yetarli emas');
+        setErrorBanner(message);
+        setMessages((prev) => [...prev, {
+          id: `err-${Date.now()}`,
+          sender: 'system',
+          text: message,
+          time: formatTimer(secondsRef.current),
+        }]);
+        onInsufficientCoins?.();
+        completeSession(null, { skipFinishApi: true, sessionEnded: true, reason: 'insufficient_coins' });
       } else {
         const message = err?.code === 'session_not_found'
           ? t('sim.sessionNotFound', 'Sessiya topilmadi')
@@ -350,16 +586,17 @@ export default function CaseSimulationRoom({
       sendingRef.current = false;
       setSending(false);
     }
-  }, [applyEventResult, completeSession, sessionId, t]);
+  }, [applyEventResult, attemptsLeft, completeSession, onInsufficientCoins, sessionId, t]);
 
-  const handlePerformAction = (actionText, type = 'question') => {
+  const handlePerformAction = (actionText) => {
     if (!actionText || !actionText.trim() || sessionEnded || sending) return;
+    if (attemptsLeft !== null && attemptsLeft <= 0) return;
     setInputText('');
-    sendEvent({ text: actionText.trim(), type });
+    sendEvent({ text: actionText.trim() });
   };
 
   const toggleRecording = async () => {
-    if (sessionEnded || sending) return;
+    if (sessionEnded || sending || (attemptsLeft !== null && attemptsLeft <= 0)) return;
 
     if (recording && recorderRef.current) {
       setRecording(false);
@@ -367,7 +604,7 @@ export default function CaseSimulationRoom({
         const audio = await recorderRef.current.stop();
         recorderRef.current = null;
         if (audio?.audio_base64) {
-          await sendEvent({ audio, type: 'question' });
+          await sendEvent({ audio });
         }
       } catch (err) {
         setErrorBanner(err.message || t('sim.micError', 'Mikrofon xatosi'));
@@ -395,8 +632,30 @@ export default function CaseSimulationRoom({
     completeSession(null, { skipFinishApi: false, sessionEnded: false, force: true });
   };
 
-  const inputsLocked = sessionEnded || sending;
+  const handleToggleSave = async () => {
+    if (!caseId || savingFavorite) return;
+    setSavingFavorite(true);
+    const next = !saved;
+    setSaved(next);
+    try {
+      const res = await api.toggleFavorite(caseId);
+      const isFav = typeof res?.is_favorite === 'boolean' ? res.is_favorite : next;
+      setSaved(isFav);
+      onToast?.(isFav
+        ? t('fav.added', "Keys saqlanganlarga qo'shildi")
+        : t('fav.removed', "Keys saqlanganlardan olib tashlandi"));
+    } catch (err) {
+      setSaved(!next);
+      setErrorBanner(err?.message || t('common.error', 'Xatolik yuz berdi'));
+    } finally {
+      setSavingFavorite(false);
+    }
+  };
+
+  const noAttemptsLeft = attemptsLeft !== null && attemptsLeft <= 0;
+  const inputsLocked = sessionEnded || sending || noAttemptsLeft;
   const inputBlocked = inputsLocked || recording;
+  const answerRows = Math.min(6, Math.max(2, (inputText.match(/\n/g) || []).length + 1));
 
   const iconButton = (extra = {}) => ({
     width: 40,
@@ -413,31 +672,6 @@ export default function CaseSimulationRoom({
     padding: 0,
     ...extra,
   });
-
-  const replayButton = (msg, dark = false) => (
-    <button
-      type="button"
-      onClick={() => handleReplay(msg)}
-      aria-label={t('sim.replay', 'Qayta eshitish')}
-      title={t('sim.replay', 'Qayta eshitish')}
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: '50%',
-        border: 'none',
-        background: dark ? 'rgba(255,255,255,0.22)' : '#F1F5F9',
-        color: dark ? '#FFFFFF' : '#334155',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        padding: 0,
-      }}
-    >
-      <Volume2 size={15} />
-    </button>
-  );
 
   return (
     <div className="sim-root">
@@ -461,12 +695,9 @@ export default function CaseSimulationRoom({
             }}>
               {caseItem?.title || t('sim.headerCase')}
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 2, flexWrap: 'wrap' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Clock size={12} /> {formatTimer(timeLimit > 0 ? Math.max(0, timeLimit - secondsElapsed) : secondsElapsed)}
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <MessageSquare size={12} /> {questionsCount}
               </span>
             </div>
           </div>
@@ -477,8 +708,8 @@ export default function CaseSimulationRoom({
               type="button"
               onClick={togglePatientVoice}
               aria-pressed={patientVoiceOn}
-              aria-label={patientVoiceOn ? t('sim.voiceOff', 'Bemor ovozini o‘chirish') : t('sim.voiceOn', 'Bemor ovozini yoqish')}
-              title={patientVoiceOn ? t('sim.voiceOff', 'Bemor ovozini o‘chirish') : t('sim.voiceOn', 'Bemor ovozini yoqish')}
+              aria-label={patientVoiceOn ? t('sim.voiceOff', "Ovozni o'chirish") : t('sim.voiceOn', 'Ovozni yoqish')}
+              title={patientVoiceOn ? t('sim.voiceOff', "Ovozni o'chirish") : t('sim.voiceOn', 'Ovozni yoqish')}
               style={iconButton(patientVoiceOn
                 ? { background: '#DCFCE7', border: '1px solid #86EFAC', color: '#16A34A' }
                 : { background: '#F1F5F9', color: '#94A3B8' })}
@@ -487,15 +718,40 @@ export default function CaseSimulationRoom({
             </button>
           )}
 
-          <button
-            id="btn-clinical-hint"
-            onClick={() => setHintModalOpen(true)}
-            aria-label={t('sim.hintTitle')}
-            title={t('sim.hintTitle')}
-            style={iconButton({ background: '#FEF3C7', border: '1px solid #FDE68A', color: '#D97706' })}
-          >
-            <Lightbulb size={18} />
-          </button>
+          {caseId && (
+            <button
+              id="btn-save-case"
+              type="button"
+              onClick={handleToggleSave}
+              disabled={savingFavorite}
+              aria-pressed={saved}
+              aria-label={saved
+                ? t('case.removeSaved', "Saqlangan keyslardan o'chirish")
+                : t('sim.saveBtn', 'Saqlash')}
+              title={saved
+                ? t('case.removeSaved', "Saqlangan keyslardan o'chirish")
+                : t('sim.saveBtn', 'Saqlash')}
+              style={{
+                height: 40,
+                padding: '0 12px',
+                borderRadius: 99,
+                background: saved ? '#FEF3C7' : '#FFFFFF',
+                border: saved ? '1px solid #FDE68A' : '1px solid #CBD5E1',
+                color: saved ? '#B45309' : '#0F172A',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: savingFavorite ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                flexShrink: 0,
+                opacity: savingFavorite ? 0.7 : 1,
+              }}
+            >
+              <Bookmark size={14} fill={saved ? '#F59E0B' : 'none'} color={saved ? '#F59E0B' : 'currentColor'} />
+              <span>{saved ? t('sim.saveBtnSaved', 'Saqlangan') : t('sim.saveBtn', 'Saqlash')}</span>
+            </button>
+          )}
 
           <button
             id="btn-finish-case"
@@ -531,8 +787,6 @@ export default function CaseSimulationRoom({
           patientAge={caseItem?.patient_age}
           patientGender={caseItem?.patient_gender}
           vitals={vitals}
-          speaking={speaking}
-          thinking={sending}
         />
 
         {errorBanner && (
@@ -548,29 +802,38 @@ export default function CaseSimulationRoom({
         <div className="sim-chat" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 2px' }}>
           {messages.length === 0 && (
             <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, fontWeight: 600, margin: '24px 0' }}>
-              {t('sim.emptyHint', 'Bemorga savol bering yoki klinik buyruq yozing')}
+              {t('sim.emptyHint', "Bemor shikoyatini o'qing va to'liq tashxis javobini yozing")}
             </p>
           )}
 
           {messages.map((msg) => {
             if (msg.sender === 'user') {
               return (
-                <div key={msg.id} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'flex-end', gap: 6, maxWidth: '86%' }}>
+                <div key={msg.id} style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, maxWidth: '86%' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>
+                    {t('sim.youLabel', 'Siz')}
+                  </span>
                   <div style={{
                     background: '#2563EB', color: '#FFFFFF', borderRadius: '18px 18px 4px 18px',
                     padding: '10px 14px', fontSize: 14, fontWeight: 600, lineHeight: 1.45,
-                    boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', gap: 8,
+                    boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'flex-start', gap: 8,
                   }}>
-                    <span style={{ wordBreak: 'break-word' }}>{msg.text}</span>
-                    {msg.audioBase64 && replayButton(msg, true)}
+                    <span style={{ wordBreak: 'break-word', whiteSpace: 'pre-line' }}>{msg.text}</span>
                   </div>
                 </div>
               );
             }
 
+            const isPatient = msg.sender === 'patient';
+            const isAi = msg.sender === 'ai';
             return (
               <div key={msg.id} style={{ alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: 5, maxWidth: '92%' }}>
-                {msg.evaluation && (
+                {(isPatient || isAi) && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: isPatient ? '#0F766E' : '#4F46E5' }}>
+                    {isPatient ? t('sim.patientLabel', 'Bemor') : t('sim.aiLabel', 'AI')}
+                  </span>
+                )}
+                {msg.evaluation && !msg.loading && (
                   <span style={{
                     alignSelf: 'flex-start',
                     background: msg.evaluation.type === 'wrong' ? '#FEE2E2' : '#DCFCE7',
@@ -582,18 +845,36 @@ export default function CaseSimulationRoom({
                   </span>
                 )}
                 <div style={{
-                  background: '#FFFFFF', borderRadius: '4px 18px 18px 18px', border: '1px solid #E2E8F0',
-                  padding: '10px 14px', color: '#1E293B', fontSize: 14, fontWeight: 500, lineHeight: 1.5,
-                  whiteSpace: 'pre-line', display: 'flex', alignItems: 'flex-start', gap: 8,
+                  background: msg.loading ? '#EEF2FF' : '#FFFFFF',
+                  borderRadius: '4px 18px 18px 18px',
+                  border: msg.loading ? '1px solid #C7D2FE' : '1px solid #E2E8F0',
+                  padding: '10px 14px',
+                  color: msg.loading ? '#4338CA' : '#1E293B',
+                  fontSize: 14,
+                  fontWeight: msg.loading ? 600 : 500,
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-line',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
                 }}>
+                  {msg.loading && (
+                    <span aria-hidden style={{ display: 'flex', gap: 4, paddingTop: 6, flexShrink: 0 }}>
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} style={{
+                          width: 6, height: 6, borderRadius: '50%', background: '#6366F1',
+                          animation: `sim-typing 1s ease-in-out ${i * 0.18}s infinite`,
+                        }} />
+                      ))}
+                    </span>
+                  )}
                   <span style={{ flex: 1, wordBreak: 'break-word' }}>{msg.text}</span>
-                  {msg.audioBase64 && replayButton(msg)}
                 </div>
               </div>
             );
           })}
 
-          {sending && (
+          {sending && !sessionEnded && (
             <div aria-live="polite" style={{
               alignSelf: 'flex-start', background: '#FFFFFF', border: '1px solid #E2E8F0',
               borderRadius: '4px 18px 18px 18px', padding: '12px 16px', display: 'flex', gap: 5,
@@ -609,40 +890,48 @@ export default function CaseSimulationRoom({
           <div ref={chatBottomRef} />
         </div>
 
-        {/* Event type (backend: question | exam | lab | imaging | medication | procedure) */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6 }}>
-          {[
-            ['question', t('sim.type.question', 'Savol')],
-            ['exam', t('sim.type.exam', "Ko'rik")],
-            ['lab', t('sim.type.lab', 'Tahlil')],
-            ['imaging', t('sim.type.imaging', 'Instrumental')],
-            ['medication', t('sim.type.medication', 'Dori')],
-            ['procedure', t('sim.type.procedure', 'Protsedura')],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setEventType(value)}
-              className={`ui-chip${eventType === value ? ' active' : ''}`}
-              style={{
-                flexShrink: 0, padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                border: `1px solid ${eventType === value ? '#16A34A' : '#E2E8F0'}`,
-                background: eventType === value ? '#16A34A' : '#FFFFFF',
-                color: eventType === value ? '#FFFFFF' : '#334155',
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        {sessionEnded && analysisReady && onNextCase ? (
+          <button
+            type="button"
+            id="btn-next-case"
+            disabled={loadingNext}
+            onClick={async () => {
+              setLoadingNext(true);
+              try { await onNextCase(); } finally { setLoadingNext(false); }
+            }}
+            style={{
+              width: '100%',
+              height: 52,
+              borderRadius: 18,
+              background: '#16A34A',
+              border: 'none',
+              boxShadow: 'var(--shadow-sm)',
+              color: '#FFFFFF',
+              fontSize: 15,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              cursor: loadingNext ? 'wait' : 'pointer',
+              opacity: loadingNext ? 0.7 : 1,
+              fontFamily: 'inherit',
+            }}
+          >
+            {t('debrief.nextCase', 'Keyingisi')}
+            <ArrowRight size={20} strokeWidth={2.6} />
+          </button>
+        ) : (<>
+        {/* Input: full diagnosis answer (counts as one attempt) */}
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', padding: '0 4px' }}>
+          {t('sim.taskHint', 'To‘liq tashxis va davolash rejangizni yozing. Har bir yuborish 1 urinish.')}
         </div>
-
-        {/* Input */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handlePerformAction(inputText, eventType);
+            handlePerformAction(inputText);
           }}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
+          style={{ display: 'flex', alignItems: 'flex-end', gap: 8, width: '100%' }}
         >
           <button
             type="button"
@@ -670,18 +959,28 @@ export default function CaseSimulationRoom({
             {recording ? <Square size={16} fill="#fff" /> : <Mic size={20} />}
           </button>
 
-          <input
-            type="text"
+          <textarea
             value={inputText}
             disabled={inputBlocked}
+            rows={answerRows}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder={recording ? t('sim.recording', 'Yozilmoqda...') : t('sim.orderPlaceholder')}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+              e.preventDefault();
+              if (!inputBlocked && inputText.trim()) handlePerformAction(inputText);
+            }}
+            placeholder={recording
+              ? t('sim.recording', 'Yozilmoqda...')
+              : noAttemptsLeft
+                ? t('sim.noAttempts', 'Urinishlar tugadi')
+                : t('sim.orderPlaceholder', 'Tashxis, asoslash va davolash rejasini yozing...')}
             style={{
               flex: 1,
               minWidth: 0,
-              height: 48,
-              padding: '0 18px',
-              borderRadius: 99,
+              minHeight: 48,
+              maxHeight: 160,
+              padding: '12px 16px',
+              borderRadius: 18,
               background: '#FFFFFF',
               border: '1px solid #CBD5E1',
               fontSize: 14,
@@ -689,6 +988,9 @@ export default function CaseSimulationRoom({
               color: '#0F172A',
               outline: 'none',
               boxSizing: 'border-box',
+              resize: 'none',
+              lineHeight: 1.45,
+              fontFamily: 'inherit',
               opacity: inputBlocked ? 0.7 : 1,
             }}
           />
@@ -718,13 +1020,8 @@ export default function CaseSimulationRoom({
             <ArrowRight size={20} strokeWidth={2.6} />
           </button>
         </form>
+        </>)}
       </div>
-
-      <ClinicalHintModal
-        isOpen={hintModalOpen}
-        onClose={() => setHintModalOpen(false)}
-        hintText={t('sim.hintDefault')}
-      />
 
       <style>{`
         @keyframes sim-typing { 0%,100% { transform: translateY(0); opacity: 0.4; } 50% { transform: translateY(-4px); opacity: 1; } }

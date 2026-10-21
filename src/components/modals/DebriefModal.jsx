@@ -1,13 +1,10 @@
 import {
-  AlertTriangle,
-  CheckCircle2,
+  ChevronRight,
   RotateCcw,
   Share2,
   Sparkles,
   X,
-  XCircle,
   Zap,
-  Stethoscope,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
@@ -15,6 +12,7 @@ export default function DebriefModal({
   debriefData,
   onClose,
   onRetryCase,
+  onNextCase,
 }) {
   const { t } = useTranslation();
   if (!debriefData) return null;
@@ -22,6 +20,9 @@ export default function DebriefModal({
   const score = debriefData.final_score ?? 0;
   const xp = debriefData.xp_earned ?? 0;
   const coins = debriefData.coins_earned ?? 0;
+  const tokensUsed = debriefData.tokens_used ?? 0;
+  const coinsSpent = debriefData.coins_spent ?? 0;
+  const showUsage = tokensUsed > 0 || coinsSpent > 0;
   const isSuccess = score >= 75;
 
   const handleShare = async () => {
@@ -261,167 +262,68 @@ export default function DebriefModal({
           </div>
         </div>
 
-        {/* Detailed AI Breakdown Sections */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          
-          {/* Correct Steps */}
-          {debriefData.correct_steps && debriefData.correct_steps.length > 0 && (
-            <div style={{
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
-              boxShadow: 'var(--shadow-sm)',
-              borderRadius: 16,
-              padding: '16px 18px',
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                color: '#15803D',
-                fontWeight: 700,
-                fontSize: '14px',
-                marginBottom: 10,
-              }}>
-                <CheckCircle2 size={18} strokeWidth={2.4} />
-                <span>{t('debrief.correctActions', "To'g'ri va o'z vaqtida bajarilgan harakatlar:")}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {debriefData.correct_steps.map((step, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '13px', color: '#166534', fontWeight: 600, lineHeight: 1.4 }}>
-                    <span style={{ color: '#22C55E', fontWeight: 700, marginTop: 1 }}>•</span>
-                    <span>{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Incorrect / Missed Steps */}
-          {debriefData.incorrect_steps && debriefData.incorrect_steps.length > 0 && (
-            <div style={{
-              background: '#FEF2F2',
-              border: '1px solid #FECACA',
-              boxShadow: 'var(--shadow-sm)',
-              borderRadius: 16,
-              padding: '16px 18px',
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                color: '#DC2626',
-                fontWeight: 700,
-                fontSize: '14px',
-                marginBottom: 10,
-              }}>
-                <XCircle size={18} strokeWidth={2.4} />
-                <span>{t('debrief.errors', "Kechiktirilgan yoki xato qadamlar:")}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {debriefData.incorrect_steps.map((step, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '13px', color: '#991B1B', fontWeight: 600, lineHeight: 1.4 }}>
-                    <span style={{ color: '#EF4444', fontWeight: 700, marginTop: 1 }}>•</span>
-                    <span>{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Weak Topics */}
-          {debriefData.weak_topics && debriefData.weak_topics.length > 0 && (
-            <div style={{
-              background: '#FFFBEB',
-              border: '1px solid #FDE68A',
-              boxShadow: 'var(--shadow-sm)',
-              borderRadius: 16,
-              padding: '16px 18px',
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                color: '#B45309',
-                fontWeight: 700,
-                fontSize: '14px',
-                marginBottom: 10,
-              }}>
-                <AlertTriangle size={18} strokeWidth={2.4} />
-                <span>{t('debrief.weakTopics', "Rivojlantirish kerak bo'lgan mavzular:")}</span>
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {debriefData.weak_topics.map((topic, idx) => (
-                  <span
-                    key={idx}
-                    style={{
-                      background: '#FFFFFF',
-                      border: '1px solid #FCD34D',
-                      borderRadius: 12,
-                      padding: '6px 12px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      color: '#92400E',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  >
-                    {topic}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Clinical Protocol / Guidelines Note */}
-          {debriefData.guideline_notes && (
-            <div style={{
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              boxShadow: 'var(--shadow-sm)',
-              borderRadius: 16,
-              padding: '16px 18px',
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                color: '#0F172A',
-                fontWeight: 700,
-                fontSize: '14px',
-                marginBottom: 6,
-              }}>
-                <Stethoscope size={18} color="#2563EB" strokeWidth={2.2} />
-                <span>{t('debrief.protocolNotes', 'Klinik protokol va tavsiyalar:')}</span>
-              </div>
-              <p style={{
-                margin: 0,
-                fontSize: '13px',
-                color: '#475569',
-                fontWeight: 500,
-                lineHeight: 1.5,
-              }}>
-                {debriefData.guideline_notes}
-              </p>
-            </div>
-          )}
-        </div>
+        {showUsage && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 16,
+            flexWrap: 'wrap',
+            fontSize: 13,
+            fontWeight: 700,
+            color: '#475569',
+          }}>
+            {tokensUsed > 0 && (
+              <span>{t('debrief.tokensUsed', 'Token')}: {tokensUsed}</span>
+            )}
+            {coinsSpent > 0 && (
+              <span>🪙 {t('debrief.coinsSpent', 'Sarflangan tanga')}: {coinsSpent}</span>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons Row */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: onRetryCase ? '1fr 1fr auto' : '1fr auto',
+          display: 'flex',
+          flexWrap: 'wrap',
           gap: 10,
           marginTop: 6,
         }}>
-          {onRetryCase && (
+          {onNextCase && (
             <button
-              onClick={onRetryCase}
+              id="btn-next-case-debrief"
+              onClick={onNextCase}
               style={{
+                flex: '1 1 140px',
                 padding: '14px',
                 borderRadius: 16,
                 background: '#16A34A',
                 border: '1px solid #16A34A',
                 boxShadow: 'var(--shadow-sm)',
                 color: '#FFFFFF',
+                fontWeight: 700,
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              {t('case.nextCase', 'Keyingi')}
+              <ChevronRight size={16} strokeWidth={2.4} />
+            </button>
+          )}
+          {onRetryCase && (
+            <button
+              onClick={onRetryCase}
+              style={{
+                flex: '1 1 140px',
+                padding: '14px',
+                borderRadius: 16,
+                background: '#FFFFFF',
+                border: '1px solid #16A34A',
+                boxShadow: 'var(--shadow-sm)',
+                color: '#15803D',
                 fontWeight: 700,
                 fontSize: '14px',
                 cursor: 'pointer',
@@ -439,6 +341,7 @@ export default function DebriefModal({
           <button
             onClick={onClose}
             style={{
+              flex: '1 1 120px',
               padding: '14px',
               borderRadius: 16,
               background: '#FFFFFF',

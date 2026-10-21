@@ -7,6 +7,12 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '439240484061-ujut1a9arhm8q83d3dsga7ruhfrjpcmf.apps.googleusercontent.com';
 
+try {
+  const tg = window.Telegram?.WebApp;
+  tg?.ready?.();
+  tg?.expand?.();
+} catch { /* not running inside Telegram */ }
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>

@@ -1,15 +1,18 @@
 # 📱 Mobil ilova API — Frontend uchun qo'llanma
 
-> **Diqqat:** bu fayl `api/docs/swagger.json` asosida avtomatik generatsiya qilingan
-> (`scripts/gen_api_doc.py` skripti orqali — qo'lda tahrirlamang, backend o'zgarsa qayta
-> generatsiya qilinadi: `swag init -g api/api.go -o api/docs && python3 scripts/gen_api_doc.py`).
->
-> - **Base URL:** deploy qilingan domen (masalan `https://prod.tibstation.uz`), path'lar shu yerda ko'rsatilganidek qo'shiladi (masalan `/mobile/category`).
-> - **Auth:** login/OTP oqimi orqali (`POST /mobile/auth/google` yoki `/mobile/auth/user/otp/*`) olingan `access_token`ni `Authorization: Bearer <access_token>` header bilan yuboring. Token muddati tugasa (`401 "access token expired"`), `POST /auth/token/refresh` ga `{"refresh_token": "..."}` yuborib yangi juft token oling (bu endpoint `/mobile` ostida emas, root'da).
-> - **Til:** ko'p javoblarda matnlar tilga bog'liq bo'lsa, `Accept-Language: uz|ru|en` header yuboriladi (default `uz`).
-> - **Pagination:** ro'yxat endpointlari odatda `limit`, `page` query parametr oladi.
-> - **Xatolik formati:** xatolik bo'lsa `4xx/5xx` status + `{"error": "..."}` shaklidagi JSON qaytadi.
-> - Pastdagi "Auth" qatori shu endpoint uchun haqiqatda routerda auth middleware borligini bildiradi (`api/api.go`dagi guruhlashga qarab tekshirilgan, ba'zi joylarda swagger annotatsiyasidan ko'ra ishonchliroq).
+User-web / mobil ilova uchun **yagona API shartnomasi**. Swagger ro'yxati asos,
+lekin javob maydonlari, xato kodlari va oqim qoidalari (ovoz, auto-finish,
+urinishlar) shu yerda to'liq yuritiladi.
+
+- **Base URL:** deploy qilingan domen (masalan `https://prod.tibstation.uz`), path'lar shu yerda ko'rsatilganidek qo'shiladi (masalan `/mobile/category`).
+- **Auth:** login/OTP oqimi orqali (`POST /mobile/auth/google` yoki `/mobile/auth/user/otp/*`) olingan `access_token`ni `Authorization: Bearer <access_token>` header bilan yuboring. Token muddati tugasa (`401 "access token expired"`), `POST /auth/token/refresh` ga `{"refresh_token": "..."}` yuborib yangi juft token oling (bu endpoint `/mobile` ostida emas, root'da).
+- **Til:** ko'p javoblarda matnlar tilga bog'liq bo'lsa, `Accept-Language: uz|ru|en` header yuboriladi (default `uz`).
+- **Pagination:** ro'yxat endpointlari odatda `limit`, `page` query parametr oladi.
+- **Xatolik formati:** xatolik bo'lsa `4xx/5xx` status + `{"error": "..."}` shaklidagi JSON qaytadi.
+- **Simulyatsiya xatolari:** `404 session_not_found` — sessiya yo'q; `409 session_not_active` — allaqachon yakunlangan sessiyaga `/event` yoki `/finish` (xato UI emas, natijani ko'rsatish).
+- Pastdagi "Auth" qatori shu endpoint uchun haqiqatda routerda auth middleware borligini bildiradi.
+- Google login tugmasi: [`GOOGLE_AUTH_FRONTEND.md`](GOOGLE_AUTH_FRONTEND.md). FE endpoint holati: [`API_ENDPOINTS.md`](API_ENDPOINTS.md).
+- Telegram Mini App: `window.Telegram.WebApp.ready()` / `expand()` chaqirish tavsiya etiladi.
 
 ---
 
@@ -18,11 +21,12 @@
 
 ### `POST /mobile/auth/google`
 **Google orqali kirish (1 bosqichli)**
-BACKEND_STRUCTURE.md 1-bo'lim: Google ID token orqali bir bosqichli kirish
+Google Identity Services (GIS) tugmasi `id_token` beradi — qo'lda paste yo'q.
+To'liq FE ulash: [`GOOGLE_AUTH_FRONTEND.md`](GOOGLE_AUTH_FRONTEND.md).
 - Auth: kerak emas
 **Body** (GoogleLoginReq) (majburiy):
   - `id_token`: string
-  - `referral_code`: string
+  - `referral_code`: string (ixtiyoriy)
 **Javob (200):**
 - `access_token`: string
 - `id`: string
@@ -79,7 +83,7 @@ Returns user activity stats by type: day|week|month|year|range. For day: optiona
 
 ### `POST /mobile/user/activity`
 **Activity user**
-Activity user
+Frontend yozmasin — sessiya tugagach backend o'zi hisoblaydi. Faqat `GET` o'qiladi.
 - Auth: kerak (Bearer token)
 **Body** (UserActivityCreateBody) (majburiy):
   - `activity`: integer
@@ -95,6 +99,11 @@ Delete a profile
 
 ### `POST /mobile/user/device`
 **Push token ro'yxatdan o'tkazish (ko'p qurilma support)**
+Backend faqat tokenni saqlaydi. Topic obunasini frontend FCM SDK orqali o'zi qiladi
+(`<lang>` = `uz` | `ru` | `en`):
+- `all_<lang>` — broadcast
+- `user_<userId>_<lang>` — shaxsiy (to'lov, study-plan eslatma)
+Til o'zgaganda eski topic'dan `unsubscribe`, yangisiga `subscribe`; logout'da ikkalasidan chiqish.
 - Auth: kerak (Bearer token)
 **Body** (object) (majburiy):
   - `fcm_token`: string
@@ -137,6 +146,7 @@ Get user profile
 - `remaining`: integer
 - `total`: integer
 - `used`: integer
+- `coins_per_1k_tokens`: number (`case_coin_cost` o'rniga; `0` = tanga yechilmaydi)
 
 ### `GET /mobile/user/rating`
 **Reyting (leaderboard) olish**
@@ -185,9 +195,14 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `Accept-Language` (header, string, default=`uz`): Language (uz|ru|en)
-**Javob (200):**
-- `categories`: CategoryMobileRes[]
-- `count`: integer
+**Javob (200):** paginated (swagger `categories`/`count` o'rniga live shu shakl)
+- `data`: CategoryMobileRes[]
+- `total`: integer
+- `page`: integer
+- `limit`: integer
+- `total_pages`: integer
+- `has_previous`: boolean
+- `has_next`: boolean
 
 ### `GET /mobile/category/{id}`
 **Get category by ID (mobile)**
@@ -232,7 +247,7 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `page` (query, integer): Page
 - `Accept-Language` (header, string, default=`uz`): Language (uz|ru|en)
 **Javob (200):**
-- `cases`: CaseMobileRes[]
+- `cases`: CaseMobileRes[] (`max_attempts` — yangi case'lar default 1)
 - `count`: integer
 
 ### `GET /mobile/case/random`
@@ -240,6 +255,9 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `Accept-Language` (header, string, default=`uz`): Language (uz|ru|en)
+- `category_id` (query, string): Bo'lim bo'yicha random
+- `topic_id` (query, string): Mavzu bo'yicha random ("Keyingi"); yechilmaganlari birinchi
+- `exclude_id` (query, string): Joriy case id — takrorlanmasin
 **Javob (200):**
 - `category_id`: string
 - `category_name`: string
@@ -249,6 +267,7 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `expected_duration_minutes`: integer
 - `id`: string
 - `is_favorite`: boolean
+- `max_attempts`: integer (yangi case'lar default 1)
 - `patient_age`: integer
 - `patient_gender`: string
 - `status`: string
@@ -272,6 +291,7 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `expected_duration_minutes`: integer
 - `id`: string
 - `is_favorite`: boolean
+- `max_attempts`: integer (yangi case'lar default 1)
 - `patient_age`: integer
 - `patient_gender`: string
 - `status`: string
@@ -290,7 +310,7 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `page` (query, integer): Page
 - `Accept-Language` (header, string, default=`uz`): Language (uz|ru|en)
 **Javob (200):**
-- `cases`: CaseMobileRes[]
+- `cases`: CaseMobileRes[] (`max_attempts` — yangi case'lar default 1)
 - `count`: integer
 
 ### `POST /mobile/favorite`
@@ -308,20 +328,22 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `count`: integer
-- `sessions`: SimulationSessionRes[]
+- `sessions`: SimulationSessionRes[] (`max_attempts`, `attempts_used`)
 
 ### `GET /mobile/simulation/ongoing`
 **Profile -> Ongoing (BACKEND_STRUCTURE.md 1-bo'lim)**
+Davom ettirilganda urinish hisoblagichini tiklash uchun `max_attempts` + `attempts_used`.
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `count`: integer
-- `sessions`: SimulationSessionRes[]
+- `sessions`: SimulationSessionRes[] (`max_attempts`, `attempts_used`)
 
 ### `POST /mobile/simulation/start`
 **Sessiyani boshlash (BACKEND_STRUCTURE.md 4-bo'lim)**
 - Auth: kerak (Bearer token)
 **Body** (object) (majburiy):
   - `case_id`: string
+  - `use_coins`: boolean (ixtiyoriy) — kunlik limit tugaganda tanga hisobidan boshlash. Oldindan narx yechilmaydi; balans `> 0` bo'lishi kerak, aks holda `insufficient_coins`. Premium va bepul urinishda yuborilmaydi.
 **Javob (200):**
 - `case_id`: string
 - `health_percent`: integer
@@ -330,6 +352,8 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `time_limit_seconds`: integer
 - `visual_state`: string
 - `ws_url`: string
+- `max_attempts`: integer
+- `attempts_used`: integer
 
 ### `GET /mobile/simulation/{id}`
 - Auth: kerak (Bearer token)
@@ -347,24 +371,51 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `status`: string
 - `user_id`: string
 - `xp_earned`: integer
+- `max_attempts`: integer
+- `attempts_used`: integer
 
 ### `POST /mobile/simulation/{id}/event`
-**Anamnez/ko'rik/tahlil/dori qadamini yuborish (BACKEND_STRUCTURE.md 4-bo'lim)**
+**Tashxis javobi / ovozli urinish yuborish**
+Joriy user-web faqat `type: "question"` yuboradi (to'liq tashxis). Urinishlar
+faqat `question` (matn va ovoz) da hisoblanadi; `exam|lab|imaging|medication|procedure`
+hisoblanmaydi.
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `id` (path, string) (majburiy): Session ID
 **Body** (SimulationEventReq) (majburiy):
-  - `payload`: object (key->object)
   - `session_id`: string
-  - `type`: string
+  - `type`: string (`question` — urinish hisoblanadi)
+  - `payload`: object
+    - matn: `question` turida `{ "question": "..." }`, boshqa turlarda `{ "text": "..." }`
+    - ovoz (matn o'rniga): `audio_base64` (raw base64, data URL prefiksisiz), `audio_mime` (ixtiyoriy, default `audio/webm`)
 **Javob (200):**
 - `health_delta`: integer
 - `health_percent`: integer
 - `is_correct`: boolean
-- `response`: object (key->object)
+- `max_attempts`: integer
+- `attempts_used`: integer
+- `attempts_left`: integer
+- `tokens_used`: integer (sessiya bo'yicha jami token)
+- `coins_spent`: integer (sessiya bo'yicha yechilgan tanga, `reason=ai_usage`)
+- `session_ended`: boolean (`health_percent=0`, `attempts_left=0` yoki to'g'ri javob)
+- `finish_result`: object (faqat `session_ended: true` da) — `session_id`, `final_score`, `xp_earned`, `coins_earned`, `debrief_ready`, `tokens_used`, `coins_spent`
+- `response`: object
+  - `patient_reply` / `feedback`: string (AI tahlili; FE chatda AI sifatida ko'rsatadi)
+  - `transcript`: string (ovozdan Gemini STT matni)
+  - `transcribe_error` / `patient_reply_error` / `feedback_error`: o'zbekcha xabar (*"AI xizmati hozir band yoki vaqtincha ishlamayapti. Birozdan so'ng qayta urinib ko'ring."*)
+  - `reply_audio_base64` / `reply_audio_mime`: Gemini TTS (`audio/wav`); xabar obyektida saqlab replay qilish
+**Xatolar:** `404 session_not_found`; `409 session_not_active`; `insufficient_coins` (balans 0 — keyingi event)
+**Auto-finish:** `health_percent` 0 bo'lsa backend `finish(reason="health_zero")` chaqiradi.
+`attempts_left = 0` — `failed`, tanga yo'q. To'g'ri javob — limitdan oldin ham `session_ended: true`.
+`session_ended: true` bo'lsa FE inputni yopadi va **qo'lda `PUT /finish` chaqirmaydi**.
+
+Ovoz: brauzer `SpeechRecognition` / `speechSynthesis` ishlatilmaydi. Mikrofon
+`MediaRecorder` → `audio_base64`. Javob audiosi `reply_audio_base64`.
 
 ### `PUT /mobile/simulation/{id}/finish`
 **Sessiyani yakunlash (BACKEND_STRUCTURE.md 4,5-bo'lim)**
+`reason`: `manual` | `health_zero` | `timeout`. Auto-finish bo'lgan sessiyaga
+qayta chaqirilsa **`409 session_not_active`** — xato UI emas, natijani ko'rsatish.
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `id` (path, string) (majburiy): Session ID
@@ -376,6 +427,8 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `final_score`: integer
 - `session_id`: string
 - `xp_earned`: integer
+- `tokens_used`: integer
+- `coins_spent`: integer
 
 ### `GET /mobile/simulation/{id}/ws`
 **Real-vaqt vitallar monitori (BACKEND_STRUCTURE.md 4-bo'lim, WebSocket)**
@@ -387,6 +440,18 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 
 ### `GET /mobile/debrief/{session_id}`
 **AI orqali Debriefing hisoboti (BACKEND_STRUCTURE.md 5-bo'lim)**
+Sessiya yopilgan va report yo‘q bo‘lsa, shu GET generatsiya qiladi (5–15 s).
+FE so‘rov taymauti 30 s, umumiy poll 50 s.
+
+**404 + `error.slug`:**
+- `debrief_not_ready` — sessiya hali faol, FE poll davom etadi
+- `debrief_failed` — AI hisobot yarata olmadi, FE poll **to‘xtaydi**
+- `session_not_found` — FE poll **to‘xtaydi**
+
+Eski 400 “not found” o‘rniga 404 + slug. `PUT /finish` auto-finish’dan keyin **409 `session_not_active`**.
+`final_score` sof `health_percent` emas: har bir `incorrect_steps` elementi uchun
+10% jarima (masalan health=80%, 2 xato → 60%). XP/coin shu ballga mutanosib.
+Frontend alohida hisoblamaydi.
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `session_id` (path, string) (majburiy): Session ID
@@ -400,13 +465,16 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 - `session_id`: string
 - `weak_topics`: string[]
 - `xp_earned`: integer
+- `tokens_used`: integer
+- `coins_spent`: integer
 
 ## Sozlamalar (limit, ovoz)
 
 ### `GET /mobile/setting/voice`
-**Ovozli funksiya (shikoyat/chat matnini o'qib berish) global yoqilganmi**
-Audio backendda generatsiya qilinmaydi - frontend shu bayroqqa qarab
-qurilma TTS'idan (device text-to-speech) foydalanadi yoki yashiradi.
+**Ovozli funksiya global yoqilganmi**
+`enabled: false` bo'lsa FE mikrofon/TTS UI ni yashiradi. Yoqilganda audio
+backendda Gemini STT+TTS orqali `/event` javobidagi `reply_audio_base64` dan
+keladi (brauzer `speechSynthesis` asosiy yo'l emas).
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `enabled`: boolean
@@ -483,6 +551,8 @@ Get a tariff by their ID
 
 ### `PUT /mobile/study-plan`
 **O'quv rejasi va eslatma vaqtini belgilash (BACKEND_STRUCTURE.md 2-bo'lim)**
+Cron `remind_time` / `remind_minutes_before` da push yuboradi (`EventStudyReminder`).
+FE alohida cron qilmaydi — push'ni UI da ko'rsatish kifoya.
 - Auth: kerak (Bearer token)
 **Body** (StudyPlanUpsertReq) (majburiy):
   - `is_enabled`: boolean

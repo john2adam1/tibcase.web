@@ -69,6 +69,47 @@ export function playBase64Audio(base64, mime = 'audio/wav') {
   return audio.play().catch(() => notifyPlayback(false));
 }
 
+const TTS_LANG = { ru: 'ru-RU', en: 'en-US' };
+
+function pickVoice(langCode) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices() || [];
+  const prefix = String(langCode || '').slice(0, 2).toLowerCase();
+  return voices.find((v) => v.lang?.toLowerCase().startsWith(prefix)) || null;
+}
+
+/** Brauzerda o‘zbek ovozi yo‘q — faqat ru/en. O‘zbekcha Gemini `reply_audio_base64`. */
+export function speakText(text, lang = 'uz') {
+  const trimmed = String(text || '').trim();
+  const langCode = TTS_LANG[lang];
+  if (!trimmed || !langCode || typeof window === 'undefined' || !window.speechSynthesis) {
+    return Promise.resolve();
+  }
+  stopPlayback();
+  const utterance = new SpeechSynthesisUtterance(trimmed);
+  utterance.lang = langCode;
+  const voice = pickVoice(langCode);
+  if (voice) utterance.voice = voice;
+  utterance.rate = 1;
+  return new Promise((resolve) => {
+    utterance.onstart = () => notifyPlayback(true);
+    utterance.onend = () => {
+      notifyPlayback(false);
+      resolve();
+    };
+    utterance.onerror = () => {
+      notifyPlayback(false);
+      resolve();
+    };
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
+export function speakReply({ audioBase64, audioMime, text, lang = 'uz' } = {}) {
+  if (audioBase64) return playBase64Audio(audioBase64, audioMime || 'audio/wav');
+  return speakText(text, lang);
+}
+
 export async function startMicRecorder() {
   if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
     throw new Error('Mikrofon ushbu brauzerda qo‘llab-quvvatlanmaydi');

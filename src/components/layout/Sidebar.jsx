@@ -8,10 +8,12 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
+import UserAvatar from '../common/UserAvatar.jsx';
 
 export default function Sidebar({
   currentView,
   setCurrentView,
+  user,
   onOpenProfile,
   onLogout,
   isOpen = false,
@@ -106,8 +108,19 @@ export default function Sidebar({
                   textAlign: 'left',
                 }}
               >
-                <Icon size={24} strokeWidth={2.2} color={isActive ? '#FFFFFF' : 'var(--text-muted)'} />
-                <span>{item.label}</span>
+                {item.id === 'profile' ? (
+                  <>
+                    <UserAvatar name={String(user?.name || '').trim()} src={user?.image_url} size={32} />
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {String(user?.name || '').trim() || item.label}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Icon size={24} strokeWidth={2.2} color={isActive ? '#FFFFFF' : 'var(--text-muted)'} />
+                    <span>{item.label}</span>
+                  </>
+                )}
                 {isActive && <span style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#FFFFFF' }} />}
               </button>
             );
@@ -115,6 +128,7 @@ export default function Sidebar({
         </nav>
       </div>
 
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <button
         id="btn-sidebar-logout"
         onClick={() => { if (onLogout) onLogout(); onClose(); }}
@@ -127,6 +141,7 @@ export default function Sidebar({
         <LogOut size={24} strokeWidth={2.2} />
         <span>{t('profile.logout', 'Tizimdan chiqish')}</span>
       </button>
+      </div>
     </aside>
   );
 

@@ -58,6 +58,7 @@ export interface UserLimitRes {
   remaining: number;
   total: number;
   used: number;
+  coins_per_1k_tokens?: number;
 }
 
 export interface ActivityStatItem {
@@ -100,6 +101,7 @@ export interface CategoryMobileRes {
   audience?: string;
   cases_count?: number;
   icon_url?: string;
+  image_url?: string;
   order_num?: number;
 }
 
@@ -127,16 +129,24 @@ export interface CaseMobileRes {
   category_name?: string;
   topic_id?: string;
   topic_name?: string;
+  max_attempts?: number;
 }
 
 export interface CaseVitals {
   hr?: number;
+  heart_rate?: number;
+  bp?: string;
   bp_sys?: number;
   bp_dia?: number;
   spo2?: number;
   rr?: number;
   temp?: number;
+  temperature?: number;
   rhythm?: string;
+  gcs?: number;
+  pain?: number | string;
+  pain_score?: number | string;
+  nrs?: number | string;
   [key: string]: any;
 }
 
@@ -148,6 +158,8 @@ export interface SimulationStartRes {
   time_limit_seconds?: number;
   visual_state?: string;
   ws_url?: string;
+  max_attempts?: number;
+  attempts_used?: number;
 }
 
 export interface SimulationSessionRes {
@@ -162,6 +174,8 @@ export interface SimulationSessionRes {
   final_score?: number;
   started_at?: string;
   ended_at?: string;
+  max_attempts?: number;
+  attempts_used?: number;
 }
 
 export interface SimulationEventResponse {
@@ -184,6 +198,11 @@ export interface SimulationEventRes {
   session_ended?: boolean;
   finish_result?: SimulationFinishRes;
   response?: SimulationEventResponse;
+  max_attempts?: number;
+  attempts_used?: number;
+  attempts_left?: number;
+  tokens_used?: number;
+  coins_spent?: number;
 }
 
 export interface SimulationFinishRes {
@@ -192,6 +211,8 @@ export interface SimulationFinishRes {
   coins_earned: number;
   xp_earned: number;
   debrief_ready: boolean;
+  tokens_used?: number;
+  coins_spent?: number;
 }
 
 export interface DebriefReportRes {
@@ -199,6 +220,8 @@ export interface DebriefReportRes {
   final_score: number;
   coins_earned: number;
   xp_earned: number;
+  tokens_used?: number;
+  coins_spent?: number;
   correct_steps?: string[];
   incorrect_steps?: string[];
   weak_topics?: string[];

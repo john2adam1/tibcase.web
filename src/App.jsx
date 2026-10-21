@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   api,
   getToken,
@@ -9,6 +9,7 @@ import {
   setStoredUser,
   setOnUnauthorized,
   isSessionNotActiveError,
+  isInsufficientCoinsError,
   registerStoredFcmDevice,
 } from './api';
 // Views
@@ -17,7 +18,6 @@ import LandingPage from './views/LandingPage';
 import HomeView from './views/HomeView';
 import CategoriesView from './views/CategoriesView';
 import RoadmapView from './views/RoadmapView';
-import CaseDetailsView from './views/CaseDetailsView';
 import CaseSimulationRoom from './views/CaseSimulationRoom';
 import Leaderboard from './views/Leaderboard';
 import ProfileView from './views/ProfileView';
@@ -38,11 +38,7 @@ import ProfileModal from './components/modals/ProfileModal';
 import QuickGuideModal from './components/modals/QuickGuideModal';
 import DebriefModal from './components/modals/DebriefModal';
 
-// Common UI
-import PreparingCaseLoader from './components/common/PreparingCaseLoader';
-
 import {
-  Crown,
   ChevronRight,
   X,
 } from 'lucide-react';
@@ -69,7 +65,6 @@ export default function App() {
   const [currentView, setCurrentView] = useState('cases'); // 'cases' | 'simulation' | 'store' | 'leaderboard'
   const [activeMode, setActiveMode] = useState('clinical'); // 'clinical' | 'citizen'
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [caseDetailBackView, setCaseDetailBackView] = useState('roadmap');
   const [casesHubSubTab, setCasesHubSubTab] = useState('categories');
   const [notificationsBackView, setNotificationsBackView] = useState('cases');
 
@@ -100,9 +95,7 @@ export default function App() {
         setSidebarOpen(false);
         return;
       }
-      if (currentView === 'case-details') {
-        setCurrentView(caseDetailBackView || 'roadmap');
-      } else if (currentView === 'roadmap') {
+      if (currentView === 'roadmap') {
         setCurrentView('clinics');
       } else if (currentView === 'clinics') {
         setCurrentView('cases');
@@ -129,7 +122,7 @@ export default function App() {
     return () => {
       tg.BackButton.offClick(handleTelegramBack);
     };
-  }, [currentView, sidebarOpen, notificationsBackView, caseDetailBackView]);
+  }, [currentView, sidebarOpen, notificationsBackView]);
 
   // Foreground push: refresh the in-app notification list when a message arrives
   useEffect(() => {
@@ -164,17 +157,16 @@ export default function App() {
     return getStoredUser();
   });
   const [categories, setCategories] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [topicTotal, setTopicTotal] = useState(null);
   const [cases, setCases] = useState([]);
   const [tariffs, setTariffs] = useState([]);
-  const [partners, setPartners] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [abouts, setAbouts] = useState([]);
   const [banners, setBanners] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [userLimit, setUserLimit] = useState(null);
-  // True once the first bulk fetch has settled (success or failure); drives skeleton loaders
-  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Active Simulation states
   const [activeCase, setActiveCase] = useState(null);
@@ -183,8 +175,6 @@ export default function App() {
 
   // Roadmap & Case Flow states
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedRoadmapNode, setSelectedRoadmapNode] = useState(null);
-  const [isPreparingCase, setIsPreparingCase] = useState(false);
   const [showQuickGuide, setShowQuickGuide] = useState(false);
 
   // Modals (restore pending OTP modal if user recently navigated to Telegram bot to get code)
@@ -248,25 +238,30 @@ export default function App() {
           console.warn(`[load:${name}] failed`, { status: err?.status, message: err?.message });
           return fallback;
         };
+        api.getTopicTotal()
+          .then((n) => { if (isMounted && typeof n === 'number') setTopicTotal(n); })
+          .catch(warn('topics', null));
+        api.getLevels()
+          .then((list) => { if (isMounted && Array.isArray(list) && list.length) setLevels(list); })
+          .catch(warn('levels', []));
+
         const [
           profileData,
           catsData,
           casesData,
           limitData,
           tariffsData,
-          partnersData,
           faqsData,
           aboutsData,
           contactsData,
           bannersData,
-          notifData
+          notifData,
         ] = await Promise.all([
           api.getUserProfile().catch(warn('profile', null)),
           api.getCategories().catch(warn('categories', [])),
           api.getCases().catch(warn('cases', [])),
           api.getUserLimit().catch(warn('limit', null)),
           api.getTariffs().catch(warn('tariffs', [])),
-          api.getPartners().catch(warn('partners', [])),
           api.getFaqs().catch(warn('faqs', [])),
           api.getAbout().catch(warn('about', [])),
           api.getContacts().catch(warn('contacts', [])),
@@ -293,7 +288,6 @@ export default function App() {
             localStorage.setItem('tibcase_last_limit_date', getTodayDateStr());
           }
           if (tariffsData && tariffsData.length) setTariffs(tariffsData);
-          if (partnersData && partnersData.length) setPartners(partnersData);
           if (faqsData && faqsData.length) setFaqs(faqsData);
           if (aboutsData && aboutsData.length) setAbouts(aboutsData);
           if (contactsData && contactsData.length) setContacts(contactsData);
@@ -302,8 +296,6 @@ export default function App() {
         }
       } catch (err) {
         console.warn('Data load handled:', err.message);
-      } finally {
-        if (isMounted) setDataLoaded(true);
       }
     }
 
@@ -402,13 +394,13 @@ export default function App() {
 
   // Simulation Triggers
   // Starts a real backend session. Returns true only when the session was created.
-  const startBackendSession = async (caseItem) => {
+  const startBackendSession = async (caseItem, { useCoins = false } = {}) => {
     if (!caseItem?.id) {
       showToast(t('common.error', "Xatolik yuz berdi"));
       return false;
     }
     try {
-      const session = await api.startSimulation(caseItem.id);
+      const session = await api.startSimulation(caseItem.id, { useCoins });
       if (!session?.session_id) throw new Error('session_id missing');
       setActiveCase({
         ...caseItem,
@@ -417,24 +409,36 @@ export default function App() {
         initial_vitals: session.initial_vitals,
         ws_url: session.ws_url,
         time_limit_seconds: session.time_limit_seconds || 0,
+        max_attempts: session.max_attempts ?? caseItem.max_attempts,
+        attempts_used: session.attempts_used ?? 0,
         startedAt: Date.now(),
       });
-      // Sync limit/profile from backend instead of guessing locally
       api.getUserLimit().then(lim => { if (lim) setUserLimit(lim); }).catch(() => {});
       return true;
     } catch (err) {
+      if (isInsufficientCoinsError(err)) {
+        const userCoins = user?.coins || 0;
+        setLimitModal({
+          type: 'out_of_coins',
+          caseItem,
+          userCoins,
+          coinsPer1k: userLimit?.coins_per_1k_tokens,
+        });
+        showToast(t('sim.insufficientCoins', 'Tangalar yetarli emas'));
+        return false;
+      }
       showToast(err?.message || t('common.error', "Xatolik yuz berdi"));
       return false;
     }
   };
 
-  const handleStartSimulation = async (caseItem) => {
-    const ok = await startBackendSession(caseItem);
-    if (ok) setCurrentView('simulation');
-  };
+  const playedCaseIdsRef = useRef(new Set());
 
   // Free Tier Limit & Coins Gatekeeper
-  const checkLimitAndStartCase = async (caseItem) => {
+  const checkLimitAndStartCase = async (caseItem, { skipGuide = false } = {}) => {
+    if (!skipGuide) playedCaseIdsRef.current = new Set();
+    const startedId = (caseItem || selectedDetailCase)?.id;
+    if (startedId) playedCaseIdsRef.current.add(String(startedId));
     const target = caseItem || selectedDetailCase;
     if (!target) return;
 
@@ -461,7 +465,7 @@ export default function App() {
 
     const launchSimulation = async (sessionTarget) => {
       const ok = await startBackendSession(sessionTarget);
-      if (ok) setIsPreparingCase(true);
+      if (ok && !skipGuide) setShowQuickGuide(true);
     };
 
     // 1. If user has active Premium subscription -> Play unlimited!
@@ -476,31 +480,72 @@ export default function App() {
       return;
     }
 
-    // 3. Free daily limit is exhausted (0 remaining) -> Check coins!
-    const caseCost = target.coins_price || target.coins || target.coin_cost || 0;
+    // 3. Free daily limit exhausted — coins billed per AI usage, no upfront case price.
     const userCoins = user?.coins || 0;
-
-    if (userCoins >= caseCost) {
+    const coinsPer1k = effectiveLimit?.coins_per_1k_tokens;
+    if (userCoins > 0 && skipGuide) {
+      // Keyingi keys: tasdiqlash oynasisiz, to'g'ridan-to'g'ri tanga hisobidan davom etadi.
+      startBackendSession(target, { useCoins: true }).then((ok) => {
+        if (!ok) return;
+        api.getUserProfile().then((p) => { if (p) { setUser(p); setStoredUser(p); } }).catch(() => {});
+      });
+      return;
+    }
+    if (userCoins > 0) {
       setLimitModal({
         type: 'spend_coins',
         caseItem: target,
-        caseCost,
         userCoins,
+        coinsPer1k,
+        skipGuide,
       });
     } else {
       setLimitModal({
         type: 'out_of_coins',
         caseItem: target,
-        caseCost,
         userCoins,
+        coinsPer1k,
+        skipGuide,
       });
     }
   };
 
-  const handleStartSimulationFromHome = async ({ categoryId }) => {
+  const handleNextCase = async (fromCase) => {
+    const source = fromCase || activeCase || selectedDetailCase;
+    const topicId = source?.topic_id;
+    const excludeId = source?.id || source?._id;
+    if (!topicId) {
+      showToast(t('sim.noNextCase', 'Keyingi keys topilmadi'));
+      return;
+    }
+    try {
+      const played = playedCaseIdsRef.current;
+      if (excludeId) played.add(String(excludeId));
+      let targetCase = null;
+      for (let i = 0; i < 8; i += 1) {
+        const randomRes = await api.getRandomCase({ topicId, excludeId });
+        const candidate = randomRes?.data || randomRes || null;
+        if (candidate?.id && !played.has(String(candidate.id))) {
+          targetCase = candidate;
+          break;
+        }
+      }
+      if (!targetCase) {
+        showToast(t('sim.topicFinished', 'Bu mavzudagi keyslar tugadi'));
+        return;
+      }
+      setDebriefData(null);
+      setSelectedDetailCase(targetCase);
+      checkLimitAndStartCase(targetCase, { skipGuide: true });
+    } catch (err) {
+      showToast(err?.message || t('sim.noNextCase', 'Keyingi keys topilmadi'));
+    }
+  };
+
+  const handleStartSimulationFromHome = async ({ categoryId, topicId, difficulty } = {}) => {
     try {
       showToast(t('sim.preparingCase', 'Klinik keys tayyorlanmoqda...'));
-      const randomRes = await api.getRandomCase({ categoryId });
+      const randomRes = await api.getRandomCase({ categoryId, topicId, difficulty });
       const targetCase = randomRes?.data || randomRes || null;
 
       if (!targetCase) {
@@ -509,7 +554,9 @@ export default function App() {
       }
       checkLimitAndStartCase(targetCase);
     } catch (err) {
-      showToast(err?.message || t('common.error', "Xatolik yuz berdi"));
+      showToast(err?.status === 404
+        ? t('sim.caseNotFound', 'Bu tanlovda klinik keys topilmadi')
+        : (err?.message || t('common.error', "Xatolik yuz berdi")));
     }
   };
 
@@ -517,9 +564,12 @@ export default function App() {
     const sessionId = activeCase?.sessionId;
     const hasRealSession = Boolean(sessionId);
     const skipFinishApi = Boolean(result?.skipFinishApi || result?.sessionEnded);
+    const skipDebriefWait = Boolean(result?.skipDebriefWait);
 
     try {
-      showToast(t('sim.finishingSim', 'Simulyatsiya yakunlanmoqda...'));
+      if (!skipDebriefWait) {
+        showToast(t('sim.finishingSim', 'Simulyatsiya yakunlanmoqda...'));
+      }
 
       let finishResult = result?.finish_result || null;
       try {
@@ -538,49 +588,39 @@ export default function App() {
               debrief_ready: true,
             };
           } catch {
-            // already ended — continue to debrief
+            // already ended — continue to scores
           }
         } else if (!isSessionNotActiveError(err)) {
           console.warn('finishSimulation API error (continuing):', err.message);
         }
       }
 
-      // 2. AI Debriefing hisobotini olish
-      showToast(t('sim.preparingDebrief', 'AI Debriefing hisoboti tayyorlanmoqda...'));
-      let debrief = null;
-      if (hasRealSession) {
-        try {
-          debrief = await api.waitForDebrief(sessionId);
-        } catch (err) {
-          console.warn('getDebrief API error:', err.message);
-        }
-      }
-
-      // 3. Faqat backenddan kelgan qiymatlar
-      // The debrief can be generated before rewards are booked, so also read the
-      // final session record and use the first source that reports a positive value.
       let sessionRec = null;
       if (hasRealSession) {
         try { sessionRec = await api.getSimulation(sessionId); } catch { /* optional */ }
       }
-      const pick = (key) => {
-        const vals = [sessionRec?.[key], finishResult?.[key], debrief?.[key]].filter((v) => typeof v === 'number');
+      const pick = (key, extra) => {
+        const vals = [sessionRec?.[key], finishResult?.[key], extra]
+          .filter((v) => typeof v === 'number');
         return vals.find((v) => v > 0) ?? vals[0] ?? 0;
       };
-      const earnedXp = pick('xp_earned');
-      const earnedCoins = pick('coins_earned');
-      console.info('[simulation] rewards', { session: sessionRec && { xp: sessionRec.xp_earned, coins: sessionRec.coins_earned, status: sessionRec.status }, finish: finishResult && { xp: finishResult.xp_earned, coins: finishResult.coins_earned }, debrief: debrief && { xp: debrief.xp_earned, coins: debrief.coins_earned } });
+      const earnedXp = pick('xp_earned', result?.xp);
+      const earnedCoins = pick('coins_earned', result?.coins);
+      const usageTokens = [result?.tokens_used, finishResult?.tokens_used, sessionRec?.tokens_used]
+        .find((v) => typeof v === 'number') ?? 0;
+      const usageCoins = [result?.coins_spent, finishResult?.coins_spent, sessionRec?.coins_spent]
+        .find((v) => typeof v === 'number') ?? 0;
 
-      setDebriefData({
-        correct_steps: [],
-        incorrect_steps: [],
-        weak_topics: [],
-        guideline_notes: '',
-        ...(debrief || {}),
-        final_score: debrief?.final_score ?? sessionRec?.final_score ?? finishResult?.final_score ?? 0,
-        xp_earned: earnedXp,
-        coins_earned: earnedCoins,
-      });
+      if (!result?.silent) {
+        setDebriefData({
+          final_score: pick('final_score', result?.score),
+          xp_earned: earnedXp,
+          coins_earned: earnedCoins,
+          tokens_used: usageTokens,
+          coins_spent: usageCoins,
+          reason: result?.reason,
+        });
+      }
 
       // 6. Backenddan yangi profil va limit olish (haqiqiy qiymatlarni sinxronlash)
       try {
@@ -606,35 +646,9 @@ export default function App() {
         final_score: 0,
         xp_earned: 0,
         coins_earned: 0,
-        correct_steps: [],
-        incorrect_steps: [],
-        weak_topics: [],
-        guideline_notes: ""
+        tokens_used: 0,
+        coins_spent: 0,
       });
-    }
-  };
-
-
-  const handleToggleFavorite = async (caseId) => {
-    if (!caseId) return;
-    try {
-      const res = await api.toggleFavorite(String(caseId));
-      const isFav = res?.is_favorite ?? res?.data?.is_favorite;
-      setCases(prev => prev.map(c => (String(c.id) === String(caseId) || String(c._id) === String(caseId))
-        ? { ...c, is_favorite: isFav !== undefined ? isFav : !c.is_favorite }
-        : c
-      ));
-      setSelectedDetailCase(prev => {
-        if (prev && (String(prev.id) === String(caseId) || String(prev._id) === String(caseId))) {
-          return { ...prev, is_favorite: isFav !== undefined ? isFav : !prev.is_favorite };
-        }
-        return prev;
-      });
-      showToast(isFav ? t('fav.added', "Keys saqlanganlarga qo'shildi") : t('fav.removed', "Keys saqlanganlardan olib tashlandi"));
-      return isFav;
-    } catch (err) {
-      console.error('Toggle favorite error:', err);
-      showToast(t('common.error', "Xatolik yuz berdi"));
     }
   };
 
@@ -646,7 +660,6 @@ export default function App() {
         <LandingPage
           onOpenLogin={() => (isAuthenticated ? setShowLandingGate(false) : setAuthModalOpen(true))}
           isAuthenticated={isAuthenticated}
-          partners={partners}
           onLangChange={handleLangChange}
           lang={lang}
         />
@@ -672,7 +685,7 @@ export default function App() {
             fontSize: '0.9rem',
             fontWeight: 600,
             boxShadow: 'var(--shadow-sm)',
-            zIndex: 100,
+            zIndex: 2000,
             animation: 'fadeIn 0.25s ease-out',
           }}>
             {toast}
@@ -684,11 +697,12 @@ export default function App() {
 
   // 2. AUTHENTICATED WORKSPACE (When logged in)
   return (
-    <div className="app-workspace-layout" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+    <div className="app-workspace-layout" style={{ minHeight: '100vh', background: 'var(--bg-main)' }}>
       {/* 1. Desktop Persistent Sidebar (>= 1024px) & Tablet/Mobile Drawer (< 1024px) */}
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
+        user={user}
         onOpenProfile={() => setCurrentView('profile')}
         onLogout={handleLogout}
         isOpen={sidebarOpen}
@@ -700,7 +714,10 @@ export default function App() {
         {/* Tablet & Mobile Header (Visible on screens < 1024px, hidden during simulation for maximum screen real estate) */}
         {currentView !== 'simulation' && (
           <TabletHeader
-            onToggleSidebar={() => setSidebarOpen(true)}
+            currentView={currentView}
+            user={user}
+            onGoHome={() => setCurrentView('cases')}
+            onOpenProfile={() => setCurrentView('profile')}
             onOpenNotifications={() => {
               if (currentView !== 'notifications') setNotificationsBackView(currentView);
               setCurrentView('notifications');
@@ -712,28 +729,39 @@ export default function App() {
         {currentView !== 'simulation' && <PushBanner />}
 
         {/* Internal Views */}
-        <main style={{ flex: 1, width: '100%' }}>
-          {/* Dashboard Home View with Greeting, Hero Banner Slider, and 3 Stat Cards */}
+        <main>
+          {/* Dashboard Home View with Greeting, Hero Banner Slider, and 4 Stat Cards */}
           {currentView === 'cases' && (
             <HomeView
               user={user}
               categories={categories}
               banners={banners}
+              topicsCount={topicTotal}
               userLimit={userLimit}
-              loading={isAuthenticated && !dataLoaded}
               onStartSimulation={handleStartSimulationFromHome}
               onOpenClinics={() => setCurrentView('clinics')}
               onOpenStore={() => setCurrentView('store')}
-              onOpenLeaderboard={() => setCurrentView('leaderboard')}
+              onSelectCategory={(cat) => {
+                setSelectedCategory(cat);
+                setCurrentView('roadmap');
+              }}
             />
           )}
 
         {/* Live Interactive Case Simulation Room with Real Hospital Monitor */}
         {currentView === 'simulation' && (
           <CaseSimulationRoom
+            key={activeCase?.sessionId || 'sim'}
             caseItem={activeCase || cases[0]}
             onExitSimulation={() => setCurrentView('cases')}
             onFinishCase={handleFinishSimulation}
+            onNextCase={() => handleNextCase(activeCase)}
+            onToast={showToast}
+            onInsufficientCoins={() => {
+              showToast(t('sim.insufficientCoins', 'Tangalar yetarli emas'));
+              setStoreInitialTab('coins');
+              api.getUserProfile().then((p) => { if (p) { setUser(p); setStoredUser(p); } }).catch(() => {});
+            }}
           />
         )}
 
@@ -759,6 +787,8 @@ export default function App() {
           <ProfileView
             user={user}
             userLimit={userLimit}
+            levels={levels}
+            tariffs={tariffs}
             onRefreshLimit={handleRefreshLimit}
             onUserUpdate={setUser}
             onOpenStore={(tab) => {
@@ -784,16 +814,24 @@ export default function App() {
               setCurrentView('roadmap');
             }}
             onSelectCase={(caseItem) => {
-              setCaseDetailBackView('clinics');
-              setSelectedDetailCase(caseItem);
-              setCurrentView('case-details');
+              checkLimitAndStartCase(caseItem);
             }}
             onOpenDebrief={async (sessionId) => {
               try {
-                const res = await api.getDebrief(sessionId);
-                if (res) setDebriefData(res);
+                const res = await api.getDebrief(sessionId, { timeoutMs: 30000 });
+                if (res) {
+                  setDebriefData({
+                    final_score: res.final_score ?? 0,
+                    xp_earned: res.xp_earned ?? 0,
+                    coins_earned: res.coins_earned ?? 0,
+                    tokens_used: res.tokens_used ?? 0,
+                    coins_spent: res.coins_spent ?? 0,
+                  });
+                }
               } catch (err) {
-                console.error('Debrief load error:', err);
+                if (!isSessionNotActiveError(err) && err?.code !== 'debrief_failed' && err?.code !== 'session_not_found' && err?.code !== 'debrief_not_ready') {
+                  console.warn('Debrief load error:', err?.message);
+                }
               }
             }}
             onStartCase={(caseItem) => {
@@ -807,23 +845,8 @@ export default function App() {
         {currentView === 'roadmap' && (
           <RoadmapView
             category={selectedCategory || categories[0]}
-            onSelectNode={(caseItem) => {
-              setCaseDetailBackView('roadmap');
-              setSelectedDetailCase(caseItem);
-              setSelectedRoadmapNode(caseItem);
-              setCurrentView('case-details');
-            }}
+            onStartSimulation={handleStartSimulationFromHome}
             onBack={() => setCurrentView('clinics')}
-          />
-        )}
-
-        {/* Case Details View (Real API case data) */}
-        {currentView === 'case-details' && (selectedDetailCase || cases[0]) && (
-          <CaseDetailsView
-            caseItem={selectedDetailCase || cases[0]}
-            onStartCase={() => checkLimitAndStartCase(selectedDetailCase || cases[0])}
-            onBack={() => setCurrentView(caseDetailBackView || 'roadmap')}
-            onToggleFavorite={handleToggleFavorite}
           />
         )}
 
@@ -845,8 +868,7 @@ export default function App() {
       </main>
 
       {/* Workspace Footer */}
-      <footer style={{
-        marginTop: 40,
+      <footer className="app-workspace-footer" style={{
         padding: '24px 0 10px 0',
         borderTop: '1px solid #E2E8F0',
         background: 'transparent',
@@ -869,8 +891,12 @@ export default function App() {
         <DebriefModal
           debriefData={debriefData}
           onClose={async () => {
+            const endedForCoins = debriefData?.reason === 'insufficient_coins';
             setDebriefData(null);
-            setCurrentView('cases');
+            if (endedForCoins) {
+              setStoreInitialTab('coins');
+              setCurrentView('store');
+            }
             // Profil va limitni backend dan yangilash
             try {
               const [freshProfile, freshLimit] = await Promise.all([
@@ -883,8 +909,9 @@ export default function App() {
           }}
           onRetryCase={() => {
             setDebriefData(null);
-            if (activeCase) handleStartSimulation(activeCase);
+            if (activeCase) checkLimitAndStartCase(activeCase);
           }}
+          onNextCase={() => handleNextCase(activeCase)}
         />
       )}
 
@@ -911,26 +938,10 @@ export default function App() {
         user={user}
       />
 
-      {/* Toast Notification */}
-      {/* Preparing Case Loading Screen (Screenshot 4) */}
-      {isPreparingCase && (
-        <PreparingCaseLoader
-          duration={2000}
-          onFinish={() => {
-            setIsPreparingCase(false);
-            setShowQuickGuide(true);
-          }}
-        />
-      )}
-
-      {/* Quick Guide Modal (Screenshot 5) */}
+      {/* Quick Guide Modal */}
       {showQuickGuide && (
         <QuickGuideModal
           onProceed={() => {
-            setShowQuickGuide(false);
-            setCurrentView('simulation');
-          }}
-          onSkip={() => {
             setShowQuickGuide(false);
             setCurrentView('simulation');
           }}
@@ -990,7 +1001,6 @@ export default function App() {
             </button>
 
             {limitModal.type === 'spend_coins' ? (
-              // CASE A: User has enough coins to spend on this case
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
@@ -1011,7 +1021,7 @@ export default function App() {
                       {t('limitModal.continueWithCoins', 'Tanga orqali davom etish')}
                     </h3>
                     <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#64748B', fontWeight: 600 }}>
-                      {t('limitModal.freeLimitExhausted', 'Bugungi bepul urinishlar limiti tugagan')} (0/3)
+                      {t('limitModal.freeLimitExhausted', 'Bugungi bepul urinishlar limiti tugagan')}
                     </p>
                   </div>
                 </div>
@@ -1032,36 +1042,42 @@ export default function App() {
                     </span>
                   </div>
                   <div style={{ width: '100%', height: 1, background: '#E2E8F0' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.casePrice', 'Keys narxi:')}</span>
-                    <span style={{ color: '#D97706', fontWeight: 700 }}>
-                      🪙 {limitModal.caseCost} {t('nav.coins', 'tanga')}
-                    </span>
-                  </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
                     <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.yourBalance', 'Sizning balansingiz:')}</span>
                     <span style={{ color: '#16A34A', fontWeight: 700 }}>
-                      🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')} ({t('limitModal.remaining', 'qoladi:')} {limitModal.userCoins - limitModal.caseCost})
+                      🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')}
                     </span>
                   </div>
+                  {typeof limitModal.coinsPer1k === 'number' && limitModal.coinsPer1k > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                      <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.rateLabel', 'Tarif:')}</span>
+                      <span style={{ color: '#475569', fontWeight: 700 }}>
+                        {limitModal.coinsPer1k} / 1k token
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
-                  {t('limitModal.continueWithCoinsDesc', "Ushbu keysni hisobingizdagi tangalarni sarflab yechishingiz yoki cheksiz keyslar uchun Premium obunaga o'tishingiz mumkin.")}
+                  {t('limitModal.continueWithCoinsDesc', "AI ishlatganicha tanga yechiladi. Balans 0 bo'lsa sessiya to'xtaydi. Cheksiz kirish uchun Premium obuna ham mumkin.")}
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
                   <button
                     id="btn-spend-coins-confirm"
                     onClick={() => {
-                      const cost = limitModal.caseCost;
                       const target = limitModal.caseItem;
+                      if (!(limitModal.userCoins > 0)) {
+                        setLimitModal(null);
+                        setStoreInitialTab('coins');
+                        setCurrentView('store');
+                        return;
+                      }
                       setLimitModal(null);
-                      startBackendSession(target).then((ok) => {
+                      startBackendSession(target, { useCoins: true }).then((ok) => {
                         if (!ok) return;
-                        setIsPreparingCase(true);
+                        if (!limitModal?.skipGuide) setShowQuickGuide(true);
                         api.getUserProfile().then(p => { if (p) { setUser(p); setStoredUser(p); } }).catch(() => {});
-                        showToast(`🪙 ${cost} ${t('sim.spentCoins', 'tanga sarflandi. Simulyatsiya boshlandi!')}`);
                       });
                     }}
                     style={{
@@ -1081,33 +1097,9 @@ export default function App() {
                       gap: 8,
                     }}
                   >
-                    <span>🪙 {limitModal.caseCost} {t('limitModal.startWithCoins', 'Tanga sarflab boshlash')}</span>
-                  </button>
-
-                  <button
-                    id="btn-open-tariffs-from-limit"
-                    onClick={() => {
-                      setLimitModal(null);
-                      setCurrentView('store');
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      borderRadius: 16,
-                      background: '#EFF6FF',
-                      border: '1px solid #BFDBFE',
-                      color: '#2563EB',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <Crown size={16} />
-                    <span>{t('limitModal.unlimitedPremium', '👑 Cheksiz kirish (Premium Obunalar)')}</span>
+                    <span>🪙 {limitModal.userCoins > 0
+                      ? t('limitModal.startWithCoins', 'Tanga hisobidan boshlash')
+                      : t('limitModal.buyCoins', 'Tanga sotib olish')}</span>
                   </button>
                 </div>
               </div>
@@ -1147,7 +1139,7 @@ export default function App() {
                   color: '#991B1B',
                   lineHeight: 1.5,
                 }}>
-                  {t('limitModal.outOfCoinsMessage', 'Bugungi bepul urinishlar limitingiz tugagan. Ushbu keys narxi:')} <strong>🪙 {limitModal.caseCost} {t('nav.coins', 'tanga')}</strong>, {t('limitModal.youHave', 'sizda esa hozir:')} <strong>🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')}</strong>.
+                  {t('limitModal.outOfCoinsMessage', 'Bugungi bepul urinishlar limitingiz tugagan.')} {t('limitModal.youHave', 'Sizda hozir:')} <strong>🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')}</strong>. {t('limitModal.needCoinsForAi', "Davom etish uchun tanga yoki Premium kerak.")}
                 </div>
 
                 {/* Recommendations */}
@@ -1308,7 +1300,7 @@ export default function App() {
           fontSize: '0.9rem',
           fontWeight: 600,
           boxShadow: 'var(--shadow-sm)',
-          zIndex: 100,
+          zIndex: 2000,
           animation: 'fadeIn 0.25s ease-out',
         }}>
           {toast}

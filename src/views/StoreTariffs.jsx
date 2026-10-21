@@ -40,13 +40,16 @@ export default function StoreTariffs({
   onUserUpdate,
   onBack,
   initialTab = 'all',
+  variant = 'page',
 }) {
   const { t, lang } = useTranslation();
+  const inline = variant === 'inline';
   const [tariffsList, setTariffsList] = useState(initialTariffs || []);
   const [loading, setLoading] = useState(false);
 
   // Tab filtering: 'all' | 'subscription' | 'coin_package'
   const [activeCategory, setActiveCategory] = useState(() => {
+    if (inline) return 'all';
     if (initialTab === 'coins') return 'coin_package';
     if (initialTab === 'subscriptions') return 'subscription';
     return initialTab || 'all';
@@ -198,6 +201,8 @@ export default function StoreTariffs({
     return new Intl.NumberFormat('uz-UZ').format(Math.max(0, price || 0)) + " so'm";
   };
 
+  const formatCoins = (n) => new Intl.NumberFormat('uz-UZ').format(Math.max(0, Number(n) || 0));
+
   // Filter tariffs by selected tab
   const displayedTariffs = tariffsList.filter((t) => {
     const isCoinPkg = t.kind === 'coin_package' || (!t.duration && (t.coins ?? 0) > 0);
@@ -220,16 +225,16 @@ export default function StoreTariffs({
   return (
     <div style={{
       width: '100%',
-      minHeight: '85vh',
-      background: '#F8FAFC',
-      padding: '24px 16px 100px 16px',
+      minHeight: inline ? 0 : '85vh',
+      background: inline ? 'transparent' : 'var(--bg-main)',
+      padding: inline ? 0 : '24px 16px 100px 16px',
       boxSizing: 'border-box',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
-      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ maxWidth: inline ? '100%' : 960, margin: '0 auto' }}>
         
         {/* Optional Back Button */}
-        {onBack && (
+        {!inline && onBack && (
           <button
             id="btn-back-tariffs"
             onClick={onBack}
@@ -256,6 +261,7 @@ export default function StoreTariffs({
         )}
 
         {/* Page Header */}
+        {!inline && (
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{
             display: 'inline-flex',
@@ -307,8 +313,10 @@ export default function StoreTariffs({
             </div>
           </div>
         </div>
+        )}
 
         {/* Category Tabs: Barchasi | Obuna | Tangalar */}
+        {!inline && (
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -348,21 +356,6 @@ export default function StoreTariffs({
             );
           })}
         </div>
-
-        {/* Loading Spinner */}
-        {loading && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '40px 20px',
-            color: '#16A34A',
-            gap: 12,
-          }}>
-            <RefreshCw size={28} className="animate-spin" />
-            <span style={{ fontSize: '14px', fontWeight: 700 }}>Tariflar yuklanmoqda...</span>
-          </div>
         )}
 
         {/* Tariffs Empty State */}
@@ -371,10 +364,10 @@ export default function StoreTariffs({
             background: '#FFFFFF',
             borderRadius: 18,
             border: '1px solid #E2E8F0',
-            padding: '50px 20px',
+            padding: inline ? '24px 12px' : '50px 20px',
             textAlign: 'center',
             color: '#64748B',
-            marginBottom: 30,
+            marginBottom: inline ? 0 : 30,
           }}>
             <Coins size={36} style={{ marginBottom: 12, opacity: 0.5 }} />
             <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
@@ -387,12 +380,12 @@ export default function StoreTariffs({
         )}
 
         {/* Tariffs Cards Grid */}
-        {!loading && displayedTariffs.length > 0 && (
+        {displayedTariffs.length > 0 && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 20,
-            marginBottom: 40,
+            gridTemplateColumns: inline ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: inline ? 10 : 20,
+            marginBottom: inline ? 0 : 40,
           }}>
             {displayedTariffs.map((tariff) => {
               const isCoinPkg = tariff.kind === 'coin_package' || (!tariff.duration && (tariff.coins ?? 0) > 0);
@@ -406,7 +399,7 @@ export default function StoreTariffs({
                     borderRadius: 18,
                     border: isPopular ? '2px solid #22C55E' : '1px solid #E2E8F0',
                     boxShadow: isPopular ? '0 12px 30px rgba(34, 197, 94, 0.15), 0 4px 0 #16A34A' : '0 4px 0 #E2E8F0',
-                    padding: '24px 22px',
+                    padding: inline ? '16px 14px' : '24px 22px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -459,48 +452,48 @@ export default function StoreTariffs({
                       )}
                     </div>
 
-                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '4px 0 8px 0', lineHeight: 1.3 }}>
-                      {tariff.name}
-                    </h3>
-
-                    {/* Price block */}
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-                      <span style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A' }}>
-                        {formatPrice(tariff.price)}
-                      </span>
-                    </div>
-
-                    {/* Description */}
-                    <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 16px 0', lineHeight: 1.5, fontWeight: 500 }}>
-                      {tariff.description || (isCoinPkg ? "Klinik keyslarni ochish uchun oltin tangalar to'plami." : "Klinik simulyator uchun to'liq imtiyozlar paketi.")}
-                    </p>
-
-                    {/* Features list */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                      paddingTop: 12,
-                      borderTop: '1px solid #F1F5F9',
-                      marginBottom: 20,
-                    }}>
-                      {isCoinPkg ? (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
-                            <Check size={16} color="#16A34A" strokeWidth={3} />
-                            <span>+{tariff.coins} ta oltin Tanga hisobingizga qo'shiladi</span>
+                    {isCoinPkg ? (
+                      <>
+                        {tariff.name ? (
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', margin: '4px 0 6px 0' }}>
+                            {tariff.name}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
-                            <Check size={16} color="#16A34A" strokeWidth={3} />
-                            <span>Kunlik limit tugaganda keyslarni mustaqil ochish</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
-                            <Check size={16} color="#16A34A" strokeWidth={3} />
-                            <span>Muddatsiz saqlanadi va kuymaydi</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
+                        ) : null}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '4px 0 6px 0' }}>
+                          <span style={{ fontSize: '32px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                            {formatCoins(tariff.coins)}
+                          </span>
+                          <span style={{ fontSize: '15px', fontWeight: 700, color: '#D97706' }}>
+                            {t('store.coinsUnit', 'tanga')}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#64748B', marginBottom: inline ? 12 : 20 }}>
+                          {formatPrice(tariff.price)}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '4px 0 8px 0', lineHeight: 1.3 }}>
+                          {tariff.name}
+                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+                          <span style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A' }}>
+                            {formatPrice(tariff.price)}
+                          </span>
+                        </div>
+                        {tariff.description ? (
+                          <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 16px 0', lineHeight: 1.5, fontWeight: 500 }}>
+                            {tariff.description}
+                          </p>
+                        ) : null}
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 8,
+                          paddingTop: 12,
+                          borderTop: '1px solid #F1F5F9',
+                          marginBottom: 20,
+                        }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
                             <span>{tariff.duration} oy davomida CHEKSIZ klinik keyslar</span>
@@ -516,12 +509,12 @@ export default function StoreTariffs({
                           {tariff.coins > 0 && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#D97706', fontWeight: 700 }}>
                               <Coins size={16} color="#D97706" />
-                              <span>+{tariff.coins} ta bonus Tanga sovg'a</span>
+                              <span>+{formatCoins(tariff.coins)} {t('store.coinsUnit', 'tanga')}</span>
                             </div>
                           )}
-                        </>
-                      )}
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Buy Button */}

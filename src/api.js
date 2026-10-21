@@ -81,17 +81,47 @@ export class ApiError extends Error {
 function extractErrorCode(data) {
   if (!data) return '';
   if (typeof data.error === 'string') return data.error;
-  if (data.error?.code) return data.error.code;
+  const slug = data.error?.slug || data.slug;
+  if (typeof slug === 'string' && slug) return slug;
+  if (typeof data.error?.code === 'string') return data.error.code;
   if (typeof data.code === 'string') return data.code;
   return '';
 }
 
+function errorSlug(err) {
+  return String(err?.code || err?.data?.error?.slug || err?.data?.slug || '');
+}
+
 export function isSessionNotActiveError(err) {
-  const code = err?.code || '';
+  const code = errorSlug(err);
   const message = String(err?.message || '');
+  const details = String(err?.data?.error?.details || '');
   return code === 'session_not_active'
     || message.includes('session_not_active')
-    || (err?.status === 409 && (code === 'session_not_active' || message.includes('session_not_active')));
+    || details.includes('session_not_active')
+    || details.includes('active session not found')
+    || err?.status === 409;
+}
+
+export function isDebriefTerminalError(err) {
+  const slug = errorSlug(err);
+  return slug === 'debrief_failed' || slug === 'session_not_found';
+}
+
+function isDebriefRetryableError(err) {
+  if (isDebriefTerminalError(err)) return false;
+  const slug = errorSlug(err);
+  if (slug === 'debrief_not_ready') return true;
+  if (err?.name === 'AbortError') return true;
+  if (!err?.status) return true;
+  return err.status === 202 || err.status === 400;
+}
+
+export function isInsufficientCoinsError(err) {
+  const code = err?.code || '';
+  const message = String(err?.message || '');
+  return code === 'insufficient_coins'
+    || message.includes('insufficient_coins');
 }
 
 export async function registerStoredFcmDevice() {
@@ -177,8 +207,10 @@ async function request(path, options = {}) {
     options.body = JSON.stringify(options.body);
   }
 
+  const { quiet, ...fetchOptions } = options;
+
   try {
-    let res = await fetch(path, { ...options, headers });
+    let res = await fetch(path, { ...fetchOptions, headers });
 
     // Auto-refresh on 401 if refresh token is present (bypass for auth endpoints)
     if (res.status === 401 && getRefreshToken() && path !== '/auth/token/refresh' && !path.startsWith('/mobile/auth/')) {
@@ -186,7 +218,7 @@ async function request(path, options = {}) {
         await refreshTokens();
         // Retry original request with newly acquired token
         headers['Authorization'] = `Bearer ${getToken()}`;
-        res = await fetch(path, { ...options, headers });
+        res = await fetch(path, { ...fetchOptions, headers });
       } catch (refreshErr) {
         console.warn(`Session refresh failed for [${path}]:`, refreshErr.message);
         throw refreshErr;
@@ -230,7 +262,9 @@ async function request(path, options = {}) {
       return parsed !== null ? parsed : text;
     }
   } catch (err) {
-    console.error(`API Error [${path}]:`, err.message);
+    if (err?.name !== 'AbortError' && !quiet) {
+      console.error(`API Error [${path}]:`, err.message);
+    }
     throw err;
   }
 }
@@ -246,8 +280,51 @@ export function extractList(json) {
     for (const k of Object.keys(json)) {
       if (Array.isArray(json[k])) return json[k];
     }
+    if (json.data && typeof json.data === 'object' && !Array.isArray(json.data)) {
+      return extractList(json.data);
+    }
   }
   return [];
+}
+
+function normalizeLevelItem(item) {
+  if (!item || typeof item !== 'object') return null;
+  const level_number = Number(item.level_number ?? item.level);
+  const required_xp = Number(item.required_xp ?? item.xp_required ?? 0);
+  if (!Number.isFinite(level_number) || level_number <= 0) return null;
+  return {
+    ...item,
+    level_number,
+    required_xp: Number.isFinite(required_xp) ? required_xp : 0,
+  };
+}
+
+/** Level ro‘yxatini level_number bo‘yicha tartiblaydi. */
+export function normalizeLevels(res) {
+  return extractList(res)
+    .map(normalizeLevelItem)
+    .filter(Boolean)
+    .sort((a, b) => a.level_number - b.level_number);
+}
+
+function listTotal(res) {
+  if (typeof res?.total === 'number') return res.total;
+  if (typeof res?.count === 'number') return res.count;
+  return extractList(res).length;
+}
+
+let topicTotalCache = null;
+let topicTotalInflight = null;
+let levelsCache = null;
+let levelsCacheLang = null;
+let levelsInflight = null;
+
+export function peekTopicTotal() {
+  return topicTotalCache;
+}
+
+export function peekLevels() {
+  return levelsCache;
 }
 
 // Backend baʼzan matnni {uz,ru,en} obyekt sifatida qaytaradi (admin modellari). UI esa oddiy satr kutadi.
@@ -271,6 +348,17 @@ function localizeItem(item) {
 
 // WebSocket brauzerda Vercel rewrite orqali o'tmaydi, shuning uchun to'g'ridan-to'g'ri backendga ulanadi.
 const API_ORIGIN = import.meta.env.VITE_API_BASE || 'https://prod.tibstation.uz';
+
+/** Absolute URL for backend media (icon_url, cover_image_url, image_url). */
+export function resolveMediaUrl(url) {
+  if (typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) return trimmed;
+  if (trimmed.startsWith('//')) return `${typeof window !== 'undefined' ? window.location.protocol : 'https:'}${trimmed}`;
+  const origin = API_ORIGIN.replace(/\/$/, '');
+  return trimmed.startsWith('/') ? `${origin}${trimmed}` : `${origin}/${trimmed}`;
+}
 
 export const api = {
 
@@ -313,12 +401,26 @@ export const api = {
 
   /** Get levels list */
   getLevels: async () => {
+    const lang = getLang();
+    if (levelsCache?.length && levelsCacheLang === lang) return levelsCache;
+    if (levelsInflight) return levelsInflight;
+    const load = async (path) => normalizeLevels(await request(path));
+    levelsInflight = (async () => {
+      try {
+        const list = await load('/mobile/level');
+        if (list.length) return list;
+      } catch {
+        // /web/level — admin statik jadval, mobile bo‘sh yoki 404 bo‘lsa
+      }
+      return load('/web/level');
+    })();
     try {
-      const res = await request('/mobile/level');
-      return extractList(res);
-    } catch {
-      const res = await request('/web/level');
-      return extractList(res);
+      const list = await levelsInflight;
+      levelsCache = list;
+      levelsCacheLang = lang;
+      return list;
+    } finally {
+      levelsInflight = null;
     }
   },
 
@@ -385,9 +487,13 @@ export const api = {
 
   // ===================== CATEGORIES =====================
 
-  /** Get all categories (swagger: GET /mobile/category, response { categories, count }) */
+  /** Get all categories (live: paginated `{ data }`; swagger: `{ categories, count }`) */
   getCategories: async () => {
-    return extractList(await request('/mobile/category')).map(localizeItem);
+    const res = await request('/mobile/category');
+    const list = Array.isArray(res?.data)
+      ? res.data
+      : (Array.isArray(res?.categories) ? res.categories : extractList(res));
+    return list.map(localizeItem);
   },
 
   /** Get single category by ID */
@@ -397,12 +503,57 @@ export const api = {
 
   // ===================== TOPICS =====================
 
-  /** Get topics */
+  /** Get topics (live paginated `{ data }`; swagger `{ topics, count }`) */
   getTopics: async (categoryId, limit = 100, page = 1) => {
     const query = new URLSearchParams({ limit, page });
     if (categoryId) query.set('category_id', categoryId);
     const res = await request(`/mobile/topic?${query.toString()}`);
-    return extractList(res).map(localizeItem);
+    const list = Array.isArray(res?.data)
+      ? res.data
+      : (Array.isArray(res?.topics) ? res.topics : extractList(res));
+    return list.map(localizeItem);
+  },
+
+  /** Topic catalog total (`total`/`count`; GET /case ni kutmaydi). */
+  getTopicTotal: async () => {
+    if (typeof topicTotalCache === 'number') return topicTotalCache;
+    if (topicTotalInflight) return topicTotalInflight;
+    topicTotalInflight = (async () => {
+      try {
+        const res = await request('/mobile/topic?limit=1&page=1');
+        const n = listTotal(res);
+        if (n) return n;
+      } catch {
+        // fallback below
+      }
+      const list = await api.getTopics(undefined, 100, 1).catch(() => []);
+      return Array.isArray(list) ? list.length : 0;
+    })();
+    try {
+      const n = await topicTotalInflight;
+      topicTotalCache = n;
+      return n;
+    } finally {
+      topicTotalInflight = null;
+    }
+  },
+
+  /** Catalog totals for home stats (`total`/`count` from list; GET /case 400 bo'lsa fallback). */
+  getCatalogCounts: async (existingCats = []) => {
+    const topics = await api.getTopicTotal();
+    let cases = 0;
+    try {
+      cases = listTotal(await request('/mobile/case?limit=1&page=1'));
+    } catch {
+      cases = 0;
+    }
+    if (!cases) {
+      const cats = existingCats.length
+        ? existingCats
+        : await api.getCategories().catch(() => []);
+      cases = cats.reduce((sum, cat) => sum + (Number(cat.cases_count) || 0), 0);
+    }
+    return { topics, cases };
   },
 
   // ===================== CASES =====================
@@ -419,7 +570,12 @@ export const api = {
     query.set('page', String(params.page || 1));
 
     const res = await request(`/mobile/case?${query.toString()}`);
-    return extractList(res).map(localizeItem);
+    const list = Array.isArray(res?.cases)
+      ? res.cases
+      : (Array.isArray(res?.data)
+        ? res.data
+        : (Array.isArray(res?.data?.cases) ? res.data.cases : extractList(res)));
+    return list.map(localizeItem);
   },
 
   /** Barcha sahifalarni yig'ib, to'liq keyslar ro'yxatini qaytaradi (backend limitidan oshib ketganda ham kesilmaydi) */
@@ -438,13 +594,27 @@ export const api = {
     return localizeItem(await request(`/mobile/case/${id}`));
   },
 
-  /** Get random case */
-  getRandomCase: async ({ categoryId, difficulty } = {}) => {
-    const query = new URLSearchParams();
-    if (categoryId && categoryId !== 'random') query.set('category_id', categoryId);
-    if (difficulty) query.set('difficulty', difficulty);
-    const qs = query.toString();
-    return localizeItem(await request(`/mobile/case/random${qs ? `?${qs}` : ''}`));
+  /** Get random case (endless practice: topic_id + exclude_id) */
+  getRandomCase: async ({ categoryId, difficulty, topicId, excludeId } = {}) => {
+    const fetchOnce = (params, quiet = false) => {
+      const query = new URLSearchParams();
+      if (params.categoryId && params.categoryId !== 'random') query.set('category_id', params.categoryId);
+      if (params.difficulty) query.set('difficulty', params.difficulty);
+      if (params.topicId) query.set('topic_id', params.topicId);
+      if (params.excludeId) query.set('exclude_id', params.excludeId);
+      const qs = query.toString();
+      return request(`/mobile/case/random${qs ? `?${qs}` : ''}`, quiet ? { quiet: true } : {}).then(localizeItem);
+    };
+
+    try {
+      return await fetchOnce({ categoryId, difficulty, topicId, excludeId }, Boolean(difficulty));
+    } catch (err) {
+      // Live katalogda shu qiyinlikdagi keys yo‘q — bo‘lim/mavzu bo‘yicha qayta urinadi.
+      if (err?.status === 404 && difficulty) {
+        return fetchOnce({ categoryId, topicId, excludeId });
+      }
+      throw err;
+    }
   },
 
   // ===================== FAVORITES =====================
@@ -475,10 +645,13 @@ export const api = {
     return await request('/mobile/simulation/ongoing');
   },
 
-  /** Start simulation session */
-  startSimulation: async (caseId, durationMinutes) => {
+  /** Start simulation session. `{ useCoins: true }` — kunlik limit tugaganda tanga hisobidan. */
+  startSimulation: async (caseId, options = {}) => {
+    const durationMinutes = typeof options === 'number' ? options : options.durationMinutes;
+    const useCoins = typeof options === 'object' ? options.useCoins : undefined;
     const body = { case_id: caseId };
     if (durationMinutes) body.duration_minutes = durationMinutes;
+    if (useCoins) body.use_coins = true;
     return await request('/mobile/simulation/start', {
       method: 'POST',
       body,
@@ -505,11 +678,19 @@ export const api = {
 
   /** Finish simulation */
   /** reason: manual | health_zero | timeout (per Swagger) */
-  finishSimulation: async (sessionId, reason = 'manual') => {
-    return await request(`/mobile/simulation/${sessionId}/finish`, {
-      method: 'PUT',
-      body: { reason },
-    });
+  finishSimulation: async (sessionId, reason = 'manual', opts = {}) => {
+    const timeoutMs = opts.timeoutMs ?? 8000;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      return await request(`/mobile/simulation/${sessionId}/finish`, {
+        method: 'PUT',
+        body: { reason },
+        signal: ctrl.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
   },
 
   /** WebSocket URL for live vitals */
@@ -521,19 +702,63 @@ export const api = {
 
   // ===================== DEBRIEFING =====================
 
-  /** Get debrief report */
-  getDebrief: async (sessionId) => {
-    return await request(`/mobile/debrief/${sessionId}`);
+  /** Get debrief report. Birinchi ochish generatsiya qilishi mumkin — default 30s. */
+  getDebrief: async (sessionId, opts = {}) => {
+    const timeoutMs = opts.timeoutMs ?? 30000;
+    const ctrl = new AbortController();
+    const onParentAbort = () => ctrl.abort();
+    opts.signal?.addEventListener('abort', onParentAbort);
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      return await request(`/mobile/debrief/${sessionId}`, { signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
+      opts.signal?.removeEventListener('abort', onParentAbort);
+    }
   },
 
-  /** Debrief fonda tayyorlanadi (tayyor bo'lguncha 400) - tayyor bo'lguncha qayta so'raydi. */
-  waitForDebrief: async (sessionId, attempts = 10, delayMs = 2000) => {
-    for (let i = 0; i < attempts; i += 1) {
+  /**
+   * GET /debrief poll.
+   * 200 — report. 404 debrief_not_ready — kutish. 404 debrief_failed / session_not_found — to‘xtash.
+   * Birinchi so‘rov 5–15 s (generatsiya) — attempt timeout 30s.
+   */
+  waitForDebrief: async (sessionId, attemptsOrOpts = {}, delayMs = 2000) => {
+    const opts = typeof attemptsOrOpts === 'number'
+      ? { attempts: attemptsOrOpts, delayMs }
+      : (attemptsOrOpts || {});
+    const delay = opts.delayMs ?? delayMs;
+    const max = opts.attempts ?? Number.POSITIVE_INFINITY;
+    const signal = opts.signal;
+    const attemptTimeoutMs = opts.timeoutMs ?? 30000;
+    const deadlineMs = opts.deadlineMs ?? 50000;
+    const started = Date.now();
+    for (let i = 0; i < max; i += 1) {
+      if (signal?.aborted) return null;
+      const remaining = deadlineMs - (Date.now() - started);
+      if (remaining <= 0) return null;
+      const attemptCtrl = new AbortController();
+      const onParentAbort = () => attemptCtrl.abort();
+      signal?.addEventListener('abort', onParentAbort);
+      const thisTimeout = Math.max(1000, Math.min(attemptTimeoutMs, remaining));
+      const attemptTimer = setTimeout(() => attemptCtrl.abort(), thisTimeout);
       try {
-        return await request(`/mobile/debrief/${sessionId}`);
+        return await request(`/mobile/debrief/${sessionId}`, { signal: attemptCtrl.signal, quiet: true });
       } catch (err) {
-        if (i === attempts - 1) throw err;
-        await new Promise((r) => setTimeout(r, delayMs));
+        if (signal?.aborted) return null;
+        if (isDebriefTerminalError(err)) throw err;
+        if (!isDebriefRetryableError(err) || i === max - 1) throw err;
+        const wait = Math.min(delay, Math.max(0, deadlineMs - (Date.now() - started)));
+        if (wait <= 0) return null;
+        await new Promise((r) => {
+          const timer = setTimeout(r, wait);
+          signal?.addEventListener('abort', () => {
+            clearTimeout(timer);
+            r();
+          }, { once: true });
+        });
+      } finally {
+        clearTimeout(attemptTimer);
+        signal?.removeEventListener('abort', onParentAbort);
       }
     }
     return null;
@@ -564,20 +789,67 @@ export const api = {
 
   // ===================== TARIFFS =====================
 
-  /** Get all tariffs */
+  /** Get all tariffs (live paginated `{ data, total }` bo‘lishi mumkin). */
   getTariffs: async (duration) => {
-    const query = duration ? `?duration=${duration}` : '';
-    const res = await request(`/mobile/tariff${query}`);
-    if (Array.isArray(res)) return res;
-    if (res && typeof res === 'object') {
-      if (Array.isArray(res.tariffs)) return res.tariffs;
-      if (Array.isArray(res.items)) return res.items;
-      if (Array.isArray(res.data)) return res.data;
-      for (const k of Object.keys(res)) {
-        if (Array.isArray(res[k])) return res[k];
+    const parse = (res) => {
+      if (Array.isArray(res)) return res;
+      if (res && typeof res === 'object') {
+        if (Array.isArray(res.tariffs)) return res.tariffs;
+        if (Array.isArray(res.items)) return res.items;
+        if (Array.isArray(res.data)) return res.data;
+        return extractList(res);
       }
+      return [];
+    };
+    const fetchPage = async (page, withPaging) => {
+      const query = new URLSearchParams();
+      if (duration) query.set('duration', String(duration));
+      if (withPaging) {
+        query.set('limit', '100');
+        query.set('page', String(page));
+      }
+      const qs = query.toString();
+      return request(`/mobile/tariff${qs ? `?${qs}` : ''}`);
+    };
+    const uniq = (list) => {
+      const seen = new Set();
+      return list.filter((t) => {
+        const id = t?.id || `${t?.kind}-${t?.name}-${t?.price}`;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    };
+
+    const collect = async (paged) => {
+      const all = [];
+      const pageSize = 100;
+      for (let page = 1; page <= 30; page += 1) {
+        const res = await fetchPage(page, paged);
+        const chunk = parse(res).map(localizeItem);
+        all.push(...chunk);
+        if (!paged) break;
+        if (res && typeof res.has_next === 'boolean') {
+          if (!res.has_next) break;
+          continue;
+        }
+        const total = listTotal(res);
+        const limit = Number(res?.limit) || pageSize;
+        if (chunk.length < limit || (total && all.length >= total)) break;
+      }
+      return all;
+    };
+
+    let list = [];
+    try {
+      list = await collect(true);
+    } catch {
+      list = [];
     }
-    return [];
+    if (!list.length) {
+      list = await collect(false);
+    }
+    return uniq(list);
   },
 
   /** Get tariff by ID */

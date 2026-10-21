@@ -1,0 +1,24 @@
+---
+description: Keep root API_ENDPOINTS.md in sync with real frontend API usage
+alwaysApply: true
+---
+
+# API_ENDPOINTS.md ni yangilab turish
+
+Root dagi [`API_ENDPOINTS.md`](API_ENDPOINTS.md) — user-web qaysi backend
+endpointlarni ishlatishining manbasi.
+
+Quyidagilardan biri o‘zgarsa, **shu turni yopmasdan** `API_ENDPOINTS.md` ni yangila:
+
+- `src/api.js` da wrapper qo‘shildi / o‘chirildi / path o‘zgardi
+- UI yangi endpoint chaqirdi yoki chaqirishni to‘xtatdi
+- `API_MOBILE.md` yoki swagger contract o‘zgardi
+- Simulyatsiya event `type`, payload yoki auto-finish qoidalari o‘zgardi
+
+Yangilash:
+
+1. Jadvaldagi **Holat**: Ishlayapti | Wrapper faqat | Ishlatilmayapti | Warning | Qo‘shimcha
+2. Warninglar ro‘yxati — eskirganini olib tashla, yangisini qo‘sh
+3. **Oxirgi tekshiruv** sanasini bugungi qil
+
+Endpointni o‘ylab topma. Path `API_MOBILE.md` yoki `src/api.js` dagi real so‘rovga mos bo‘lsin.

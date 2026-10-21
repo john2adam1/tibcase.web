@@ -14,7 +14,7 @@ const imgOf = (u) => u?.image_url || u?.image || u?.avatar_url || '';
 export default function Leaderboard({ onBack }) {
   const { t } = useTranslation();
   const [filterType, setFilterType] = useState('total');
-  const { data: leaderboard, loading, error, reload } = useAsync(
+  const { data: leaderboard, error, reload } = useAsync(
     () => api.getUserRating(filterType),
     [filterType],
   );
@@ -22,14 +22,14 @@ export default function Leaderboard({ onBack }) {
   const items = leaderboard?.items || [];
   const me = leaderboard?.me || null;
 
-  if (loading || error) {
+  if (error) {
     return (
       <div style={{
-        width: '100%', minHeight: '85vh', background: '#F8FAFC',
+        width: '100%', minHeight: '85vh', background: 'var(--bg-main)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
-        <AsyncState loading={loading} error={error} onRetry={reload} />
+        <AsyncState error={error} onRetry={reload} />
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default function Leaderboard({ onBack }) {
     <div style={{
       width: '100%',
       minHeight: '85vh',
-      background: '#F8FAFC',
+      background: 'var(--bg-main)',
       padding: '32px 16px 100px 16px',
       boxSizing: 'border-box',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",

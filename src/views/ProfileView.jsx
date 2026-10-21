@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import Skeleton from '../components/common/Skeleton.jsx';
+import React, { useState, useEffect, useRef } from 'react';
 import UserAvatar from '../components/common/UserAvatar';
-import { api } from '../api';
+import { api, peekLevels, resolveMediaUrl } from '../api';
+import Skeleton from '../components/common/Skeleton.jsx';
+import StoreTariffs from './StoreTariffs.jsx';
 import {
   Trophy,
   ChevronLeft,
@@ -34,20 +35,34 @@ import { useTranslation } from '../i18n.jsx';
 export default function ProfileView({
   user,
   userLimit,
+  levels: levelsFromApp = [],
   onRefreshLimit,
   onUserUpdate,
   onOpenStore,
   onNavigate,
   onLangChange,
-  onLogout
+  onLogout,
+  tariffs = [],
 }) {
   const { t, lang: appLang, setLang } = useTranslation();
   const lang = appLang || 'uz';
   const [currentScreen, setCurrentScreen] = useState('profile'); // 'profile' | 'settings'
+  const [coinsOpen, setCoinsOpen] = useState(false);
+  const coinsSectionRef = useRef(null);
+
+  const openCoinsDropdown = () => {
+    setCoinsOpen(true);
+    requestAnimationFrame(() => {
+      coinsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  };
   const [activeTab, setActiveTab] = useState('completed'); // 'completed' | 'ongoing'
-  const [levelsList, setLevelsList] = useState([]);
-  // Starts true so the first paint never shows fallback (1000 XP) values before levels arrive
-  const [loadingLevels, setLoadingLevels] = useState(true);
+  const [levelsList, setLevelsList] = useState(() => {
+    if (Array.isArray(levelsFromApp) && levelsFromApp.length) return levelsFromApp;
+    const cached = peekLevels();
+    return Array.isArray(cached) && cached.length ? cached : [];
+  });
+  const [loadingLevels, setLoadingLevels] = useState(() => !((levelsFromApp && levelsFromApp.length) || peekLevels()?.length));
   const [localLimit, setLocalLimit] = useState(userLimit || null);
 
   useEffect(() => {
@@ -63,33 +78,49 @@ export default function ProfileView({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
 
-  // Load completed/ongoing simulations, levels and real daily limit from API
+  useEffect(() => {
+    if (Array.isArray(levelsFromApp) && levelsFromApp.length) {
+      setLevelsList(levelsFromApp);
+      setLoadingLevels(false);
+    }
+  }, [levelsFromApp]);
+
+  // Levels must not wait on simulation history (completed is ~1s).
+  useEffect(() => {
+    let mounted = true;
+    if (!(levelsFromApp && levelsFromApp.length)) setLoadingLevels(true);
+    api.getLevels()
+      .then((freshLevels) => {
+        if (mounted && Array.isArray(freshLevels) && freshLevels.length > 0) {
+          setLevelsList(freshLevels);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (mounted) setLoadingLevels(false);
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  // Load completed/ongoing simulations and real daily limit from API
   useEffect(() => {
     let mounted = true;
     setLoadingSessions(true);
-    setLoadingLevels(true);
     Promise.all([
       api.getCompletedSimulations().catch(() => ({ sessions: [], count: 0 })),
       api.getOngoingSimulations().catch(() => ({ sessions: [], count: 0 })),
       api.getUserLimit().catch(() => null),
-      api.getLevels().catch(() => []),
-    ]).then(([comp, ong, freshLimit, freshLevels]) => {
+    ]).then(([comp, ong, freshLimit]) => {
       if (mounted) {
         setCompletedSessions(comp?.sessions || []);
         setOngoingSessions(ong?.sessions || []);
-        if (Array.isArray(freshLevels) && freshLevels.length > 0) {
-          setLevelsList(freshLevels);
-        }
         if (freshLimit) {
           setLocalLimit(freshLimit);
           if (onRefreshLimit) onRefreshLimit();
         }
       }
     }).finally(() => {
-      if (mounted) {
-        setLoadingSessions(false);
-        setLoadingLevels(false);
-      }
+      if (mounted) setLoadingSessions(false);
     });
     return () => { mounted = false; };
   }, []);
@@ -174,7 +205,6 @@ export default function ProfileView({
 
 
   // 3. About App State & Handlers
-  const [aboutLoading, setAboutLoading] = useState(false);
   const [aboutList, setAboutList] = useState([]);
   const [appRoute, setAppRoute] = useState(null);
   const [contactList, setContactList] = useState([]);
@@ -183,7 +213,6 @@ export default function ProfileView({
 
   const handleOpenAbout = () => {
     setModalType('about');
-    setAboutLoading(true);
     Promise.all([
       api.getAbout().catch(() => []),
       api.getAppRoutes().catch(() => null),
@@ -195,8 +224,6 @@ export default function ProfileView({
       setAppRoute(routeData);
       setContactList(Array.isArray(contacts) ? contacts : (contacts?.contacts || []));
       setFaqList(Array.isArray(faqs) ? faqs : (faqs?.faqs || []));
-    }).finally(() => {
-      setAboutLoading(false);
     });
   };
 
@@ -240,30 +267,37 @@ export default function ProfileView({
     }
   };
 
-  // XP & Level calculations strictly reflecting live API data
-  const totalXP = user?.xp || 0;
+  // XP & Level: live catalog may skip numbers (e.g. 1, 4, 5). Next = next existing row.
+  const totalXP = Number(user?.xp) || 0;
   const userLevelNum = Number(user?.level) || 1;
+  const sortedLevels = Array.isArray(levelsList)
+    ? [...levelsList].sort((a, b) => Number(a.level_number) - Number(b.level_number))
+    : [];
 
-  // Level from API response if present
-  const currentLevelObj = levelsList.find(l => Number(l.level_number) === userLevelNum) || null;
-  const nextLevelObj = levelsList.find(l => Number(l.level_number) === (userLevelNum + 1)) || null;
-  const levelsLoading = loadingLevels && levelsList.length === 0;
+  const currentLevelObj = sortedLevels.find((l) => Number(l.level_number) === userLevelNum)
+    || [...sortedLevels].reverse().find((l) => totalXP >= Number(l.required_xp || 0))
+    || sortedLevels[0]
+    || null;
+  const currentIdx = currentLevelObj
+    ? sortedLevels.findIndex((l) => Number(l.level_number) === Number(currentLevelObj.level_number))
+    : -1;
+  const prevLevelObj = currentIdx > 0 ? sortedLevels[currentIdx - 1] : null;
+  const nextLevelObj = currentIdx >= 0 ? (sortedLevels[currentIdx + 1] || null) : null;
 
-  let currMinXp = 0;
-  let nextTargetXp = 1000;
-  let xpSpan = 1000;
-  let xpInCurrentLevel = totalXP % 1000;
-  let xpRemaining = 1000 - xpInCurrentLevel;
-  let xpProgressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / 1000) * 100));
-
-  if (currentLevelObj && nextLevelObj) {
-    currMinXp = currentLevelObj.required_xp || 0;
-    nextTargetXp = nextLevelObj.required_xp || (currMinXp + 1000);
-    xpSpan = Math.max(1, nextTargetXp - currMinXp);
-    xpInCurrentLevel = Math.max(0, totalXP - currMinXp);
-    xpRemaining = Math.max(0, nextTargetXp - totalXP);
-    xpProgressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / xpSpan) * 100));
-  }
+  const currentReqXp = Number(currentLevelObj?.required_xp || 0);
+  const nextReqXp = nextLevelObj != null ? Number(nextLevelObj.required_xp || 0) : null;
+  // Starting rank is granted immediately (user.level=1 with XP below required_xp).
+  const currMinXp = prevLevelObj ? currentReqXp : 0;
+  const nextTargetXp = nextReqXp != null && nextReqXp > currMinXp
+    ? nextReqXp
+    : (currentReqXp > totalXP ? currentReqXp : null);
+  const xpSpan = nextTargetXp != null ? Math.max(1, nextTargetXp - currMinXp) : 1;
+  const xpInCurrentLevel = Math.max(0, totalXP - currMinXp);
+  const xpRemaining = nextTargetXp != null ? Math.max(0, nextTargetXp - totalXP) : 0;
+  const xpProgressPercent = nextTargetXp == null
+    ? (currentLevelObj ? 100 : 0)
+    : Math.min(100, Math.max(0, (xpInCurrentLevel / xpSpan) * 100));
+  const displayLevelNum = Number(currentLevelObj?.level_number) || userLevelNum;
 
   const completedCount = completedSessions.length || user?.completed_cases_count || 0;
   const ongoingCount = ongoingSessions.length || user?.ongoing_cases_count || 0;
@@ -286,21 +320,11 @@ export default function ProfileView({
     if (slug === 'student' || raw.includes('talab') || raw.includes('студент')) return t('level.student', lvl.title || 'Talaba');
     if (slug === 'intern' || raw.includes('intern') || raw.includes('интерн')) return t('level.intern', lvl.title || 'Intern');
     if (slug === 'resident' || raw.includes('rezident') || raw.includes('ординат')) return t('level.resident', lvl.title || 'Rezident');
-    if (slug === 'doctor' || raw.includes('shifokor') || raw.includes('врач')) return t('level.doctor', lvl.title || 'Shifokor');
+    if (slug === 'doctor' || raw.includes('doktor') || raw.includes('shifokor') || raw.includes('врач')) return t('level.doctor', lvl.title || 'Shifokor');
     if (slug === 'specialist' || raw.includes('mutaxassis') || raw.includes('специалист')) return t('level.specialist', lvl.title || 'Mutaxassis');
     if (slug === 'expert' || raw.includes('ekspert') || raw.includes('эксперт')) return t('level.expert', lvl.title || 'Ekspert');
     if (slug === 'master' || slug === 'professor' || raw.includes('professor') || raw.includes('профессор')) return t('level.master', lvl.title || 'Professor');
     return lvl.title || '';
-  };
-
-  const getTranslatedSpecialization = (spec) => {
-    if (!spec) return '';
-    const s = String(spec).toLowerCase().trim();
-    if (s === 'student' || s === 'talaba' || s.includes('студент')) return t('profile.student', 'Tibbiyot talabasi');
-    if (s === 'doctor' || s === 'shifokor' || s.includes('врач')) return t('profile.doctor', 'Shifokor');
-    if (s === 'resident' || s === 'rezident' || s.includes('ординатор')) return t('profile.resident', 'Rezident');
-    if (s === 'intern' || s.includes('интерн')) return t('profile.intern', 'Intern');
-    return spec;
   };
 
   return (
@@ -312,7 +336,7 @@ export default function ProfileView({
       alignItems: 'center',
       padding: '16px 16px 100px 16px',
       boxSizing: 'border-box',
-      background: '#F8FAFC',
+      background: 'var(--bg-main)',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
       {/* Container simulating the sleek mobile/app column */}
@@ -377,37 +401,13 @@ export default function ProfileView({
                     fontSize: '22px',
                     fontWeight: 700,
                     color: '#0F172A',
-                    margin: '0 0 4px 0',
+                    margin: 0,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}>
                     {user?.name || ''}
                   </h2>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    {levelsLoading && <Skeleton width="84px" height="20px" radius={8} />}
-                    {!levelsLoading && currentLevelObj && (
-                      <span style={{
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#16A34A',
-                        background: '#DCFCE7',
-                        padding: '2px 8px',
-                        borderRadius: 8,
-                        border: '1px solid #86EFAC',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}>
-                        <Zap size={12} /> {getTranslatedLevelTitle(currentLevelObj)}
-                      </span>
-                    )}
-                    {user?.specialization && (
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B' }}>
-                        {getTranslatedSpecialization(user.specialization)}
-                      </span>
-                    )}
-                  </div>
                 </div>
 
                 {/* Glowing Green Trophy / Badge */}
@@ -434,7 +434,7 @@ export default function ProfileView({
                 >
                   {currentLevelObj?.badge_image_url ? (
                     <img
-                      src={currentLevelObj.badge_image_url}
+                      src={resolveMediaUrl(currentLevelObj.badge_image_url)}
                       alt={getTranslatedLevelTitle(currentLevelObj) || 'Badge'}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -446,20 +446,6 @@ export default function ProfileView({
 
               {/* Level and Progress Bar strictly with live API values */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 6 }}>
-                
-                {levelsLoading ? (
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <Skeleton width="120px" height="18px" />
-                      <Skeleton width="96px" height="18px" />
-                    </div>
-                    <Skeleton height="14px" radius={999} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <Skeleton width="110px" height="16px" />
-                      <Skeleton width="150px" height="20px" radius={8} />
-                    </div>
-                  </>
-                ) : (<>
                 {/* Level Numbers & Titles Row */}
                 <div style={{
                   display: 'flex',
@@ -469,28 +455,38 @@ export default function ProfileView({
                 }}>
                   {/* Current Level Info */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '14.5px' }}>
-                        {t('profile.level')} {user?.level ?? 1}{currentLevelObj ? `: ${getTranslatedLevelTitle(currentLevelObj)}` : ''}
-                      </span>
-                    </div>
-                    {currentLevelObj?.required_xp > 0 && (
-                      <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
-                        {currentLevelObj.required_xp} XP
-                      </span>
+                    {loadingLevels && !currentLevelObj ? (
+                      <Skeleton width={160} height={16} radius={8} />
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '14.5px' }}>
+                          {t('profile.level')} {displayLevelNum}{currentLevelObj ? `: ${getTranslatedLevelTitle(currentLevelObj)}` : ''}
+                        </span>
+                      </div>
                     )}
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
+                      {totalXP} XP
+                    </span>
                   </div>
 
-                  {/* Target Next Level Info */}
+                  {/* Target Next Level Info — only a real catalog row, never level+1 guess */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, textAlign: 'right' }}>
-                    <span style={{ fontWeight: 700, color: '#64748B', fontSize: '13.5px' }}>
-                      {nextLevelObj 
-                        ? `${t('profile.level')} ${nextLevelObj.level_number}${nextLevelObj ? `: ${getTranslatedLevelTitle(nextLevelObj)}` : ''}`
-                        : `${t('profile.level')} ${(user?.level ?? 1) + 1}`}
-                    </span>
-                    {nextLevelObj?.required_xp > 0 && (
-                      <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
-                        {nextLevelObj.required_xp} XP
+                    {loadingLevels && !nextLevelObj ? (
+                      <Skeleton width={130} height={16} radius={8} />
+                    ) : nextLevelObj ? (
+                      <>
+                        <span style={{ fontWeight: 700, color: '#64748B', fontSize: '13.5px' }}>
+                          {t('profile.level')} {nextLevelObj.level_number}{getTranslatedLevelTitle(nextLevelObj) ? `: ${getTranslatedLevelTitle(nextLevelObj)}` : ''}
+                        </span>
+                        {nextTargetXp != null && (
+                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
+                            {nextTargetXp} XP
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ fontWeight: 700, color: '#64748B', fontSize: '13.5px' }}>
+                        {t('profile.maxLevel', 'Maksimal daraja')}
                       </span>
                     )}
                   </div>
@@ -531,7 +527,7 @@ export default function ProfileView({
                     <span style={{ fontWeight: 700, color: '#16A34A' }}>
                       {totalXP} XP
                     </span>
-                    {nextTargetXp > 0 && (
+                    {!loadingLevels && nextTargetXp != null && (
                       <>
                         <span style={{ color: '#94A3B8' }}>/</span>
                         <span style={{ fontWeight: 700, color: '#64748B' }}>
@@ -541,7 +537,7 @@ export default function ProfileView({
                     )}
                   </div>
 
-                  {xpRemaining > 0 && (
+                  {!loadingLevels && xpRemaining > 0 && (
                     <span style={{
                       fontWeight: 700,
                       color: '#D97706',
@@ -588,7 +584,6 @@ export default function ProfileView({
                     <span>{t('profile.allLevels', 'Barcha darajalar jadvalini ko‘rish')} &gt;</span>
                   </button>
                 )}
-                </>)}
               </div>
             </div>
 
@@ -601,7 +596,7 @@ export default function ProfileView({
             }}>
               {/* Tangalar card — clickable to buy coins */}
               <div
-                onClick={() => onOpenStore && onOpenStore('coins')}
+                onClick={openCoinsDropdown}
                 title={t('pm.buyCoinsTitle')}
                 style={{
                   flex: 1,
@@ -647,9 +642,7 @@ export default function ProfileView({
                   <div
                     id="profile-daily-limit-card"
                     onClick={() => {
-                      if (isExhausted && onOpenStore) {
-                        onOpenStore('coins');
-                      }
+                      if (isExhausted) openCoinsDropdown();
                     }}
                     style={{
                       flex: 1,
@@ -724,13 +717,15 @@ export default function ProfileView({
               marginTop: 18,
               marginBottom: 24,
             }}>
-              {/* Highlighted: Tanga sotib olish (top of the list) */}
+              {/* Highlighted: Tanga sotib olish — dropdown, not a separate page */}
+              <div ref={coinsSectionRef}>
               <div
                 id="btn-buy-coins-profile"
                 role="button"
                 tabIndex={0}
-                onClick={() => onOpenStore && onOpenStore('coins')}
-                onKeyDown={(e) => { if (e.key === 'Enter') onOpenStore && onOpenStore('coins'); }}
+                aria-expanded={coinsOpen}
+                onClick={() => setCoinsOpen((open) => !open)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCoinsOpen((open) => !open); } }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -767,7 +762,28 @@ export default function ProfileView({
                     {t('profile.buyCoinsDesc', 'Klinik keyslar va simulyatsiyalar uchun tanga paketlari')}
                   </div>
                 </div>
-                <ChevronRight size={20} strokeWidth={2.6} color="#D97706" />
+                <ChevronDown
+                  size={20}
+                  strokeWidth={2.6}
+                  color="#D97706"
+                  style={{ transform: coinsOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease', flexShrink: 0 }}
+                />
+              </div>
+              {coinsOpen && (
+                <div style={{
+                  padding: '12px',
+                  background: '#FFFBEB',
+                  borderBottom: '1px solid #FDE68A',
+                }}>
+                  <StoreTariffs
+                    variant="inline"
+                    tariffs={tariffs}
+                    user={user}
+                    userLimit={userLimit}
+                    onUserUpdate={onUserUpdate}
+                  />
+                </div>
+              )}
               </div>
               <SettingsListItem
                 icon={<Trophy size={20} color="#0F172A" strokeWidth={2} />}
@@ -831,7 +847,7 @@ export default function ProfileView({
             }}>
               <SettingsListItem
                 icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.info', "Ma'lumot")}
+                label={t('settings.info', "Profil ma'lumoti")}
                 subtitle={t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 onClick={handleOpenProfileInfo}
               />
@@ -974,7 +990,7 @@ export default function ProfileView({
             }}>
               <SettingsListItem
                 icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.info', "Ma'lumot")}
+                label={t('settings.info', "Profil ma'lumoti")}
                 subtitle={t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 onClick={handleOpenProfileInfo}
               />
@@ -1059,7 +1075,7 @@ export default function ProfileView({
       {/* 0A. Profile Info Modal */}
       {modalType === 'profile_info' && (
         <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title={t('settings.info', "Ma'lumotlarim va Profil")} onClose={() => setModalType(null)} maxWidth={460}>
+          <ModalCard title={t('settings.info', "Profil ma'lumoti")} onClose={() => setModalType(null)} maxWidth={460}>
             <form onSubmit={handleSaveProfileInfo} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -1302,15 +1318,8 @@ export default function ProfileView({
                 </p>
               </div>
 
-              {/* Loading State */}
-              {aboutLoading && (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 20, color: '#16A34A' }}>
-                  <RefreshCw size={24} className="animate-spin" />
-                </div>
-              )}
-
               {/* Biz haqimizda items from API */}
-              {!aboutLoading && aboutList.length > 0 && (
+              {aboutList.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
                     Biz haqimizda
@@ -1756,12 +1765,7 @@ export default function ProfileView({
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title={t('profile.levelsTableTitle', 'Klinik Darajalar Tizimi')} onClose={() => setModalType(null)} maxWidth={480}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '65vh', overflowY: 'auto', paddingRight: 4 }}>
-              {loadingLevels ? (
-                <div style={{ textAlign: 'center', padding: '30px 16px', color: '#16A34A', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <RefreshCw size={24} className="animate-spin" />
-                  <span style={{ fontSize: '13px', fontWeight: 700 }}>{t('pm.levelsLoading')}</span>
-                </div>
-              ) : levelsList.length === 0 ? (
+              {levelsList.length === 0 && !loadingLevels ? (
                 <div style={{ textAlign: 'center', padding: '30px 16px', color: '#64748B' }}>
                   <Award size={36} style={{ opacity: 0.4, marginBottom: 10 }} />
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#0F172A' }}>
@@ -1777,9 +1781,10 @@ export default function ProfileView({
                     Klinik keyslar yechish va debriefing tahlillaridan yuqori ball olish orqali XP to'plang va yangi darajalarga erishing:
                   </p>
 
-                  {levelsList.map((lvl) => {
-                    const isCurrent = Number(lvl.level_number) === Number(user?.level || 1);
-                    const isPassed = totalXP >= (lvl.required_xp || 0);
+                  {sortedLevels.map((lvl) => {
+                    const isCurrent = Number(lvl.level_number) === displayLevelNum;
+                    const isFirst = Number(lvl.level_number) === Number(sortedLevels[0]?.level_number);
+                    const isPassed = isFirst || totalXP >= Number(lvl.required_xp || 0);
 
                     return (
                       <div

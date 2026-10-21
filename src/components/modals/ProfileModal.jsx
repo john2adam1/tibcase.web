@@ -38,7 +38,7 @@ export default function ProfileModal({
           overflowY: 'auto',
           borderRadius: 32,
           position: 'relative',
-          background: '#F8FAFC',
+          background: 'var(--bg-main)',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35)',
         }}
       >

@@ -92,6 +92,7 @@ export default function AuthModal({
             setIdentifier(parsed.identifier);
             if (parsed.authMethod) setAuthMethod(parsed.authMethod);
             setStep('otp');
+            api.sendOtp(parsed.identifier, parsed.authMethod || 'telegram').catch(() => {});
             return;
           } else if (isExpired) {
             localStorage.removeItem('tibcase_auth_pending');
@@ -229,7 +230,7 @@ export default function AuthModal({
     setErrorMsg(`${t('auth.googleError')} (${window.location.origin})`);
   }, [t]);
 
-  // Send OTP (transitions immediately to OTP step & opens Telegram bot)
+  // Send OTP, then open Telegram bot (bot requires OTP to already exist)
   const handleSendCode = async (e) => {
     if (e) e.preventDefault();
     const type = resolveAuthType();
@@ -239,8 +240,8 @@ export default function AuthModal({
 
     if (type === 'telegram' && !cleanId.startsWith('@')) {
       const digits = cleanId.replace(/\D/g, '');
-      if (digits.length < 9) {
-        setErrorMsg("Iltimos, telefon raqamingizni to'g'ri formatda kiriting (+998...)");
+      if (!digits.startsWith('998') || digits.length !== 12) {
+        setErrorMsg("Iltimos, telefon raqamingizni to'g'ri formatda kiriting (+998XXXXXXXXX)");
         return;
       }
     }
@@ -250,29 +251,27 @@ export default function AuthModal({
     setInfoMsg('');
     setCode('');
     setResendTimer(60);
-
-    // Save pending state in localStorage & sessionStorage in case mobile WebApp reloads or is minimized
-    try {
-      const pendingData = {
-        step: 'otp',
-        identifier: cleanId,
-        authMethod: type,
-        timestamp: Date.now()
-      };
-      sessionStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
-      localStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
-    } catch {
-      // ignore
-    }
-
-    // 1. Immediately switch to OTP code input step on the website
-    setStep('otp');
-
-    // 3. Request OTP from backend
     setLoading(true);
+
     try {
       await api.sendOtp(cleanId, type);
+      try {
+        const pendingData = {
+          step: 'otp',
+          identifier: cleanId,
+          authMethod: type,
+          timestamp: Date.now(),
+        };
+        sessionStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
+        localStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
+      } catch {
+        // ignore
+      }
+      setStep('otp');
       setInfoMsg(t('auth.resendSuccess') || 'Tasdiqlash kodi yuborildi ✓');
+      if (type === 'telegram') {
+        openTelegramBot(cleanId);
+      }
     } catch (err) {
       setErrorMsg(err.message || t('auth.sendError'));
     } finally {
@@ -366,19 +365,17 @@ export default function AuthModal({
   };
 
   // Open Telegram Bot or close WebApp when inside Telegram
-  const handleOpenTelegramBot = (e) => {
-    if (e) e.preventDefault();
+  const openTelegramBot = (idOverride) => {
     const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
     const type = resolveAuthType();
-    const cleanId = normalizeIdentifier(identifier, type);
+    const cleanId = normalizeIdentifier(idOverride || identifier, type);
 
-    // Save pending state so it is restored on re-opening WebApp
     try {
       const pendingData = {
         step: 'otp',
         identifier: cleanId,
         authMethod: type,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
       sessionStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
       localStorage.setItem('tibcase_auth_pending', JSON.stringify(pendingData));
@@ -386,17 +383,16 @@ export default function AuthModal({
       // ignore
     }
 
-    // Inside Telegram WebApp:
     if (tg?.initData) {
       if (typeof tg.openTelegramLink === 'function') {
         try {
           tg.openTelegramLink(TELEGRAM_BOT_URL);
-        } catch {}
+        } catch { /* ignore */ }
       }
       if (typeof tg.disableClosingConfirmation === 'function') {
         try {
           tg.disableClosingConfirmation();
-        } catch {}
+        } catch { /* ignore */ }
       }
       if (typeof tg.close === 'function') {
         tg.close();
@@ -404,6 +400,12 @@ export default function AuthModal({
     } else {
       window.open(TELEGRAM_BOT_URL, '_blank', 'noopener,noreferrer');
     }
+  };
+
+  const handleOpenTelegramBot = (e) => {
+    if (e) e.preventDefault();
+    if (loading) return;
+    openTelegramBot();
   };
 
   // Clipboard paste helper for OTP
@@ -723,6 +725,7 @@ export default function AuthModal({
               <button
                 type="button"
                 onClick={handleOpenTelegramBot}
+                disabled={loading}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

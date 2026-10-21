@@ -15,10 +15,11 @@ import {
   Bookmark,
   Calendar,
 } from 'lucide-react';
-import { api, extractList } from '../api';
+import { api, extractList, resolveMediaUrl } from '../api';
 import { useTranslation } from '../i18n.jsx';
+import Skeleton from '../components/common/Skeleton.jsx';
 
-const getCategoryMeta = (cat) => {
+export const getCategoryMeta = (cat) => {
   const name = String(cat?.name || '').toLowerCase();
   if (name.includes('kardio') || name.includes('cardio') || name.includes('yurak')) {
     return { emoji: '❤️', iconBg: '#FEE2E2', iconBorder: '#FCA5A5', color: '#EF4444' };
@@ -47,11 +48,40 @@ const getCategoryMeta = (cat) => {
   return { emoji: '🩺', iconBg: '#DCFCE7', iconBorder: '#86EFAC', color: '#16A34A' };
 };
 
-const formatTitle = (name) => {
+export const formatTitle = (name) => {
   const str = String(name ?? '');
   if (!str) return 'Kategoriya';
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
+
+export function CategoryCover({ src, alt, emoji, iconBg, height = 120 }) {
+  const [failed, setFailed] = useState(false);
+  const url = resolveMediaUrl(src);
+  const showImg = Boolean(url) && !failed;
+  return (
+    <div
+      style={{
+        height,
+        background: showImg ? '#F1F5F9' : iconBg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}
+    >
+      {showImg ? (
+        <img
+          src={url}
+          alt={alt}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span style={{ fontSize: 40, lineHeight: 1 }}>{emoji}</span>
+      )}
+    </div>
+  );
+}
 
 export default function CategoriesView({
   categories: initialCategories = [],
@@ -95,7 +125,7 @@ export default function CategoriesView({
     let isMounted = true;
     async function loadApiCategories() {
       try {
-        setCategoriesLoading(true);
+        if (!initialCategories?.length) setCategoriesLoading(true);
         setTabError('categories', '');
         const data = await api.getCategories();
         if (isMounted) setCategories(Array.isArray(data) ? data : []);
@@ -216,14 +246,14 @@ export default function CategoriesView({
   };
 
   return (
-    <div className="ui-page" style={{ paddingBottom: 90 }}>
+    <div className="ui-page" style={{ paddingBottom: 40 }}>
       {/* Top Header & Subtabs */}
       <div style={{ marginBottom: 20 }}>
         {/* Top Back & Page Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           {onBack && (
             <button
-              className="ui-icon-btn"
+              className="ui-icon-btn page-inline-back"
               onClick={onBack}
               title={t('cat.back', 'Orqaga')}
               aria-label={t('cat.back', 'Orqaga')}
@@ -299,18 +329,23 @@ export default function CategoriesView({
         <div>
           {categoriesLoading && (
             <div className="ui-grid">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="ui-card"
                   style={{
-                    padding: 24,
-                    height: 160,
-                    background: 'var(--bg-muted, #F8FAFC)',
-                    animation: 'pulse 1.5s infinite',
+                    overflow: 'hidden',
+                    minHeight: 180,
                     borderRadius: 18,
+                    border: '1px solid #E2E8F0',
+                    background: '#FFFFFF',
                   }}
-                />
+                >
+                  <Skeleton height={120} radius={0} />
+                  <div style={{ padding: '14px 16px 16px' }}>
+                    <Skeleton width="55%" height={16} style={{ marginBottom: 10 }} />
+                    <Skeleton width={72} height={20} radius={12} />
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -347,11 +382,11 @@ export default function CategoriesView({
                     className="ui-card ui-card-press"
                     onClick={() => onSelectCategory && onSelectCategory({ ...cat, title, emoji: meta.emoji, casesCount })}
                     style={{
-                      padding: 20,
+                      padding: 0,
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      minHeight: 140,
+                      overflow: 'hidden',
+                      minHeight: 180,
                       borderRadius: 18,
                       border: '1px solid #E2E8F0',
                       background: '#FFFFFF',
@@ -360,53 +395,18 @@ export default function CategoriesView({
                       transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                      <div
-                        style={{
-                          width: 52,
-                          height: 52,
-                          borderRadius: 16,
-                          background: meta.iconBg,
-                          border: `1px solid ${meta.iconBorder}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 26,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {cat.icon_url ? (
-                          <img
-                            src={cat.icon_url}
-                            alt={title}
-                            style={{ width: '70%', height: '70%', objectFit: 'contain' }}
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        ) : (
-                          <span>{meta.emoji}</span>
-                        )}
-                      </div>
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 8,
-                          background: '#F1F5F9',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#64748B',
-                        }}
-                      >
-                        <ChevronRight size={16} />
-                      </div>
-                    </div>
+                    <CategoryCover
+                      src={cat.icon_url || cat.image_url}
+                      alt={title}
+                      emoji={meta.emoji}
+                      iconBg={meta.iconBg}
+                    />
 
-                    <div style={{ marginTop: 14 }}>
-                      <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0', lineHeight: 1.25 }}>
-                        {title}
-                      </h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ padding: '14px 16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0', lineHeight: 1.25 }}>
+                          {title}
+                        </h3>
                         <span
                           style={{
                             fontSize: 11,
@@ -419,6 +419,21 @@ export default function CategoriesView({
                         >
                           {casesCount} {t('cat.cases', 'keys')}
                         </span>
+                      </div>
+                      <div
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 8,
+                          background: '#F1F5F9',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#64748B',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <ChevronRight size={16} />
                       </div>
                     </div>
                   </div>
@@ -434,22 +449,6 @@ export default function CategoriesView({
           ============================================================ */}
       {activeTab === 'favorites' && (
         <div>
-          {favoritesLoading && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  style={{
-                    height: 100,
-                    borderRadius: 16,
-                    background: '#F1F5F9',
-                    animation: 'pulse 1.5s infinite',
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
           {!favoritesLoading && loadError.favorites && renderError(loadError.favorites)}
 
           {!favoritesLoading && !loadError.favorites && favoritesList.length === 0 && (
@@ -587,22 +586,6 @@ export default function CategoriesView({
           ============================================================ */}
       {activeTab === 'history' && (
         <div>
-          {historyLoading && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  style={{
-                    height: 110,
-                    borderRadius: 16,
-                    background: '#F1F5F9',
-                    animation: 'pulse 1.5s infinite',
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
           {!historyLoading && loadError.history && renderError(loadError.history)}
 
           {!historyLoading && !loadError.history && ongoingSims.length === 0 && completedSims.length === 0 && (

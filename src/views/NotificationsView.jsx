@@ -88,7 +88,7 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      background: '#F8FAFC',
+      background: 'var(--bg-main)',
       padding: '24px 20px',
       overflowY: 'auto',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -178,22 +178,13 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 60 }}>
-          <div style={{
-            width: 40, height: 40, border: '4px solid #E2E8F0', borderTopColor: '#3B82F6',
-            borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px auto',
-          }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
-          {t('notifications.loading', 'Yuklanmoqda...')}
-        </div>
-      ) : loadError ? (
+      {loadError ? (
         <div style={{ textAlign: 'center', marginTop: 60, padding: '0 20px', color: '#B91C1C' }}>
           <p style={{ fontWeight: 700, margin: '0 0 8px' }}>{t('common.error', 'Xatolik yuz berdi')}</p>
           <p style={{ fontSize: 13, margin: '0 0 16px', color: '#64748B' }}>{loadError}</p>
           <button type="button" className="ui-btn" onClick={fetchNotifications}>{t('common.retry', 'Qayta urinish')}</button>
         </div>
-      ) : notifications.length === 0 ? (
+      ) : !loading && notifications.length === 0 ? (
         <div style={{
           display: 'flex',
           flexDirection: 'column',

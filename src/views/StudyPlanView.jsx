@@ -10,7 +10,6 @@ export default function StudyPlanView({ onBack }) {
     remind_time: '20:00',
     remind_minutes_before: 15,
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -27,7 +26,6 @@ export default function StudyPlanView({ onBack }) {
 
   const fetchPlan = async () => {
     try {
-      setLoading(true);
       const res = await api.getStudyPlan();
       if (res) {
         const data = {
@@ -41,8 +39,6 @@ export default function StudyPlanView({ onBack }) {
     } catch (err) {
       console.error('Failed to load study plan', err);
       showToast(err?.message || t('common.error', 'Xatolik yuz berdi'), 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -89,7 +85,7 @@ export default function StudyPlanView({ onBack }) {
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      background: '#F8FAFC',
+      background: 'var(--bg-main)',
       padding: '24px 20px',
       overflowY: 'auto',
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -133,17 +129,7 @@ export default function StudyPlanView({ onBack }) {
         </h1>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', color: '#94A3B8', marginTop: 60 }}>
-          <div style={{
-            width: 40, height: 40, border: '4px solid #E2E8F0', borderTopColor: '#3B82F6',
-            borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px auto',
-          }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
-          {t('studyPlan.loading', 'Yuklanmoqda...')}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* Info Banner */}
           <div style={{
@@ -391,7 +377,6 @@ export default function StudyPlanView({ onBack }) {
               )}
           </button>
         </div>
-      )}
 
       {/* Toast */}
       {toast && (
