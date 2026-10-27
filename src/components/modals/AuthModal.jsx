@@ -11,8 +11,10 @@ import {
   Phone,
   ClipboardPaste
 } from 'lucide-react';
-import { api, setStoredUser, setToken, setRefreshToken } from '../../api';
+import { api, formatApiError, setStoredUser, setToken, setRefreshToken } from '../../api';
 import { useTranslation } from '../../i18n.jsx';
+import { getCaptchaTokenSafe } from '../../utils/captcha';
+import { openExternalUrl } from '../../utils/openUrl';
 
 const TELEGRAM_BOT_URL = 'https://t.me/tibstation_aibot?start=login';
 
@@ -42,7 +44,8 @@ export default function AuthModal({
   onLoginSuccess,
 }) {
   const { t } = useTranslation();
-  const [step, setStep] = useState('input'); // 'input' | 'otp'
+  const [step, setStep] = useState('input'); // 'input' | 'otp' | 'tg_wait'
+  const [tgLogin, setTgLogin] = useState(null);
   const [authMethod, setAuthMethod] = useState('telegram'); // 'telegram' | 'email' (default to Telegram/phone)
   const [identifier, setIdentifier] = useState('+998');
   const [code, setCode] = useState('');
@@ -59,6 +62,7 @@ export default function AuthModal({
     setInfoMsg('');
     setCode('');
     setStep('input');
+    setTgLogin(null);
     try {
       sessionStorage.removeItem('tibcase_auth_pending');
       localStorage.removeItem('tibcase_auth_pending');
@@ -88,6 +92,11 @@ export default function AuthModal({
         if (raw) {
           const parsed = JSON.parse(raw);
           const isExpired = parsed?.timestamp && (Date.now() - parsed.timestamp > 10 * 60 * 1000);
+          if (!isExpired && parsed?.step === 'tg_wait' && parsed?.token) {
+            setTgLogin({ token: parsed.token, bot_url: parsed.bot_url, expiresAt: parsed.expiresAt });
+            setStep('tg_wait');
+            return;
+          }
           if (!isExpired && parsed?.step === 'otp' && parsed?.identifier) {
             setIdentifier(parsed.identifier);
             if (parsed.authMethod) setAuthMethod(parsed.authMethod);
@@ -254,7 +263,8 @@ export default function AuthModal({
     setLoading(true);
 
     try {
-      await api.sendOtp(cleanId, type);
+      const captcha = await getCaptchaTokenSafe();
+      await api.sendOtp(cleanId, type, captcha || undefined);
       try {
         const pendingData = {
           step: 'otp',
@@ -273,7 +283,7 @@ export default function AuthModal({
         openTelegramBot(cleanId);
       }
     } catch (err) {
-      setErrorMsg(err.message || t('auth.sendError'));
+      setErrorMsg(formatApiError(err, t) || t('auth.sendError'));
     } finally {
       setLoading(false);
     }
@@ -292,10 +302,11 @@ export default function AuthModal({
     setResendTimer(60);
 
     try {
-      await api.sendOtp(cleanId, type);
+      const captcha = await getCaptchaTokenSafe();
+      await api.sendOtp(cleanId, type, captcha || undefined);
       setInfoMsg(t('auth.resendSuccess') || 'Yangi tasdiqlash kodi yuborildi ✓');
     } catch (err) {
-      setErrorMsg(err.message || t('auth.sendError'));
+      setErrorMsg(formatApiError(err, t) || t('auth.sendError'));
     } finally {
       setResending(false);
     }
@@ -337,7 +348,7 @@ export default function AuthModal({
 
       handleClose();
     } catch (err) {
-      setErrorMsg(err.message || t('auth.confirmError'));
+      setErrorMsg(formatApiError(err, t) || t('auth.confirmError'));
     } finally {
       setLoading(false);
     }
@@ -350,6 +361,74 @@ export default function AuthModal({
       handleConfirmCode(null, val);
     }
   };
+
+  const finishWithAuth = async (auth) => {
+    if (auth?.access_token) setToken(auth.access_token);
+    if (auth?.refresh_token) setRefreshToken(auth.refresh_token);
+    const profile = await api.getUserProfile();
+    setStoredUser(profile);
+    onLoginSuccess(profile);
+    handleClose();
+  };
+
+  const handleTelegramBotLogin = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    setInfoMsg('');
+    try {
+      const captcha = await getCaptchaTokenSafe();
+      const res = await api.startTelegramLogin(captcha || undefined);
+      const expiresAt = Date.now() + (Number(res?.expires_in) || 300) * 1000;
+      const next = { token: res.token, bot_url: res.bot_url, expiresAt };
+      setTgLogin(next);
+      try {
+        sessionStorage.setItem('tibcase_auth_pending', JSON.stringify({
+          step: 'tg_wait',
+          token: res.token,
+          bot_url: res.bot_url,
+          expiresAt,
+          timestamp: Date.now(),
+        }));
+      } catch { /* ignore */ }
+      setStep('tg_wait');
+      openExternalUrl(res.bot_url);
+    } catch (err) {
+      setErrorMsg(formatApiError(err, t));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (step !== 'tg_wait' || !tgLogin?.token) return undefined;
+    let cancelled = false;
+    const tick = async () => {
+      if (Date.now() > (tgLogin.expiresAt || 0)) {
+        setErrorMsg(t('auth.tgBotExpired', "Token muddati o'tdi. Qayta boshlang."));
+        setStep('input');
+        return;
+      }
+      try {
+        const res = await api.checkTelegramLogin(tgLogin.token);
+        if (cancelled) return;
+        if (res?.status === 'confirmed' && (res.auth || res.access_token)) {
+          await finishWithAuth(res.auth || res);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        if (err?.code === 'otp_expired') {
+          setErrorMsg(formatApiError(err, t));
+          setStep('input');
+        }
+      }
+    };
+    tick();
+    const id = setInterval(tick, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [step, tgLogin]);
 
   const handleChangeNumber = () => {
     try {
@@ -608,8 +687,46 @@ export default function AuthModal({
           </div>
         )}
 
-        {step === 'input' ? (
+        {step === 'tg_wait' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'center' }}>
+            <p style={{ margin: 0, fontWeight: 700, color: '#0F172A' }}>
+              {t('auth.tgBotWaiting', 'Telegram botida tasdiqlang. Shu yerga avtomatik qaytamiz.')}
+            </p>
+            <button
+              type="button"
+              onClick={() => openExternalUrl(tgLogin?.bot_url)}
+              style={{
+                ...btnPrimaryStyle,
+                background: 'linear-gradient(135deg, #0088cc 0%, #0284c7 100%)',
+              }}
+            >
+              <Send size={16} />
+              {t('auth.tgBotOpen', 'Botni ochish')}
+              <ExternalLink size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStep('input'); setTgLogin(null); }}
+              style={{ background: 'none', border: 'none', color: '#64748B', fontWeight: 700, cursor: 'pointer' }}
+            >
+              {t('auth.changeNumber')}
+            </button>
+          </div>
+        ) : step === 'input' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <button
+              type="button"
+              onClick={handleTelegramBotLogin}
+              disabled={loading || googleLoading}
+              style={{
+                ...btnPrimaryStyle,
+                background: 'linear-gradient(135deg, #0088cc 0%, #0284c7 100%)',
+              }}
+            >
+              <Send size={16} />
+              {loading ? t('auth.sending') : t('auth.tgBotLogin', 'Telegram orqali kirish')}
+            </button>
+
             {/* 1. Official Google Sign-In via @react-oauth/google */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
               <MemoizedGoogleLogin

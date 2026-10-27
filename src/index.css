@@ -152,6 +152,82 @@ input, select, textarea {
   width: 100%;
 }
 
+.tablet-mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  flex-shrink: 0;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  height: calc(56px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+  background: var(--bg-card);
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tablet-mobile-header .tm-header-logo {
+  display: flex;
+  align-items: center;
+  user-select: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tablet-mobile-header .tm-header-logo img {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+
+.tm-header-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 180px;
+  height: 40px;
+  padding: 0 12px 0 10px;
+  border: none;
+  border-radius: 99px;
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.tm-header-home span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tablet-mobile-header #btn-open-notifications {
+  border: none;
+}
+
+.tm-header-unread {
+  position: absolute;
+  top: 10px;
+  right: 11px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 1px solid #fff;
+  box-sizing: content-box;
+}
+
 .app-workspace-footer {
   margin-top: auto;
   flex-shrink: 0;
@@ -207,12 +283,6 @@ input, select, textarea {
   }
 }
 
-@media (max-width: 1023.98px) {
-  .page-inline-back {
-    display: none !important;
-  }
-}
-
 /* Tablet view (768px - 1023px) */
 @media (min-width: 768px) and (max-width: 1023.98px) {
   .desktop-sidebar-wrapper {
@@ -235,10 +305,18 @@ input, select, textarea {
     margin-left: 0 !important;
     width: 100% !important;
     min-height: 100dvh;
-    padding: 20px 24px 48px 24px;
+    padding: 0 0 48px 0;
     background: var(--bg-main);
   }
 
+  .app-main-content-wrapper:not(.simulation-mode) > main {
+    padding: 20px 24px 0;
+  }
+
+  .app-workspace-footer {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 
 /* Mobile view (< 768px) & Telegram Mini App */
@@ -263,8 +341,17 @@ input, select, textarea {
     margin-left: 0 !important;
     width: 100% !important;
     min-height: 100dvh;
-    padding: 16px 16px calc(84px + env(safe-area-inset-bottom, 0px)) 16px;
+    padding: 0 0 calc(84px + env(safe-area-inset-bottom, 0px)) 0;
     background: var(--bg-main);
+  }
+
+  .app-main-content-wrapper:not(.simulation-mode) > main {
+    padding: 16px 16px 0;
+  }
+
+  .app-workspace-footer {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   /* Hide 3 stats cards on mobile screens */
@@ -275,11 +362,6 @@ input, select, textarea {
 
 /* Tablets and Mobile (< 1024px) rule */
 @media (max-width: 1023.98px) {
-  /* The sticky header sits inside the padded wrapper, so give the content its own gap below it */
-  .app-main-content-wrapper:not(.simulation-mode) > main {
-    padding-top: 20px;
-  }
-
   .dashboard-stats-grid {
     display: none !important;
   }
@@ -1088,7 +1170,7 @@ body { background: var(--bg-main); }
   font-size: 15px;
   font-weight: 800;
   color: var(--text-primary);
-  margin: 0 0 6px;
+  margin: 0;
   line-height: 1.25;
 }
 
@@ -1099,6 +1181,108 @@ body { background: var(--bg-main); }
   border-radius: 12px;
   background: #DCFCE7;
   color: #15803D;
+}
+
+.home-fc-card {
+  flex: 0 0 78%;
+  max-width: 340px;
+  min-height: 188px;
+  padding: 16px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+  scroll-snap-align: start;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  border-radius: 18px;
+  overflow: hidden;
+  appearance: none;
+  font: inherit;
+  color: inherit;
+}
+
+.home-fc-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #16A34A;
+}
+
+.home-fc-text {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.home-fc-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.home-fc-ratings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.home-fc-ratings button {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.home-fc-ratings button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (min-width: 768px) {
+  .home-fc-card { flex-basis: 280px; }
+}
+
+.fc-grid-card {
+  text-align: left;
+  padding: 14px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+}
+
+.fc-grid-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #16A34A;
+}
+
+.fc-grid-text {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary);
 }
 
 .home-cat-card-arrow {
@@ -1233,3 +1417,24 @@ body { background: var(--bg-main); }
 /* Sidebar hover for inactive items (active one has an inline green background) */
 [id^="sidebar-nav-"]:hover:not([style*="var(--accent)"]) { background: var(--bg-muted) !important; color: var(--accent) !important; }
 #btn-sidebar-logout:hover { background: #FEF2F2 !important; color: #EF4444 !important; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 0.8s linear infinite; }
+
+.fc-flip { perspective: 1000px; }
+.fc-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.45s ease;
+  min-height: 220px;
+}
+.fc-inner.flipped { transform: rotateY(180deg); }
+.fc-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.fc-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}

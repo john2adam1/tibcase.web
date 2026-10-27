@@ -24,6 +24,9 @@ import ProfileView from './views/ProfileView';
 import NotificationsView from './views/NotificationsView.jsx';
 import StudyPlanView from './views/StudyPlanView.jsx';
 import StoreTariffs from './views/StoreTariffs';
+import PracticeView from './views/PracticeView.jsx';
+import FlashcardsView from './views/FlashcardsView.jsx';
+import KnowledgeMapView from './views/KnowledgeMapView.jsx';
 
 // Layout
 import BottomNavBar from './components/layout/BottomNavBar';
@@ -103,6 +106,8 @@ export default function App() {
         setCurrentView('cases');
       } else if (currentView === 'notifications') {
         setCurrentView(notificationsBackView || 'cases');
+      } else if (['practice', 'flashcards', 'knowledge_map'].includes(currentView)) {
+        setCurrentView('cases');
       } else if (['study_plan', 'leaderboard', 'store', 'tariffs'].includes(currentView)) {
         setCurrentView('profile');
       } else if (currentView === 'profile') {
@@ -167,6 +172,9 @@ export default function App() {
   const [banners, setBanners] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [userLimit, setUserLimit] = useState(null);
+  const [wallet, setWallet] = useState(null);
+  const [flashcardStats, setFlashcardStats] = useState(null);
+  const [practiceConfig, setPracticeConfig] = useState(null);
 
   // Active Simulation states
   const [activeCase, setActiveCase] = useState(null);
@@ -216,14 +224,33 @@ export default function App() {
   const handleRefreshLimit = async () => {
     if (isAuthenticated) {
       try {
-        const fresh = await api.getUserLimit();
+        const [fresh, freshWallet] = await Promise.all([
+          api.getUserLimit().catch(() => null),
+          api.getPracticeWallet().catch(() => null),
+        ]);
         if (fresh) setUserLimit(fresh);
+        if (freshWallet) setWallet(freshWallet);
         return fresh;
       } catch (err) {
         console.warn('Refresh limit error:', err);
       }
     }
     return null;
+  };
+
+  const refreshWallet = () => {
+    api.getPracticeWallet().then((w) => { if (w) setWallet(w); }).catch(() => {});
+    api.getFlashcardStats().then((s) => { if (s) setFlashcardStats(s); }).catch(() => {});
+  };
+
+  const openStoreForCoins = () => {
+    setStoreInitialTab('coins');
+    setCurrentView('store');
+  };
+
+  const openPractice = (config = null) => {
+    setPracticeConfig(config);
+    setCurrentView('practice');
   };
 
   // Initial Data Fetch
@@ -256,6 +283,8 @@ export default function App() {
           contactsData,
           bannersData,
           notifData,
+          walletData,
+          flashStats,
         ] = await Promise.all([
           api.getUserProfile().catch(warn('profile', null)),
           api.getCategories().catch(warn('categories', [])),
@@ -267,6 +296,8 @@ export default function App() {
           api.getContacts().catch(warn('contacts', [])),
           api.getBanners().catch(warn('banners', [])),
           api.getNotifications().catch(warn('notifications', { count: 0, notifications: [] })),
+          api.getPracticeWallet().catch(warn('wallet', null)),
+          api.getFlashcardStats().catch(warn('flashcards', null)),
         ]);
 
         if (isMounted) {
@@ -293,6 +324,8 @@ export default function App() {
           if (contactsData && contactsData.length) setContacts(contactsData);
           if (bannersData && bannersData.length) setBanners(bannersData);
           if (notifData) setNotifications(notifData?.notifications || notifData?.items || []);
+          if (walletData) setWallet(walletData);
+          setFlashcardStats(flashStats || { total: 0 });
         }
       } catch (err) {
         console.warn('Data load handled:', err.message);
@@ -357,9 +390,10 @@ export default function App() {
 
     // Refresh full profile & daily limit from API
     try {
-      const [freshProfile, freshLimit] = await Promise.all([
+      const [freshProfile, freshLimit, freshWallet] = await Promise.all([
         api.getUserProfile().catch(() => null),
         api.getUserLimit().catch(() => null),
+        api.getPracticeWallet().catch(() => null),
       ]);
       if (freshProfile) {
         setUser(freshProfile);
@@ -369,6 +403,7 @@ export default function App() {
         setUserLimit(freshLimit);
         localStorage.setItem('tibcase_last_limit_date', getTodayDateStr());
       }
+      if (freshWallet) setWallet(freshWallet);
     } catch { /* use whatever came from login */ }
 
     registerStoredFcmDevice();
@@ -635,6 +670,7 @@ export default function App() {
         if (freshLimit) {
           setUserLimit(freshLimit);
         }
+        refreshWallet();
       } catch {
         // profile refresh failed — keep current values
       }
@@ -701,7 +737,10 @@ export default function App() {
       {/* 1. Desktop Persistent Sidebar (>= 1024px) & Tablet/Mobile Drawer (< 1024px) */}
       <Sidebar
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={(id) => {
+          if (id === 'practice') setPracticeConfig(null);
+          setCurrentView(id);
+        }}
         user={user}
         onOpenProfile={() => setCurrentView('profile')}
         onLogout={handleLogout}
@@ -734,13 +773,17 @@ export default function App() {
           {currentView === 'cases' && (
             <HomeView
               user={user}
+              wallet={wallet}
               categories={categories}
               banners={banners}
               topicsCount={topicTotal}
               userLimit={userLimit}
-              onStartSimulation={handleStartSimulationFromHome}
+              flashcardStats={flashcardStats}
+              onStartPractice={() => openPractice(null)}
               onOpenClinics={() => setCurrentView('clinics')}
               onOpenStore={() => setCurrentView('store')}
+              onOpenFlashcards={() => setCurrentView('flashcards')}
+              onOpenKnowledgeMap={() => setCurrentView('knowledge_map')}
               onSelectCategory={(cat) => {
                 setSelectedCategory(cat);
                 setCurrentView('roadmap');
@@ -771,6 +814,7 @@ export default function App() {
             tariffs={tariffs}
             user={user}
             userLimit={userLimit}
+            wallet={wallet}
             onUserUpdate={setUser}
             onBack={() => setCurrentView('profile')}
             initialTab={storeInitialTab}
@@ -786,6 +830,7 @@ export default function App() {
         {currentView === 'profile' && (
           <ProfileView
             user={user}
+            wallet={wallet}
             userLimit={userLimit}
             levels={levels}
             tariffs={tariffs}
@@ -865,11 +910,44 @@ export default function App() {
         {currentView === 'study_plan' && (
           <StudyPlanView onBack={() => setCurrentView('profile')} />
         )}
+
+        {currentView === 'practice' && (
+          <PracticeView
+            key={JSON.stringify(practiceConfig) || 'practice'}
+            categories={categories}
+            initialConfig={practiceConfig}
+            onBack={() => { setPracticeConfig(null); setCurrentView('cases'); }}
+            onToast={showToast}
+            onInsufficientCoins={openStoreForCoins}
+            onOpenFlashcards={() => setCurrentView('flashcards')}
+            onWalletRefresh={refreshWallet}
+          />
+        )}
+
+        {currentView === 'flashcards' && (
+          <FlashcardsView
+            categories={categories}
+            onBack={() => setCurrentView('cases')}
+            onToast={showToast}
+            onInsufficientCoins={openStoreForCoins}
+          />
+        )}
+
+        {currentView === 'knowledge_map' && (
+          <KnowledgeMapView
+            onBack={() => setCurrentView('cases')}
+            onToast={showToast}
+            onInsufficientCoins={openStoreForCoins}
+            onStartPractice={(cfg) => openPractice(cfg)}
+            onOpenFlashcards={() => setCurrentView('flashcards')}
+          />
+        )}
       </main>
 
       {/* Workspace Footer */}
       <footer className="app-workspace-footer" style={{
-        padding: '24px 0 10px 0',
+        paddingTop: 24,
+        paddingBottom: 10,
         borderTop: '1px solid #E2E8F0',
         background: 'transparent',
         textAlign: 'center',

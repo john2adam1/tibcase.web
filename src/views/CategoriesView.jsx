@@ -374,13 +374,12 @@ export default function CategoriesView({
               {categories.map((cat) => {
                 const meta = getCategoryMeta(cat);
                 const title = formatTitle(cat.name);
-                const casesCount = cat.cases_count ?? 0;
                 return (
                   <div
                     key={cat.id}
                     id={`cat-card-${cat.id}`}
                     className="ui-card ui-card-press"
-                    onClick={() => onSelectCategory && onSelectCategory({ ...cat, title, emoji: meta.emoji, casesCount })}
+                    onClick={() => onSelectCategory && onSelectCategory({ ...cat, title, emoji: meta.emoji })}
                     style={{
                       padding: 0,
                       display: 'flex',
@@ -404,21 +403,9 @@ export default function CategoriesView({
 
                     <div style={{ padding: '14px 16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                       <div style={{ minWidth: 0 }}>
-                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0', lineHeight: 1.25 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0, lineHeight: 1.25 }}>
                           {title}
                         </h3>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: 12,
-                            background: '#DCFCE7',
-                            color: '#15803D',
-                          }}
-                        >
-                          {casesCount} {t('cat.cases', 'keys')}
-                        </span>
                       </div>
                       <div
                         style={{

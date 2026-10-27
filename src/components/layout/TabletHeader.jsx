@@ -1,6 +1,7 @@
 import React from 'react';
-import { Bell, ChevronLeft } from 'lucide-react';
+import { Bell, Home } from 'lucide-react';
 import ProfileChip from '../common/ProfileChip.jsx';
+import { useTranslation } from '../../i18n.jsx';
 
 export default function TabletHeader({
   currentView = 'cases',
@@ -10,64 +11,39 @@ export default function TabletHeader({
   onOpenNotifications,
   unreadCount = 0,
 }) {
-  const isHome = currentView === 'cases';
+  const { t } = useTranslation();
+  const onProfile = currentView === 'profile';
 
   return (
-    <header
-      className="tablet-mobile-header"
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        height: 56,
-        background: 'var(--bg-card)',
-        borderBottom: '1px solid var(--border-color)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 12px',
-        boxSizing: 'border-box',
-      }}
-    >
-      {isHome ? (
-        <div className="tm-header-menu" style={{ minWidth: 0 }}>
+    <header className="tablet-mobile-header">
+      <div className="tm-header-menu" style={{ minWidth: 0 }}>
+        {onProfile ? (
+          <button
+            type="button"
+            id="btn-header-home"
+            className="tm-header-home"
+            onClick={onGoHome}
+          >
+            <Home size={18} strokeWidth={2.4} />
+            <span>{t('nav.homePage', 'Asosiy sahifa')}</span>
+          </button>
+        ) : (
           <ProfileChip user={user} onClick={onOpenProfile} />
-        </div>
-      ) : (
-        <button
-          id="btn-header-back-home"
-          className="ui-icon-btn tm-header-menu"
-          onClick={onGoHome}
-          aria-label="Asosiy"
-          style={{ border: 'none' }}
-        >
-          <ChevronLeft size={24} strokeWidth={2} />
-        </button>
-      )}
+        )}
+      </div>
 
       <button
         type="button"
         className="tm-header-logo"
         onClick={onGoHome}
-        aria-label="Asosiy"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          userSelect: 'none',
-          border: 'none',
-          background: 'transparent',
-          padding: 0,
-          cursor: 'pointer',
-        }}
+        aria-label={t('nav.home', 'Asosiy')}
       >
-        <img src="/logo-full.svg" alt="TibStation" style={{ height: 26, width: 'auto', display: 'block' }} />
+        <img src="/logo-full.svg" alt="TibStation" />
       </button>
 
-      <button id="btn-open-notifications" className="ui-icon-btn" onClick={onOpenNotifications} aria-label="Notifications" style={{ border: 'none' }}>
+      <button id="btn-open-notifications" className="ui-icon-btn" onClick={onOpenNotifications} aria-label="Notifications">
         <Bell size={22} strokeWidth={2.6} />
-        {unreadCount > 0 && (
-          <span style={{ position: 'absolute', top: 10, right: 11, width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)', border: '1px solid #fff', boxSizing: 'content-box' }} />
-        )}
+        {unreadCount > 0 && <span className="tm-header-unread" />}
       </button>
     </header>
   );

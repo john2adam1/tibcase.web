@@ -136,7 +136,7 @@ export default function CaseSimulationRoom({
   const [sessionEnded, setSessionEnded] = useState(false);
   const [analysisReady, setAnalysisReady] = useState(false);
   const [loadingNext, setLoadingNext] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [errorBanner, setErrorBanner] = useState('');
   const [messages, setMessages] = useState(() => (
     caseItem?.chief_complaint
@@ -148,7 +148,7 @@ export default function CaseSimulationRoom({
   const chatBottomRef = useRef(null);
   const recorderRef = useRef(null);
   const secondsRef = useRef(0);
-  const voiceEnabledRef = useRef(true);
+  const voiceEnabledRef = useRef(false);
   const sessionEndedRef = useRef(false);
   const sendingRef = useRef(false);
   const usageRef = useRef({ tokens_used: 0, coins_spent: 0 });
@@ -219,8 +219,8 @@ export default function CaseSimulationRoom({
 
   useEffect(() => {
     api.getVoiceSetting()
-      .then((res) => setVoiceEnabled(res?.enabled !== false))
-      .catch(() => setVoiceEnabled(true));
+      .then((res) => setVoiceEnabled(res?.enabled === true))
+      .catch(() => setVoiceEnabled(false));
   }, []);
 
   // Real-time vitals / health over WebSocket (same as user-panel.html)

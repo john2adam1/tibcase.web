@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import UserAvatar from '../components/common/UserAvatar';
-import { api, peekLevels, resolveMediaUrl } from '../api';
+import { api, formatApiError, peekLevels, resolveMediaUrl, walletSpendable } from '../api';
+import { openExternalUrl } from '../utils/openUrl';
 import Skeleton from '../components/common/Skeleton.jsx';
 import StoreTariffs from './StoreTariffs.jsx';
 import {
@@ -9,12 +10,11 @@ import {
   ChevronRight,
   Globe,
   Trash2,
-  Sparkles,
   Award,
   Star,
   Check,
   X,
-  MessageCircle,
+  Send,
   AlertCircle,
   Coins,
   ShieldAlert,
@@ -34,6 +34,7 @@ import { useTranslation } from '../i18n.jsx';
 
 export default function ProfileView({
   user,
+  wallet,
   userLimit,
   levels: levelsFromApp = [],
   onRefreshLimit,
@@ -126,9 +127,10 @@ export default function ProfileView({
   }, []);
 
   // Sub-modals for Settings
-  const [modalType, setModalType] = useState(null); // 'profile_info' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'feedback' | 'terms' | 'privacy' | 'delete' | 'levels_guide'
+  const [modalType, setModalType] = useState(null); // 'profile_info' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'terms' | 'privacy' | 'delete' | 'levels_guide'
   const [tempUsername, setTempUsername] = useState(user?.name || '');
-  const [feedbackText, setFeedbackText] = useState('');
+  const [emailCode, setEmailCode] = useState('');
+  const [linkBusy, setLinkBusy] = useState(false);
   const [userRating, setUserRating] = useState(5);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -179,8 +181,6 @@ export default function ProfileView({
     try {
       await api.updateUserProfile({
         name: profileForm.name,
-        phone_number: profileForm.phone_number,
-        email: profileForm.email,
         language: profileForm.language,
         image: profileForm.imageFile,
       });
@@ -203,6 +203,97 @@ export default function ProfileView({
     }
   };
 
+  const refreshProfile = async () => {
+    const fresh = await api.getUserProfile().catch(() => null);
+    if (fresh) {
+      if (onUserUpdate) onUserUpdate(fresh);
+      setProfileForm((prev) => ({
+        ...prev,
+        phone_number: fresh.phone_number || '',
+        email: fresh.email || '',
+        name: fresh.name || prev.name,
+      }));
+    }
+    return fresh;
+  };
+
+  const handleLinkPhone = async () => {
+    setLinkBusy(true);
+    try {
+      const res = await api.startPhoneLink();
+      if (res?.bot_url) openExternalUrl(res.bot_url);
+      const token = res?.token;
+      const deadline = Date.now() + (Number(res?.expires_in) || 300) * 1000;
+      showToast(t('profile.linkPhoneWait', 'Telegram botida tasdiqlang'));
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const check = await api.confirmPhoneLink(token).catch(() => null);
+        if (check?.status === 'confirmed') {
+          await refreshProfile();
+          showToast(t('profile.linked', 'Ulandi'));
+          return;
+        }
+      }
+    } catch (err) {
+      showToast(formatApiError(err, t));
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
+  const handleUnlinkPhone = async () => {
+    setLinkBusy(true);
+    try {
+      await api.unlinkPhone();
+      await refreshProfile();
+      showToast(t('profile.unlinked', 'Uzildi'));
+    } catch (err) {
+      showToast(formatApiError(err, t));
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
+  const handleSendEmailCode = async () => {
+    if (!profileForm.email.trim()) return;
+    setLinkBusy(true);
+    try {
+      await api.sendEmailLink(profileForm.email.trim());
+      showToast(t('auth.resendSuccess'));
+    } catch (err) {
+      showToast(formatApiError(err, t));
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
+  const handleConfirmEmail = async () => {
+    if (!profileForm.email.trim() || !emailCode.trim()) return;
+    setLinkBusy(true);
+    try {
+      await api.confirmEmailLink(profileForm.email.trim(), emailCode.trim());
+      setEmailCode('');
+      await refreshProfile();
+      showToast(t('profile.linked', 'Ulandi'));
+    } catch (err) {
+      showToast(formatApiError(err, t));
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
+  const handleUnlinkEmail = async () => {
+    setLinkBusy(true);
+    try {
+      await api.unlinkEmail();
+      await refreshProfile();
+      showToast(t('profile.unlinked', 'Uzildi'));
+    } catch (err) {
+      showToast(formatApiError(err, t));
+    } finally {
+      setLinkBusy(false);
+    }
+  };
 
   // 3. About App State & Handlers
   const [aboutList, setAboutList] = useState([]);
@@ -219,11 +310,10 @@ export default function ProfileView({
       api.getContacts().catch(() => []),
       api.getFaqs().catch(() => []),
     ]).then(([abouts, routes, contacts, faqs]) => {
-      setAboutList(Array.isArray(abouts) ? abouts : (abouts?.abouts || []));
-      const routeData = routes && typeof routes === 'object' ? (routes.app_routes?.[0] || routes) : null;
-      setAppRoute(routeData);
-      setContactList(Array.isArray(contacts) ? contacts : (contacts?.contacts || []));
-      setFaqList(Array.isArray(faqs) ? faqs : (faqs?.faqs || []));
+      setAboutList(Array.isArray(abouts) ? abouts : []);
+      setAppRoute(Array.isArray(routes) ? (routes[0] || null) : null);
+      setContactList(Array.isArray(contacts) ? contacts : []);
+      setFaqList(Array.isArray(faqs) ? faqs : []);
     });
   };
 
@@ -627,15 +717,24 @@ export default function ProfileView({
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>
                     {t('profile.coins', 'Tangalar')}
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>{user?.coins || 0}</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>
+                    {wallet?.has_subscription
+                      ? t('profile.unlimited', 'Cheksiz')
+                      : (wallet ? walletSpendable(wallet) : (user?.coins || 0))}
+                  </div>
+                  {wallet && !wallet.has_subscription && (
+                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginTop: 4 }}>
+                      {t('home.walletFree', 'Bepul')}: {wallet.free_coins_left ?? 0} · {t('home.walletPaid', 'Balans')}: {wallet.coins ?? 0}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Daily Limit Card (Strictly bound to API models.UserLimitStatusRes) */}
+              {/* Daily free coins from GET /mobile/practice/wallet */}
               {(() => {
-                const isSub = Boolean(user?.has_subscription || localLimit?.has_subscription);
-                const rem = localLimit?.remaining ?? 0;
-                const tot = localLimit?.total ?? 0;
+                const isSub = Boolean(user?.has_subscription || wallet?.has_subscription || localLimit?.has_subscription);
+                const rem = Number(wallet?.free_coins_left ?? 0);
+                const tot = Number(wallet?.daily_free_coins ?? 0);
                 const isExhausted = !isSub && rem === 0;
 
                 return (
@@ -658,7 +757,7 @@ export default function ProfileView({
                       transition: 'all 0.15s ease',
                       minWidth: 0,
                     }}
-                    title={isSub ? "Cheksiz PRO obuna faol" : `Kunlik bepul limit: ${rem}/${tot}`}
+                    title={isSub ? t('profile.proActive', 'PRO faol') : `${t('home.walletFree', 'Bugungi bepul tanga')}: ${rem}/${tot}`}
                   >
                     <div style={{
                       width: 42,
@@ -697,7 +796,7 @@ export default function ProfileView({
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
                       }}>
-                        {isSub ? t('profile.proActive', 'PRO faol') : (rem > 0 ? `${rem} ${t('profile.remainingAttempts', 'ta qoldi')}` : t('profile.limitExhausted', 'Tugagan'))}
+                        {isSub ? t('profile.proActive', 'PRO faol') : (rem > 0 ? `${rem} ${t('profile.remainingCoins', 'tanga qoldi')}` : t('profile.limitExhausted', 'Tugagan'))}
                       </div>
                     </div>
                   </div>
@@ -780,6 +879,7 @@ export default function ProfileView({
                     tariffs={tariffs}
                     user={user}
                     userLimit={userLimit}
+                    wallet={wallet}
                     onUserUpdate={onUserUpdate}
                   />
                 </div>
@@ -797,42 +897,6 @@ export default function ProfileView({
                 onClick={() => onNavigate && onNavigate('study_plan')}
               />
             </div>
-
-            {/* Feedback: opens the project's Telegram group */}
-            <a
-              id="btn-profile-feedback"
-              href="https://t.me/+bCWmUnYC7KcyNjgy"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '14px 18px',
-                marginBottom: 24,
-                background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
-                border: '1px solid #BAE6FD',
-                borderRadius: 18,
-                boxShadow: '0 4px 0 #BAE6FD',
-                textDecoration: 'none',
-                cursor: 'pointer',
-                transition: 'filter 0.15s ease',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.97)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.filter = 'none'; }}
-            >
-              <div style={{
-                width: 42, height: 42, borderRadius: 13, flexShrink: 0,
-                background: 'linear-gradient(135deg, #38BDF8, #0284C7)',
-                color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <MessageCircle size={22} strokeWidth={2.2} />
-              </div>
-              <span style={{ flex: 1, minWidth: 0, fontSize: '14.5px', fontWeight: 800, color: '#075985', lineHeight: 1.3 }}>
-                {t('profile.feedbackBtn', 'Loyihani rivojlantirish uchun feedback yozing')}
-              </span>
-              <ExternalLink size={18} strokeWidth={2.4} color="#0284C7" />
-            </a>
 
             {/* Settings Group 1: Ma'lumot, Ilova haqida */}
             <div id="profile-settings-group" style={{
@@ -1162,7 +1226,7 @@ export default function ProfileView({
                 <input
                   type="tel"
                   value={profileForm.phone_number}
-                  onChange={(e) => setProfileForm(prev => ({ ...prev, phone_number: e.target.value }))}
+                  readOnly
                   placeholder="+998901234567"
                   style={{
                     width: '100%',
@@ -1174,8 +1238,19 @@ export default function ProfileView({
                     color: '#0F172A',
                     boxSizing: 'border-box',
                     outline: 'none',
+                    background: '#F8FAFC',
                   }}
                 />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="ui-btn" disabled={linkBusy} onClick={handleLinkPhone}>
+                    {t('profile.linkPhone', 'Telegram orqali ulash')}
+                  </button>
+                  {profileForm.phone_number && (
+                    <button type="button" className="ui-btn" disabled={linkBusy} onClick={handleUnlinkPhone}>
+                      {t('profile.unlink', 'Uzish')}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Email Field */}
@@ -1200,6 +1275,36 @@ export default function ProfileView({
                     outline: 'none',
                   }}
                 />
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="button" className="ui-btn" disabled={linkBusy} onClick={handleSendEmailCode}>
+                    {t('profile.emailCode', 'Kod yuborish')}
+                  </button>
+                  {user?.email && (
+                    <button type="button" className="ui-btn" disabled={linkBusy} onClick={handleUnlinkEmail}>
+                      {t('profile.unlink', 'Uzish')}
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={emailCode}
+                  onChange={(e) => setEmailCode(e.target.value)}
+                  placeholder={t('profile.confirmEmail', 'Email kodi')}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    border: '1px solid #E2E8F0',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+                <button type="button" className="ui-btn ui-btn-primary" disabled={linkBusy || !emailCode.trim()} onClick={handleConfirmEmail}>
+                  {t('auth.confirm', 'Tasdiqlash')}
+                </button>
               </div>
 
               {/* Til Select */}
@@ -1268,222 +1373,15 @@ export default function ProfileView({
       {modalType === 'about' && (
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title={t('pm.aboutTitle')} onClose={() => setModalType(null)} maxWidth={480}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-              {/* Brand Header */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                padding: '16px 12px',
-                background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
-                borderRadius: 16,
-                border: '1px solid #BBF7D0',
-              }}>
-                <div style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 18,
-                  background: '#16A34A',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: 'var(--shadow-sm)',
-                  marginBottom: 10,
-                }}>
-                  <Sparkles size={28} />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px 0' }}>
-                  TibStation AI Medical Simulator
-                </h3>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '3px 10px',
-                  borderRadius: 16,
-                  background: '#FFFFFF',
-                  border: '1px solid #86EFAC',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: '#15803D',
-                  marginBottom: 6,
-                }}>
-                  {appRoute?.app_version?.android ? `Versiya: ${appRoute.app_version.android}` : ''}
-                </div>
-                <p style={{ fontSize: '13px', color: '#475569', margin: 0, maxWidth: 320 }}>
-                  Tibbiyot talabalari va amaliyotchi shifokorlar uchun interaktiv klinik vaziyatlar simulyatori.
-                </p>
-              </div>
-
-              {/* Biz haqimizda items from API */}
-              {aboutList.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                    Biz haqimizda
-                  </h4>
-                  {aboutList.map((item, idx) => (
-                    <div
-                      key={item.id || idx}
-                      style={{
-                        padding: '14px',
-                        background: '#F8FAFC',
-                        borderRadius: 16,
-                        border: '1px solid #E2E8F0',
-                      }}
-                    >
-                      <h5 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
-                        {item.title}
-                      </h5>
-                      <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
-                        {item.description}
-                      </p>
-                      {item.link_url && (
-                        <a
-                          href={item.link_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            marginTop: 8,
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            color: '#2563EB',
-                            textDecoration: 'none',
-                          }}
-                        >
-                          Batafsil <ExternalLink size={12} />
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Support & Call Center */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                  Aloqa va Qo'llab-quvvatlash
-                </h4>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {appRoute?.call_center && (
-                  <a
-                    href={`tel:${appRoute.call_center}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      padding: '12px',
-                      borderRadius: 14,
-                      background: '#F0FDF4',
-                      border: '1px solid #BBF7D0',
-                      color: '#15803D',
-                      fontWeight: 700,
-                      fontSize: '13px',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <Phone size={16} />
-                    Call-center
-                  </a>
-                  )}
-
-                  {appRoute?.support_url && (
-                  <a
-                    href={appRoute.support_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      padding: '12px',
-                      borderRadius: 14,
-                      background: '#EFF6FF',
-                      border: '1px solid #BFDBFE',
-                      color: '#2563EB',
-                      fontWeight: 700,
-                      fontSize: '13px',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <MessageCircle size={16} />
-                    Yordam
-                  </a>
-                  )}
-                </div>
-
-                {/* Additional contacts list if available */}
-                {contactList.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-                    {contactList.map((c, cIdx) => (
-                      <div
-                        key={c.id || cIdx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 14px',
-                          background: '#F8FAFC',
-                          borderRadius: 12,
-                          border: '1px solid #E2E8F0',
-                          fontSize: '13px',
-                        }}
-                      >
-                        <span style={{ fontWeight: 700, color: '#0F172A' }}>{c.name}</span>
-                        {c.phone_number && (
-                          <a href={`tel:${c.phone_number}`} style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
-                            {c.phone_number}
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* FAQ Accordion */}
-              {faqList.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <HelpCircle size={16} color="#2563EB" /> Tez-tez beriladigan savollar
-                  </h4>
-                  {faqList.map((faq, fIdx) => (
-                    <div
-                      key={faq.id || fIdx}
-                      onClick={() => setExpandedFaq(expandedFaq === fIdx ? null : fIdx)}
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: 14,
-                        background: '#F8FAFC',
-                        border: '1px solid #E2E8F0',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
-                          {faq.question}
-                        </span>
-                        {expandedFaq === fIdx ? <ChevronUp size={16} color="#64748B" /> : <ChevronDown size={16} color="#64748B" />}
-                      </div>
-                      {expandedFaq === fIdx && (
-                        <p style={{ fontSize: '13px', color: '#475569', marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
-                          {faq.answer}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-            </div>
+            <AboutAppBody
+              t={t}
+              appRoute={appRoute}
+              aboutList={aboutList}
+              contactList={contactList}
+              faqList={faqList}
+              expandedFaq={expandedFaq}
+              setExpandedFaq={setExpandedFaq}
+            />
           </ModalCard>
         </ModalOverlay>
       )}
@@ -1620,57 +1518,6 @@ export default function ProfileView({
                 }}
               >
                 {t('pm.rateSubmit')}
-              </button>
-            </div>
-          </ModalCard>
-        </ModalOverlay>
-      )}
-
-      {/* 5. Feedback Modal */}
-      {modalType === 'feedback' && (
-        <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title={t('pm.feedbackTitle')} onClose={() => setModalType(null)}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
-                {t('pm.feedbackDesc')}
-              </p>
-              <textarea
-                rows={4}
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder={t('pm.feedbackPh')}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 14,
-                  border: '1px solid #E2E8F0',
-                  fontSize: '14px',
-                  color: '#0F172A',
-                  boxSizing: 'border-box',
-                  fontFamily: 'inherit',
-                  resize: 'none',
-                }}
-              />
-              <button
-                onClick={() => {
-                  if (!feedbackText.trim()) return;
-                  setModalType(null);
-                  setFeedbackText('');
-                  showToast(t('pm.feedbackSent'));
-                }}
-                style={{
-                  padding: '12px',
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                {t('pm.feedbackTitle')}
               </button>
             </div>
           </ModalCard>
@@ -1884,6 +1731,266 @@ export default function ProfileView({
 // -------------------------------------------------------------
 // Helper subcomponents for clean Settings rows
 // -------------------------------------------------------------
+
+function isTelegramUrl(url) {
+  return /(?:https?:\/\/)?(?:t(?:elegram)?\.me|telegram\.dog)\//i.test(String(url || ''));
+}
+
+function collectStringUrls(value, out = []) {
+  if (typeof value === 'string' && /^https?:\/\//i.test(value)) out.push(value);
+  else if (Array.isArray(value)) value.forEach((v) => collectStringUrls(v, out));
+  else if (value && typeof value === 'object') Object.values(value).forEach((v) => collectStringUrls(v, out));
+  return out;
+}
+
+function pickTelegramUrl(appRoute, contacts = [], abouts = []) {
+  const candidates = [
+    appRoute?.support_url,
+    ...collectStringUrls(appRoute?.app_links),
+    ...(Array.isArray(contacts) ? contacts.map((c) => c.link_url) : []),
+    ...(Array.isArray(abouts) ? abouts.map((a) => a.link_url) : []),
+  ].filter(Boolean);
+  return candidates.find(isTelegramUrl) || appRoute?.support_url || '';
+}
+
+function AboutAppBody({
+  t,
+  appRoute,
+  aboutList = [],
+  contactList = [],
+  faqList = [],
+  expandedFaq,
+  setExpandedFaq,
+}) {
+  const telegramUrl = pickTelegramUrl(appRoute, contactList, aboutList);
+  const telegramStyle = isTelegramUrl(telegramUrl);
+  const version = appRoute?.app_version?.android || appRoute?.app_version?.ios || appRoute?.app_version?.web || '';
+  const hasContacts = Boolean(appRoute?.call_center) || contactList.length > 0;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        padding: '22px 16px 20px',
+        background: 'linear-gradient(180deg, #ECFDF5 0%, #F0FDF4 100%)',
+        borderRadius: 20,
+        border: '1px solid #BBF7D0',
+      }}>
+        <img src="/logo-full.svg" alt="TibStation" style={{ height: 36, width: 'auto', marginBottom: 12 }} />
+        <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+          TibStation AI
+        </h3>
+        {version ? (
+          <div style={{
+            display: 'inline-flex',
+            padding: '3px 10px',
+            borderRadius: 99,
+            background: '#FFFFFF',
+            border: '1px solid #BBF7D0',
+            fontSize: 11,
+            fontWeight: 800,
+            color: '#15803D',
+            marginBottom: 8,
+          }}>
+            {t('about.version', 'Versiya')} {version}
+          </div>
+        ) : null}
+        <p style={{ fontSize: 13, color: '#475569', margin: 0, maxWidth: 340, lineHeight: 1.5 }}>
+          {t('about.tagline', 'Tibbiyot talabalari va amaliyotchi shifokorlar uchun interaktiv klinik vaziyatlar simulyatori.')}
+        </p>
+      </div>
+
+      {telegramUrl ? (
+        <button
+          type="button"
+          id="btn-about-telegram"
+          onClick={() => openExternalUrl(telegramUrl)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            width: '100%',
+            padding: '12px 14px',
+            border: 'none',
+            borderRadius: 16,
+            background: telegramStyle ? '#229ED9' : '#16A34A',
+            color: '#fff',
+            cursor: 'pointer',
+            textAlign: 'left',
+            fontFamily: 'inherit',
+          }}
+        >
+          <span style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            background: 'rgba(255,255,255,.18)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Send size={18} strokeWidth={2.4} />
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>
+              {telegramStyle ? t('about.telegram', 'Telegram') : t('about.support', 'Yordam')}
+            </span>
+            <span style={{ display: 'block', fontSize: 12, fontWeight: 600, opacity: 0.9 }}>
+              {telegramStyle ? t('about.telegramCta', 'Telegram orqali yozing') : t('about.supportCta', "Qo'llab-quvvatlash")}
+            </span>
+          </span>
+          <ExternalLink size={16} />
+        </button>
+      ) : null}
+
+      {aboutList.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {aboutList.map((item, idx) => (
+            <div
+              key={item.id || idx}
+              style={{
+                padding: '14px 16px',
+                background: '#F8FAFC',
+                borderRadius: 16,
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              {item.title ? (
+                <h5 style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>
+                  {item.title}
+                </h5>
+              ) : null}
+              {item.description ? (
+                <p style={{ fontSize: 13, color: '#475569', margin: 0, lineHeight: 1.55 }}>
+                  {item.description}
+                </p>
+              ) : null}
+              {item.link_url && !isTelegramUrl(item.link_url) ? (
+                <button
+                  type="button"
+                  onClick={() => openExternalUrl(item.link_url)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    marginTop: 10,
+                    padding: 0,
+                    border: 'none',
+                    background: 'transparent',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: '#16A34A',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {t('about.more', 'Batafsil')} <ExternalLink size={12} />
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hasContacts && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: '#64748B', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            {t('about.contact', "Aloqa")}
+          </h4>
+          {appRoute?.call_center ? (
+            <a
+              href={`tel:${appRoute.call_center}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 14px',
+                background: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                borderRadius: 14,
+                textDecoration: 'none',
+                color: '#15803D',
+              }}
+            >
+              <Phone size={16} />
+              <span style={{ flex: 1, fontWeight: 800, fontSize: 13 }}>{t('about.callCenter', 'Call-center')}</span>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>{appRoute.call_center}</span>
+            </a>
+          ) : null}
+          {contactList.map((c, cIdx) => (
+            <div
+              key={c.id || cIdx}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 14px',
+                background: '#F8FAFC',
+                borderRadius: 14,
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: 13 }}>{c.name}</div>
+                {c.phone_number ? (
+                  <a href={`tel:${c.phone_number}`} style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none', fontSize: 12 }}>
+                    {c.phone_number}
+                  </a>
+                ) : null}
+              </div>
+              {c.link_url && !isTelegramUrl(c.link_url) ? (
+                <button type="button" onClick={() => openExternalUrl(c.link_url)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#16A34A' }}>
+                  <ExternalLink size={16} />
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {faqList.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: '#64748B', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <HelpCircle size={14} /> {t('about.faq', 'Savollar')}
+          </h4>
+          {faqList.map((faq, fIdx) => {
+            const open = expandedFaq === fIdx;
+            return (
+              <button
+                key={faq.id || fIdx}
+                type="button"
+                onClick={() => setExpandedFaq(open ? null : fIdx)}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 14,
+                  background: open ? '#F0FDF4' : '#F8FAFC',
+                  border: open ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{faq.question}</span>
+                  {open ? <ChevronUp size={16} color="#16A34A" /> : <ChevronDown size={16} color="#94A3B8" />}
+                </div>
+                {open && (
+                  <p style={{ fontSize: 13, color: '#475569', margin: '8px 0 0', lineHeight: 1.55 }}>
+                    {faq.answer}
+                  </p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SettingsListItem({ icon, label, subtitle, labelColor = 'var(--text-primary)', onClick }) {
   return (

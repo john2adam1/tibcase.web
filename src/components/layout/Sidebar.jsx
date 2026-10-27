@@ -2,10 +2,12 @@ import React from 'react';
 import {
   Home,
   Folder,
-  LayoutGrid,
   User,
   LogOut,
   X,
+  Brain,
+  Layers,
+  Map,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 import UserAvatar from '../common/UserAvatar.jsx';
@@ -22,21 +24,12 @@ export default function Sidebar({
   const { t } = useTranslation();
 
   const navItems = [
-    {
-      id: 'cases',
-      label: t('nav.home', 'Asosiy'),
-      icon: Home
-    },
-    {
-      id: 'clinics',
-      label: t('nav.casesHub', 'Keyslar'),
-      icon: Folder
-    },
-    {
-      id: 'profile',
-      label: t('nav.profile', 'Profil'),
-      icon: User
-    },
+    { id: 'cases', label: t('nav.home', 'Asosiy'), icon: Home },
+    { id: 'clinics', label: t('nav.casesHub', 'Keyslar'), icon: Folder },
+    { id: 'practice', label: t('nav.practice', 'Mashq'), icon: Brain },
+    { id: 'flashcards', label: t('nav.flashcards', 'Fleshkartalar'), icon: Layers },
+    { id: 'knowledge_map', label: t('nav.roadmap', 'Xarita'), icon: Map },
+    { id: 'profile', label: t('nav.profile', 'Profil'), icon: User },
   ];
 
   const handleNavClick = (id) => {

@@ -69,12 +69,13 @@ export const setOnUnauthorized = (cb) => {
 };
 
 export class ApiError extends Error {
-  constructor(message, { status = 0, code = '', data = null } = {}) {
+  constructor(message, { status = 0, code = '', data = null, retryAfter = 0 } = {}) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.data = data;
+    this.retryAfter = Number(retryAfter) || 0;
   }
 }
 
@@ -118,10 +119,66 @@ function isDebriefRetryableError(err) {
 }
 
 export function isInsufficientCoinsError(err) {
-  const code = err?.code || '';
+  const code = errorSlug(err);
   const message = String(err?.message || '');
   return code === 'insufficient_coins'
     || message.includes('insufficient_coins');
+}
+
+export function isRateLimitedError(err) {
+  const code = errorSlug(err);
+  return err?.status === 429
+    || code === 'too_many_requests'
+    || code === 'otp_locked';
+}
+
+export function isTopicNotMedicalError(err) {
+  return errorSlug(err) === 'topic_not_medical';
+}
+
+export function walletSpendable(wallet) {
+  if (!wallet) return 0;
+  return (Number(wallet.free_coins_left) || 0) + (Number(wallet.coins) || 0);
+}
+
+export function formatApiError(err, t = (_, fb) => fb) {
+  if (isRateLimitedError(err)) {
+    const sec = Number(err?.retryAfter) || 0;
+    if (errorSlug(err) === 'otp_locked') {
+      return sec
+        ? t('err.otpLocked', `Kod bloklandi. ${sec} soniyadan keyin yangi kod so'rang.`)
+        : t('err.otpLockedShort', "Kod bloklandi. Yangi kod so'rang.");
+    }
+    return sec
+      ? t('err.retryAfter', `Juda ko'p so'rov. ${sec} soniyadan keyin qayta urinib ko'ring.`)
+      : t('err.tooMany', "Juda ko'p so'rov. Birozdan so'ng qayta urinib ko'ring.");
+  }
+  if (isInsufficientCoinsError(err)) {
+    return t('sim.insufficientCoins', 'Tangalar yetarli emas');
+  }
+  if (isTopicNotMedicalError(err)) {
+    return t('practice.topicNotMedical', 'Tibbiy mavzu yozing');
+  }
+  const code = errorSlug(err);
+  if (code === 'captcha_failed') return t('err.captcha', 'Captcha tasdiqlanmadi');
+  if (code === 'identifier_taken') return t('err.identifierTaken', 'Bu telefon yoki email boshqa hisobda band');
+  if (code === 'auth_method_required') return t('err.authMethodRequired', "Uzish uchun boshqa kirish usuli qolishi kerak");
+  if (code === 'coin_payment_disabled') return t('err.coinPayDisabled', "Tangadan obuna to'lash o'chirilgan");
+  if (code === 'practice_generation_failed') return t('practice.genFailed', "AI yaratolmadi. Qayta urinib ko'ring.");
+  if (code === 'timeout') return t('err.timeout', "So'rov vaqti tugadi");
+  return err?.message || t('common.error', 'Xatolik yuz berdi');
+}
+
+function parseRetryAfter(res) {
+  const raw = res?.headers?.get?.('Retry-After');
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+}
+
+function filterActive(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter((item) => item?.is_active !== false);
 }
 
 export async function registerStoredFcmDevice() {
@@ -190,35 +247,74 @@ async function refreshTokens() {
 async function request(path, options = {}) {
   const token = getToken();
   const lang = getLang();
+  const {
+    quiet,
+    timeoutMs,
+    captchaToken,
+    headers: extraHeaders,
+    body: rawBody,
+    signal: userSignal,
+    ...fetchRest
+  } = options;
 
   const headers = {
-    'Accept': 'application/json',
+    Accept: 'application/json',
     'Accept-Language': lang,
-    ...(options.headers || {}),
+    ...(extraHeaders || {}),
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
+  }
+  if (captchaToken) {
+    headers['X-Captcha-Token'] = captchaToken;
   }
 
-  // Handle JSON body
-  if (options.body && !(options.body instanceof FormData) && typeof options.body === 'object') {
+  let body = rawBody;
+  if (body && !(body instanceof FormData) && typeof body === 'object') {
     headers['Content-Type'] = 'application/json';
-    options.body = JSON.stringify(options.body);
+    body = JSON.stringify(body);
   }
 
-  const { quiet, ...fetchOptions } = options;
+  let abortCtrl = null;
+  let timer = null;
+  let signal = userSignal;
+  if (timeoutMs) {
+    abortCtrl = new AbortController();
+    if (userSignal) {
+      if (userSignal.aborted) abortCtrl.abort();
+      else userSignal.addEventListener('abort', () => abortCtrl.abort(), { once: true });
+    }
+    timer = setTimeout(() => abortCtrl.abort(), timeoutMs);
+    signal = abortCtrl.signal;
+  }
+
+  const throwHttpError = (res, data, text = '') => {
+    if (res.status === 401 && !getRefreshToken() && !path.startsWith('/mobile/auth/')) {
+      if (onUnauthorizedCallback) onUnauthorizedCallback();
+    }
+    const errorText = data?.error?.details
+      || data?.error?.message
+      || (typeof data?.error === 'string' ? data.error : null)
+      || data?.message
+      || text
+      || `Xatolik: ${res.status}`;
+    throw new ApiError(errorText, {
+      status: res.status,
+      code: extractErrorCode(data) || (String(text).includes('session_not_active') ? 'session_not_active' : ''),
+      data,
+      retryAfter: parseRetryAfter(res),
+    });
+  };
 
   try {
-    let res = await fetch(path, { ...fetchOptions, headers });
+    let res = await fetch(path, { ...fetchRest, headers, body, signal });
 
-    // Auto-refresh on 401 if refresh token is present (bypass for auth endpoints)
     if (res.status === 401 && getRefreshToken() && path !== '/auth/token/refresh' && !path.startsWith('/mobile/auth/')) {
       try {
         await refreshTokens();
-        // Retry original request with newly acquired token
-        headers['Authorization'] = `Bearer ${getToken()}`;
-        res = await fetch(path, { ...fetchOptions, headers });
+        headers.Authorization = `Bearer ${getToken()}`;
+        res = await fetch(path, { ...fetchRest, headers, body, signal });
       } catch (refreshErr) {
         console.warn(`Session refresh failed for [${path}]:`, refreshErr.message);
         throw refreshErr;
@@ -226,46 +322,30 @@ async function request(path, options = {}) {
     }
 
     const contentType = res.headers.get('content-type') || '';
-    // Vercel SPA fallback sometimes returns index.html (200) instead of proxying /mobile/*.
     if (contentType.includes('text/html')) {
       throw new ApiError('API HTML qaytardi (proxy/rewrite ishlamadi)', { status: res.status });
     }
     if (contentType.includes('application/json')) {
       const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 401 && !getRefreshToken() && !path.startsWith('/mobile/auth/')) {
-          if (onUnauthorizedCallback) onUnauthorizedCallback();
-        }
-        const errorText = data?.error?.details || data?.error?.message || (typeof data?.error === 'string' ? data.error : null) || data?.message || `Xatolik: ${res.status}`;
-        throw new ApiError(errorText, {
-          status: res.status,
-          code: extractErrorCode(data),
-          data,
-        });
-      }
+      if (!res.ok) throwHttpError(res, data);
       return data;
-    } else {
-      const text = await res.text();
-      let parsed = null;
-      try { parsed = text ? JSON.parse(text) : null; } catch {}
-      if (!res.ok) {
-        if (res.status === 401 && !getRefreshToken() && !path.startsWith('/mobile/auth/')) {
-          if (onUnauthorizedCallback) onUnauthorizedCallback();
-        }
-        const errorText = parsed?.error?.details || parsed?.error?.message || (typeof parsed?.error === 'string' ? parsed.error : null) || parsed?.message || text || `Xatolik: ${res.status}`;
-        throw new ApiError(errorText, {
-          status: res.status,
-          code: extractErrorCode(parsed) || (text.includes('session_not_active') ? 'session_not_active' : ''),
-          data: parsed,
-        });
-      }
-      return parsed !== null ? parsed : text;
     }
+
+    const text = await res.text();
+    let parsed = null;
+    try { parsed = text ? JSON.parse(text) : null; } catch { /* not json */ }
+    if (!res.ok) throwHttpError(res, parsed, text);
+    return parsed !== null ? parsed : text;
   } catch (err) {
+    if (err?.name === 'AbortError' && timeoutMs) {
+      throw new ApiError("So'rov vaqti tugadi", { status: 0, code: 'timeout' });
+    }
     if (err?.name !== 'AbortError' && !quiet) {
       console.error(`API Error [${path}]:`, err.message);
     }
     throw err;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -382,10 +462,11 @@ export const api = {
   },
 
   /** Send OTP code (type must be 'email' or 'telegram') */
-  sendOtp: async (identifier, type = 'email') => {
+  sendOtp: async (identifier, type = 'email', captchaToken) => {
     return await request('/mobile/auth/user/otp/send', {
       method: 'POST',
       body: { identifier, type },
+      ...(captchaToken ? { captchaToken } : {}),
     });
   },
 
@@ -493,7 +574,7 @@ export const api = {
     const list = Array.isArray(res?.data)
       ? res.data
       : (Array.isArray(res?.categories) ? res.categories : extractList(res));
-    return list.map(localizeItem);
+    return filterActive(list.map(localizeItem));
   },
 
   /** Get single category by ID */
@@ -511,7 +592,7 @@ export const api = {
     const list = Array.isArray(res?.data)
       ? res.data
       : (Array.isArray(res?.topics) ? res.topics : extractList(res));
-    return list.map(localizeItem);
+    return filterActive(list.map(localizeItem));
   },
 
   /** Topic catalog total (`total`/`count`; GET /case ni kutmaydi). */
@@ -859,11 +940,12 @@ export const api = {
 
   // ===================== SUBSCRIPTION =====================
 
-  /** Subscribe to a tariff */
-  subscribe: async (tariffId, coinsUsed = 0, provider = 'inpay') => {
+  /** Subscribe to a tariff. Tangadan to'lash o'chirilgan — coins_used yuborilmaydi. */
+  subscribe: async (tariffId, coinsUsedOrProvider = 'inpay', provider = 'inpay') => {
+    const payProvider = typeof coinsUsedOrProvider === 'string' ? coinsUsedOrProvider : provider;
     return await request('/mobile/subscription', {
       method: 'POST',
-      body: { tariff_id: tariffId, coins_used: coinsUsed, provider },
+      body: { tariff_id: tariffId, provider: payProvider },
     });
   },
 
@@ -922,7 +1004,7 @@ export const api = {
   /** Get about info */
   getAbout: async () => {
     const res = await request('/mobile/about');
-    return res.abouts || res.data || [];
+    return res.abouts || extractList(res);
   },
 
   /** Get about by ID */
@@ -935,7 +1017,7 @@ export const api = {
   /** Get FAQs */
   getFaqs: async () => {
     const res = await request('/mobile/faq');
-    return res.faqs || res.data || [];
+    return res.faqs || extractList(res);
   },
 
   /** Get FAQ by ID */
@@ -948,7 +1030,7 @@ export const api = {
   /** Get contacts */
   getContacts: async () => {
     const res = await request('/mobile/contact');
-    return res.contacts || res.data || [];
+    return res.contacts || extractList(res);
   },
 
   /** Get contact by ID */
@@ -958,10 +1040,10 @@ export const api = {
 
   // ===================== APP ROUTES =====================
 
-  /** Get app routes */
+  /** Get app routes (`support_url` — Telegram; `call_center`) */
   getAppRoutes: async () => {
     const res = await request('/mobile/app-route');
-    return res.app_routes || res.data || [];
+    return extractList(res);
   },
 
   /** Get app route by ID */
@@ -975,5 +1057,233 @@ export const api = {
   getPartners: async () => {
     const res = await request('/mobile/partner');
     return res.partners || res.data || [];
+  },
+
+  // ===================== PRACTICE WALLET / SESSIONS =====================
+
+  getPracticeWallet: async () => {
+    return await request('/mobile/practice/wallet');
+  },
+
+  startPracticeSession: async (payload, opts = {}) => {
+    return await request('/mobile/practice/sessions', {
+      method: 'POST',
+      body: payload,
+      timeoutMs: opts.timeoutMs ?? 60000,
+    });
+  },
+
+  nextPracticeItem: async (sessionId, opts = {}) => {
+    return await request(`/mobile/practice/sessions/${sessionId}/next`, {
+      method: 'POST',
+      timeoutMs: opts.timeoutMs ?? 60000,
+      signal: opts.signal,
+    });
+  },
+
+  answerPracticeItem: async (itemId, answer, opts = {}) => {
+    return await request(`/mobile/practice/items/${itemId}/answer`, {
+      method: 'POST',
+      body: { answer },
+      timeoutMs: opts.timeoutMs ?? 60000,
+      signal: opts.signal,
+    });
+  },
+
+  finishPracticeSession: async (sessionId) => {
+    return await request(`/mobile/practice/sessions/${sessionId}/finish`, {
+      method: 'POST',
+    });
+  },
+
+  getPracticeSessions: async (limit = 20, page = 1) => {
+    const res = await request(`/mobile/practice/sessions?limit=${limit}&page=${page}`);
+    return {
+      sessions: extractList(res),
+      total: listTotal(res),
+      raw: res,
+    };
+  },
+
+  getPracticeSession: async (sessionId) => {
+    return await request(`/mobile/practice/sessions/${sessionId}`);
+  },
+
+  reportPracticeItem: async (itemId, reason) => {
+    return await request(`/mobile/practice/items/${itemId}/report`, {
+      method: 'POST',
+      body: { reason },
+    });
+  },
+
+  // ===================== FLASHCARDS =====================
+
+  getFlashcardDue: async (limit = 20, deckId) => {
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (deckId) query.set('deck_id', deckId);
+    return await request(`/mobile/flashcard/due?${query.toString()}`);
+  },
+
+  reviewFlashcard: async (cardId, rating) => {
+    return await request(`/mobile/flashcard/cards/${cardId}/review`, {
+      method: 'POST',
+      body: { rating },
+    });
+  },
+
+  getFlashcardStats: async () => {
+    return await request('/mobile/flashcard/stats');
+  },
+
+  getFlashcardDecks: async () => {
+    const res = await request('/mobile/flashcard/decks');
+    return extractList(res);
+  },
+
+  orderFlashcardDeck: async (payload) => {
+    return await request('/mobile/flashcard/decks', {
+      method: 'POST',
+      body: payload,
+      timeoutMs: 60000,
+    });
+  },
+
+  deleteFlashcardDeck: async (deckId) => {
+    return await request(`/mobile/flashcard/decks/${deckId}`, { method: 'DELETE' });
+  },
+
+  getFlashcardCards: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.deck_id) query.set('deck_id', params.deck_id);
+    query.set('limit', String(params.limit || 50));
+    query.set('page', String(params.page || 1));
+    const res = await request(`/mobile/flashcard/cards?${query.toString()}`);
+    return {
+      cards: extractList(res),
+      total: listTotal(res),
+      raw: res,
+    };
+  },
+
+  getAllFlashcards: async (params = {}, pageSize = 50, maxPages = 20) => {
+    const all = [];
+    for (let page = 1; page <= maxPages; page += 1) {
+      const res = await api.getFlashcardCards({ ...params, limit: pageSize, page });
+      const chunk = Array.isArray(res?.cards) ? res.cards : [];
+      all.push(...chunk);
+      if (chunk.length < pageSize) break;
+      if (res.total && all.length >= res.total) break;
+    }
+    return all;
+  },
+
+  /** Due first, then the rest — home carousel. */
+  getImportantFlashcards: async (limit = 12) => {
+    const dueRes = await api.getFlashcardDue(limit).catch(() => ({ cards: [] }));
+    const due = [...(Array.isArray(dueRes?.cards) ? dueRes.cards : [])];
+    const seen = new Set(due.map((c) => c?.id).filter(Boolean));
+    if (due.length >= limit) return due.slice(0, limit);
+    const rest = await api.getAllFlashcards({}, 50, 2).catch(() => []);
+    for (const card of rest) {
+      if (!card?.id || seen.has(card.id)) continue;
+      due.push(card);
+      seen.add(card.id);
+      if (due.length >= limit) break;
+    }
+    return due;
+  },
+
+  createFlashcard: async (payload) => {
+    return await request('/mobile/flashcard/cards', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  updateFlashcard: async (cardId, payload) => {
+    return await request(`/mobile/flashcard/cards/${cardId}`, {
+      method: 'PUT',
+      body: payload,
+    });
+  },
+
+  deleteFlashcard: async (cardId) => {
+    return await request(`/mobile/flashcard/cards/${cardId}`, { method: 'DELETE' });
+  },
+
+  // ===================== ROADMAP =====================
+
+  getRoadmap: async () => {
+    return await request('/mobile/roadmap');
+  },
+
+  refreshRoadmap: async () => {
+    return await request('/mobile/roadmap/refresh', {
+      method: 'POST',
+      timeoutMs: 60000,
+    });
+  },
+
+  // ===================== FEEDBACK =====================
+
+  sendFeedback: async (payload) => {
+    return await request('/mobile/feedback', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  // ===================== TELEGRAM LOGIN (OTP'siz) =====================
+
+  startTelegramLogin: async (captchaToken) => {
+    return await request('/mobile/auth/telegram/start', {
+      method: 'POST',
+      ...(captchaToken ? { captchaToken } : {}),
+    });
+  },
+
+  checkTelegramLogin: async (token, referralCode) => {
+    const body = { token };
+    if (referralCode) body.referral_code = referralCode;
+    return await request('/mobile/auth/telegram/check', {
+      method: 'POST',
+      body,
+      quiet: true,
+    });
+  },
+
+  // ===================== PHONE / EMAIL LINK =====================
+
+  startPhoneLink: async () => {
+    return await request('/mobile/user/phone/start', { method: 'POST' });
+  },
+
+  confirmPhoneLink: async (token) => {
+    return await request('/mobile/user/phone/confirm', {
+      method: 'POST',
+      body: { token },
+    });
+  },
+
+  unlinkPhone: async () => {
+    return await request('/mobile/user/phone', { method: 'DELETE' });
+  },
+
+  sendEmailLink: async (email) => {
+    return await request('/mobile/user/email/send', {
+      method: 'POST',
+      body: { email },
+    });
+  },
+
+  confirmEmailLink: async (email, code) => {
+    return await request('/mobile/user/email/confirm', {
+      method: 'POST',
+      body: { email, code },
+    });
+  },
+
+  unlinkEmail: async () => {
+    return await request('/mobile/user/email', { method: 'DELETE' });
   },
 };

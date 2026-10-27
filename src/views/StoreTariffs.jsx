@@ -14,7 +14,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import { api } from '../api';
+import { api, formatApiError } from '../api';
 import { useTranslation } from '../i18n.jsx';
 
 /**
@@ -37,6 +37,7 @@ export default function StoreTariffs({
   tariffs: initialTariffs = [],
   user,
   userLimit,
+  wallet,
   onUserUpdate,
   onBack,
   initialTab = 'all',
@@ -61,7 +62,6 @@ export default function StoreTariffs({
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentProvider, setPaymentProvider] = useState('inpay'); // 'inpay'
-  const [coinsToUse, setCoinsToUse] = useState('');
 
   // Payment link modal (for URL redirect & copy fallback)
   const [payLinkModal, setPayLinkModal] = useState({
@@ -107,7 +107,6 @@ export default function StoreTariffs({
 
   const handleBuy = (tariff) => {
     setSelectedTariff(tariff);
-    setCoinsToUse('');
     setPaymentProvider('inpay');
     setPaymentModalOpen(true);
   };
@@ -117,10 +116,9 @@ export default function StoreTariffs({
     setPaymentLoading(true);
 
     const isCoinPkg = selectedTariff.kind === 'coin_package' || (!selectedTariff.duration && (selectedTariff.coins ?? 0) > 0);
-    const parsedCoins = isCoinPkg ? 0 : Math.max(0, Math.min(Number(coinsToUse) || 0, user?.coins || 0));
 
     try {
-      const result = await api.subscribe(selectedTariff.id, parsedCoins, 'inpay');
+      const result = await api.subscribe(selectedTariff.id, 'inpay');
 
       // Close checkout selector modal
       setPaymentModalOpen(false);
@@ -129,7 +127,7 @@ export default function StoreTariffs({
       if (result?.just_paid) {
         const msg = isCoinPkg
           ? t('store.justPaidCoins', "Tangalar hisobga qo'shildi!")
-          : t('store.justPaidSub', "To'liq tangadan to'landi — obuna faollashdi!");
+          : t('store.justPaidSub', 'Obuna faollashdi!');
         setSuccessModal({ open: true, message: msg });
 
         // Refresh user profile & limit
@@ -172,7 +170,7 @@ export default function StoreTariffs({
         // ignore
       }
     } catch (err) {
-      alert(err?.message || "To'lov jarayonida xatolik yuz berdi");
+      alert(formatApiError(err, t) || err?.message || "To'lov jarayonida xatolik yuz berdi");
     } finally {
       setPaymentLoading(false);
     }
@@ -217,10 +215,7 @@ export default function StoreTariffs({
     return true; // 'all'
   });
 
-  // Calculate remaining payment amount inside checkout modal
-  const isSelectedCoinPkg = selectedTariff?.kind === 'coin_package' || (!selectedTariff?.duration && (selectedTariff?.coins ?? 0) > 0);
-  const currentEnteredCoins = isSelectedCoinPkg ? 0 : Math.max(0, Math.min(Number(coinsToUse) || 0, user?.coins || 0));
-  const remainingPayAmount = Math.max(0, (selectedTariff?.price || 0) - currentEnteredCoins);
+  const remainingPayAmount = Math.max(0, selectedTariff?.price || 0);
 
   return (
     <div style={{
@@ -309,7 +304,11 @@ export default function StoreTariffs({
             <div style={{ width: 1, height: 18, background: '#CBD5E1' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 700, color: (user?.has_subscription || userLimit?.has_subscription) ? '#15803D' : '#64748B' }}>
               <ShieldCheck size={16} color={(user?.has_subscription || userLimit?.has_subscription) ? '#16A34A' : '#94A3B8'} />
-              <span>{(user?.has_subscription || userLimit?.has_subscription) ? 'PRO Obuna faol' : `Bepul tarif (${userLimit?.remaining ?? '-'}/${userLimit?.total ?? '-'} limit)`}</span>
+              <span>{(user?.has_subscription || userLimit?.has_subscription || wallet?.has_subscription)
+                ? t('profile.proActive', 'PRO Obuna faol')
+                : t('store.dailyFreeCoins', 'Bugungi bepul tanga: {n}/{m}')
+                  .replace('{n}', String(wallet?.free_coins_left ?? '—'))
+                  .replace('{m}', String(wallet?.daily_free_coins ?? '—'))}</span>
             </div>
           </div>
         </div>
@@ -629,73 +628,6 @@ export default function StoreTariffs({
               Tarif: <strong style={{ color: '#0F172A' }}>{selectedTariff?.name}</strong> • Narxi: <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
             </p>
 
-            {/* Optional Coins Usage (Allowed for Subscriptions) */}
-            {!isSelectedCoinPkg && (
-              <div style={{
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: 14,
-                padding: '12px 14px',
-                marginBottom: 16,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <label htmlFor="input-coins-used" style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
-                    {t('store.coinsUsageLabel', 'Tangalardan foydalanish (ixtiyoriy):')}
-                  </label>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#D97706' }}>
-                    🪙 {user?.coins ?? 0} tanga
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input
-                    id="input-coins-used"
-                    type="number"
-                    min={0}
-                    max={user?.coins || 0}
-                    placeholder="Masalan: 50"
-                    value={coinsToUse}
-                    onChange={(e) => setCoinsToUse(e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: '9px 12px',
-                      borderRadius: 10,
-                      border: '1px solid #CBD5E1',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      outline: 'none',
-                      background: '#FFFFFF',
-                    }}
-                  />
-                  {user?.coins > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setCoinsToUse(String(Math.min(user?.coins || 0, Math.floor(selectedTariff?.price || 0))))}
-                      style={{
-                        padding: '9px 12px',
-                        borderRadius: 10,
-                        border: '1px solid #CBD5E1',
-                        background: '#FFFFFF',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: '#D97706',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Barchasi
-                    </button>
-                  )}
-                </div>
-                {currentEnteredCoins > 0 && (
-                  <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#16A34A', fontWeight: 600 }}>
-                    {remainingPayAmount <= 0
-                      ? "✓ To'liq tangalardan to'lanadi (0 so'm naqd to'lov)"
-                      : `- ${formatPrice(currentEnteredCoins)} chegirma. To'lovga: ${formatPrice(remainingPayAmount)}`}
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* Dedicated inPAY Gateway Card */}
             <div
               style={{
@@ -793,8 +725,6 @@ export default function StoreTariffs({
                   <RefreshCw size={16} className="animate-spin" />
                   <span>Bog'lanmoqda...</span>
                 </>
-              ) : remainingPayAmount <= 0 ? (
-                <span>🪙 Tangalar orqali faollashtirish</span>
               ) : (
                 <span>
                   💳 {formatPrice(remainingPayAmount)} · inPAY orqali to'lash

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BookOpen, ChevronRight, Coins, FileText, Layers, ExternalLink } from 'lucide-react';
-import { api, peekTopicTotal } from '../../api';
+import { BookOpen, ChevronRight, Coins, Layers, Library, ExternalLink } from 'lucide-react';
+import { api, peekTopicTotal, walletSpendable } from '../../api';
 import { useTranslation } from '../../i18n.jsx';
 import Skeleton from '../common/Skeleton.jsx';
 import { CategoryCover, formatTitle, getCategoryMeta } from '../../views/CategoriesView.jsx';
@@ -136,18 +136,17 @@ export function HomeCategoryCarousel({
           {items.map((cat) => {
             const meta = getCategoryMeta(cat);
             const title = formatTitle(cat.name);
-            const casesCount = cat.cases_count ?? 0;
             return (
               <div
                 key={cat.id}
                 role="button"
                 tabIndex={0}
                 className="home-cat-card ui-card ui-card-press"
-                onClick={() => onSelectCategory?.({ ...cat, title, emoji: meta.emoji, casesCount })}
+                onClick={() => onSelectCategory?.({ ...cat, title, emoji: meta.emoji })}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelectCategory?.({ ...cat, title, emoji: meta.emoji, casesCount });
+                    onSelectCategory?.({ ...cat, title, emoji: meta.emoji });
                   }
                 }}
               >
@@ -161,9 +160,6 @@ export function HomeCategoryCarousel({
                 <div className="home-cat-card-body">
                   <div style={{ minWidth: 0 }}>
                     <h3>{title}</h3>
-                    <span>
-                      {casesCount} {t('cat.cases', 'keys')}
-                    </span>
                   </div>
                   <span className="home-cat-card-arrow">
                     <ChevronRight size={16} />
@@ -178,9 +174,149 @@ export function HomeCategoryCarousel({
   );
 }
 
-export default function DashboardHero({ user, categories = [], topicsCount, onOpenClinics, onOpenStore }) {
+const HOME_FC_RATINGS = [
+  { id: 'again', color: '#DC2626', bg: '#FEE2E2' },
+  { id: 'hard', color: '#D97706', bg: '#FEF3C7' },
+  { id: 'good', color: '#16A34A', bg: '#DCFCE7' },
+  { id: 'easy', color: '#2563EB', bg: '#DBEAFE' },
+];
+
+export function HomeFlashcardCarousel({ onViewAll }) {
   const { t } = useTranslation();
-  const fallbackCases = (categories || []).reduce((sum, cat) => sum + (Number(cat.cases_count) || 0), 0);
+  const trackRef = useRef(null);
+  const pausedRef = useRef(false);
+  const [items, setItems] = useState([]);
+  const [flippedId, setFlippedId] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    api.getImportantFlashcards(12)
+      .then((list) => {
+        if (live && Array.isArray(list)) setItems(list);
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    pausedRef.current = Boolean(flippedId);
+  }, [flippedId]);
+
+  useEffect(() => {
+    if (!items || items.length <= 1) return undefined;
+    const el = trackRef.current;
+    if (!el) return undefined;
+    const timer = setInterval(() => {
+      if (pausedRef.current) return;
+      const card = el.querySelector('.home-fc-card');
+      if (!card) return;
+      const step = card.offsetWidth + 12;
+      const max = el.scrollWidth - el.clientWidth;
+      const next = el.scrollLeft + step;
+      if (next >= max - 4) el.scrollTo({ left: 0, behavior: 'smooth' });
+      else el.scrollTo({ left: next, behavior: 'smooth' });
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [items]);
+
+  const rate = async (card, rating, e) => {
+    e.stopPropagation();
+    if (!card?.id || busyId) return;
+    setBusyId(card.id);
+    try {
+      await api.reviewFlashcard(card.id, rating);
+      setItems((prev) => prev.filter((c) => c.id !== card.id));
+      setFlippedId(null);
+    } catch {
+      /* keep card */
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (!items.length) return null;
+
+  return (
+    <section className="home-cat-section">
+      <div className="home-cat-head">
+        <h2>{t('nav.flashcards', 'Fleshkartalar')}</h2>
+        <button type="button" className="home-cat-all" onClick={onViewAll}>
+          {t('home.departmentsAll', "Barchasini ko'rish")}
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      <div
+        ref={trackRef}
+        className="home-cat-carousel no-scrollbar"
+        onPointerEnter={() => { pausedRef.current = true; }}
+        onPointerLeave={() => { if (!flippedId) pausedRef.current = false; }}
+      >
+        {items.map((card) => {
+          const flipped = flippedId === card.id;
+          return (
+            <div
+              key={card.id}
+              role="button"
+              tabIndex={0}
+              className="home-fc-card ui-card"
+              onClick={() => setFlippedId(flipped ? null : card.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setFlippedId(flipped ? null : card.id);
+                }
+              }}
+            >
+              <div className="home-fc-kicker">
+                {flipped ? t('flash.back', 'Javob') : t('flash.front', 'Savol')}
+              </div>
+              <div className="home-fc-text">
+                {flipped ? (card.back || '') : (card.front || '')}
+              </div>
+              {!flipped && (
+                <div className="home-fc-hint">{t('flash.flip', 'Javobni ko‘rish uchun bosing')}</div>
+              )}
+              {flipped && (
+                <div className="home-fc-ratings" onClick={(e) => e.stopPropagation()}>
+                  {HOME_FC_RATINGS.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      disabled={busyId === card.id}
+                      onClick={(e) => rate(card, r.id, e)}
+                      style={{ background: r.bg, color: r.color }}
+                    >
+                      {r.id === 'again' ? t('flash.again', 'Qayta') : r.id === 'hard' ? t('flash.hard', 'Qiyin') : r.id === 'good' ? t('flash.good', 'Yaxshi') : t('flash.easy', 'Oson')}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export default function DashboardHero({
+  user,
+  wallet,
+  categories = [],
+  topicsCount,
+  flashcardStats,
+  onOpenClinics,
+  onOpenStore,
+  onOpenFlashcards,
+}) {
+  const { t } = useTranslation();
+  const coinValue = wallet?.has_subscription
+    ? t('profile.unlimited', 'Cheksiz')
+    : (wallet ? walletSpendable(wallet) : (user?.coins ?? 0));
+  const flashTotal = flashcardStats == null
+    ? null
+    : (Number(flashcardStats.total) || 0);
   const [topics, setTopics] = useState(() => {
     if (typeof topicsCount === 'number') return topicsCount;
     const cached = peekTopicTotal();
@@ -213,8 +349,14 @@ export default function DashboardHero({ user, categories = [], topicsCount, onOp
         label={t('home.statTopics', 'Mavzular')}
         onClick={onOpenClinics}
       />
-      <Stat icon={FileText} value={fallbackCases} label={t('home.statCases', 'Keyslar')} onClick={onOpenClinics} />
-      <Stat icon={Coins} value={user?.coins ?? 0} label={t('nav.coins', 'Tangalar')} onClick={onOpenStore} />
+      <Stat
+        icon={Library}
+        value={flashTotal ?? 0}
+        loading={flashTotal == null}
+        label={t('home.statFlashcards', 'Fleshkartalar')}
+        onClick={onOpenFlashcards}
+      />
+      <Stat icon={Coins} value={coinValue} label={t('nav.coins', 'Tangalar')} onClick={onOpenStore} />
     </div>
   );
 }
