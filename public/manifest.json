@@ -1,7 +1,7 @@
 {
-  "name": "TibStation AI — Virtual Klinik Simulyator",
+  "name": "TibStation AI — AI mashq va fleshkartalar",
   "short_name": "TibStation",
-  "description": "Tibbiyot talabalari va shifokorlar uchun real vaqtdagi klinik keyslar simulyatori va sun'iy intellektli tibbiy murabbiy.",
+  "description": "Tibbiyot talabalari va shifokorlar uchun AI mashq, fleshkartalar va bilim xaritasi.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

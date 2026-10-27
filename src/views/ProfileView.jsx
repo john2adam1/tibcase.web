@@ -989,7 +989,7 @@ export default function ProfileView({
               color: '#94A3B8',
               paddingBottom: 36,
             }}>
-              Medical Case App
+              TibStation AI
             </div>
           </div>
         )}
@@ -1125,7 +1125,7 @@ export default function ProfileView({
               color: '#94A3B8',
               padding: '12px 0 24px 0',
             }}>
-              Medical Case App
+              TibStation AI
             </div>
           </div>
         )}

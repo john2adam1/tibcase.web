@@ -8,7 +8,6 @@ import {
   X,
   ExternalLink,
   RefreshCw,
-  Phone,
   ClipboardPaste
 } from 'lucide-react';
 import { api, formatApiError, setStoredUser, setToken, setRefreshToken } from '../../api';
@@ -46,8 +45,8 @@ export default function AuthModal({
   const { t } = useTranslation();
   const [step, setStep] = useState('input'); // 'input' | 'otp' | 'tg_wait'
   const [tgLogin, setTgLogin] = useState(null);
-  const [authMethod, setAuthMethod] = useState('telegram'); // 'telegram' | 'email' (default to Telegram/phone)
-  const [identifier, setIdentifier] = useState('+998');
+  const [authMethod, setAuthMethod] = useState('email');
+  const [identifier, setIdentifier] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -97,11 +96,11 @@ export default function AuthModal({
             setStep('tg_wait');
             return;
           }
-          if (!isExpired && parsed?.step === 'otp' && parsed?.identifier) {
+          if (!isExpired && parsed?.step === 'otp' && parsed?.identifier && parsed?.authMethod === 'email') {
             setIdentifier(parsed.identifier);
-            if (parsed.authMethod) setAuthMethod(parsed.authMethod);
+            setAuthMethod('email');
             setStep('otp');
-            api.sendOtp(parsed.identifier, parsed.authMethod || 'telegram').catch(() => {});
+            api.sendOtp(parsed.identifier, 'email').catch(() => {});
             return;
           } else if (isExpired) {
             localStorage.removeItem('tibcase_auth_pending');
@@ -159,39 +158,6 @@ export default function AuthModal({
     return `+${digits}`;
   };
 
-  // Format identifier when typing
-  const handleIdentifierChange = (e) => {
-    const val = e.target.value;
-    if (authMethod === 'telegram') {
-      if (val === '' || val === '+') {
-        setIdentifier('+');
-      } else if (val.startsWith('@') || /^[a-zA-Z]/.test(val)) {
-        setIdentifier(val);
-      } else {
-        const cleanVal = val.startsWith('+') ? '+' + val.slice(1).replace(/\D/g, '') : '+' + val.replace(/\D/g, '');
-        setIdentifier(cleanVal);
-      }
-    } else {
-      setIdentifier(val);
-    }
-  };
-
-  // Handle tab switch
-  const handleMethodSwitch = (method) => {
-    setAuthMethod(method);
-    setErrorMsg('');
-    setInfoMsg('');
-    if (method === 'telegram') {
-      if (!identifier || identifier.includes('@')) {
-        setIdentifier('+998');
-      }
-    } else {
-      if (identifier === '+998' || identifier === '+') {
-        setIdentifier('');
-      }
-    }
-  };
-
   // Google Login response handler (stable reference via useCallback)
   const handleGoogleSuccess = useCallback(async (credentialResponse) => {
     const idToken = credentialResponse?.credential;
@@ -242,7 +208,8 @@ export default function AuthModal({
   // Send OTP, then open Telegram bot (bot requires OTP to already exist)
   const handleSendCode = async (e) => {
     if (e) e.preventDefault();
-    const type = resolveAuthType();
+    setAuthMethod('email');
+    const type = 'email';
     const cleanId = normalizeIdentifier(identifier, type);
 
     if (!cleanId) return;
@@ -557,41 +524,6 @@ export default function AuthModal({
     fontFamily: "'Plus Jakarta Sans', sans-serif",
   };
 
-  const activeTabStyle = {
-    flex: 1,
-    padding: '8px 12px',
-    borderRadius: 12,
-    background: '#FFFFFF',
-    border: 'none',
-    color: '#0F172A',
-    fontWeight: 700,
-    fontSize: '0.84rem',
-    cursor: 'pointer',
-    boxShadow: 'var(--shadow-sm)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    transition: 'all 0.15s ease',
-  };
-
-  const inactiveTabStyle = {
-    flex: 1,
-    padding: '8px 12px',
-    borderRadius: 12,
-    background: 'transparent',
-    border: 'none',
-    color: '#64748B',
-    fontWeight: 600,
-    fontSize: '0.84rem',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    transition: 'all 0.15s ease',
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -754,33 +686,6 @@ export default function AuthModal({
               <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
             </div>
 
-            {/* Method Toggle: Telegram vs Email */}
-            <div style={{
-              background: '#F1F5F9',
-              borderRadius: 14,
-              padding: 4,
-              display: 'flex',
-              gap: 4,
-            }}>
-              <button
-                type="button"
-                onClick={() => handleMethodSwitch('telegram')}
-                style={authMethod === 'telegram' ? activeTabStyle : inactiveTabStyle}
-              >
-                <Send size={15} color={authMethod === 'telegram' ? '#0088cc' : '#64748B'} />
-                <span>{t('auth.methodTelegram')}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMethodSwitch('email')}
-                style={authMethod === 'email' ? activeTabStyle : inactiveTabStyle}
-              >
-                <Mail size={15} color={authMethod === 'email' ? '#16A34A' : '#64748B'} />
-                <span>{t('auth.methodEmail')}</span>
-              </button>
-            </div>
-
-            {/* 2. Identifier Form */}
             <form onSubmit={handleSendCode} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{
@@ -790,49 +695,30 @@ export default function AuthModal({
                   marginBottom: 6,
                   fontWeight: 700,
                 }}>
-                  {authMethod === 'email' ? t('auth.emailLabel') : t('auth.telegramLabel')}
+                  {t('auth.emailLabel')}
                 </label>
                 <div style={{ position: 'relative' }}>
-                  {authMethod === 'email' ? (
-                    <Mail size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
-                  ) : (
-                    <Phone size={18} color="#0088cc" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
-                  )}
+                  <Mail size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
                   <input
-                    type={authMethod === 'email' ? 'email' : 'text'}
-                    placeholder={authMethod === 'email' ? t('auth.emailPlaceholder') : '+998 90 123 45 67'}
+                    type="email"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={identifier}
-                    onChange={handleIdentifierChange}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     style={{ ...inputStyle, paddingLeft: 42 }}
-                    onFocus={(e) => { e.target.style.borderColor = authMethod === 'telegram' ? '#0088cc' : '#22C55E'; }}
+                    onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
                     onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
                   />
                 </div>
               </div>
 
-              {authMethod === 'telegram' ? (
-                <button
-                  type="submit"
-                  disabled={loading || googleLoading || !identifier.trim() || identifier === '+'}
-                  style={{
-                    ...btnPrimaryStyle,
-                    background: 'linear-gradient(135deg, #0088cc 0%, #0284c7 100%)',
-                    boxShadow: 'var(--shadow-sm)',
-                  }}
-                >
-                  <Send size={16} />
-                  <span>{loading ? t('auth.sending') : t('auth.sendTelegramBtn')}</span>
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={loading || googleLoading || !identifier.trim()}
-                  style={btnPrimaryStyle}
-                >
-                  <span>{loading ? t('auth.sending') : t('auth.sendCode')}</span>
-                  <ArrowRight size={16} />
-                </button>
-              )}
+              <button
+                type="submit"
+                disabled={loading || googleLoading || !identifier.trim()}
+                style={btnPrimaryStyle}
+              >
+                <span>{loading ? t('auth.sending') : t('auth.sendCode')}</span>
+                <ArrowRight size={16} />
+              </button>
             </form>
           </div>
         ) : (

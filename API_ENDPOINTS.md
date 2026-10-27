@@ -10,7 +10,7 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 |---|---|---|
 | `POST /mobile/auth/google` | Ishlayapti | AuthModal |
 | `POST /mobile/auth/user/check` | Ishlayapti | AuthModal |
-| `POST /mobile/auth/user/otp/send` | Ishlayapti | AuthModal (captcha token ixtiyoriy) |
+| `POST /mobile/auth/user/otp/send` | Ishlayapti | AuthModal email OTP (captcha ixtiyoriy). Telefon OTP UI yo‘q |
 | `POST /mobile/auth/user/otp/confirm` | Ishlayapti | AuthModal |
 | `POST /mobile/auth/telegram/start` | Ishlayapti | AuthModal OTP’siz Telegram |
 | `POST /mobile/auth/telegram/check` | Ishlayapti | AuthModal 2s poll |

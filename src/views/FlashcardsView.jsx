@@ -41,8 +41,10 @@ export default function FlashcardsView({
   const [decks, setDecks] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [orderOpen, setOrderOpen] = useState(false);
-  const [manualOpen, setManualOpen] = useState(false);
+  const [createMode, setCreateMode] = useState('manual');
+  const [aiSource, setAiSource] = useState('catalog');
+  const [openDeck, setOpenDeck] = useState(null);
+  const [deckCards, setDeckCards] = useState([]);
   const [categoryId, setCategoryId] = useState('');
   const [topicId, setTopicId] = useState('');
   const [topics, setTopics] = useState([]);
@@ -148,15 +150,18 @@ export default function FlashcardsView({
   };
 
   const handleOrderDeck = async () => {
+    const free = aiSource === 'free' && topicText.trim().length >= 3;
+    const catalog = aiSource === 'catalog' && categoryId;
+    if (!free && !catalog) return;
     setBusy(true);
     try {
-      const payload = topicText.trim()
+      const payload = free
         ? { topic_text: topicText.trim(), count: Number(count) || 10 }
         : { category_id: categoryId, topic_id: topicId || undefined, count: Number(count) || 10 };
       const res = await api.orderFlashcardDeck(payload);
       onToast?.(t('flash.created', '{n} ta karta yaratildi').replace('{n}', String(res?.created ?? 0)));
-      setOrderOpen(false);
-      setTab('all');
+      setTab('decks');
+      setOpenDeck(null);
       await reload();
     } catch (err) {
       fail(err);
@@ -165,6 +170,38 @@ export default function FlashcardsView({
     }
   };
 
+  const openDeckCards = async (deck) => {
+    if (!deck?.id) return;
+    setOpenDeck(deck);
+    setBusy(true);
+    try {
+      const res = await api.getFlashcardCards({ deck_id: deck.id, limit: 100 });
+      setDeckCards(Array.isArray(res?.cards) ? res.cards : []);
+    } catch (err) {
+      fail(err);
+      setDeckCards([]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deckTitle = (deck) => {
+    if (deck?.kind === 'mistakes') return t('flash.mistakes', 'Xatolarim');
+    return localizeText(deck?.name) || deck?.name || t('flash.decks', "To'plam");
+  };
+
+  const deckKindLabel = (deck) => {
+    if (deck?.kind === 'mistakes') return t('flash.deckFromPractice', 'Keys / test');
+    if (deck?.kind === 'topic') return t('flash.deckTopic', 'Mavzu');
+    if (deck?.kind === 'manual') return t('flash.deckManual', "Qo'lda");
+    return '';
+  };
+
+  const sortedDecks = useMemo(() => {
+    const rank = (kind) => (kind === 'mistakes' ? 0 : kind === 'topic' ? 1 : 2);
+    return [...decks].sort((a, b) => rank(a?.kind) - rank(b?.kind));
+  }, [decks]);
+
   const handleCreateCard = async () => {
     if (!front.trim() || !back.trim()) return;
     setBusy(true);
@@ -172,7 +209,6 @@ export default function FlashcardsView({
       await api.createFlashcard({ front: front.trim(), back: back.trim() });
       setFront('');
       setBack('');
-      setManualOpen(false);
       onToast?.(t('flash.added', 'Karta qo‘shildi'));
       await reload();
     } catch (err) {
@@ -187,6 +223,10 @@ export default function FlashcardsView({
     setBusy(true);
     try {
       await api.deleteFlashcardDeck(id);
+      if (openDeck?.id === id) {
+        setOpenDeck(null);
+        setDeckCards([]);
+      }
       await reload();
     } catch (err) {
       fail(err);
@@ -217,6 +257,7 @@ export default function FlashcardsView({
 
   const tabs = [
     { id: 'all', label: t('flash.all', 'Kartalar') },
+    { id: 'create', label: t('flash.create', 'Yaratish') },
     { id: 'due', label: t('flash.due', 'Takrorlash') },
     { id: 'decks', label: t('flash.decks', "To'plamlar") },
   ];
@@ -239,14 +280,20 @@ export default function FlashcardsView({
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
         {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
             className="ui-btn"
-            onClick={() => { setTab(item.id); setReviewQueue(null); setFlipped(false); setIndex(0); }}
-            style={{ flex: 1, background: tab === item.id ? 'var(--accent)' : '#F1F5F9', color: tab === item.id ? '#fff' : '#334155', border: 'none' }}
+            onClick={() => {
+              setTab(item.id);
+              setReviewQueue(null);
+              setFlipped(false);
+              setIndex(0);
+              setOpenDeck(null);
+            }}
+            style={{ flex: 1, background: tab === item.id ? 'var(--accent)' : '#F1F5F9', color: tab === item.id ? '#fff' : '#334155', border: 'none', padding: '10px 8px', fontSize: 13 }}
           >
             {item.label}
           </button>
@@ -324,16 +371,91 @@ export default function FlashcardsView({
         </>
       )}
 
+      {tab === 'create' && !reviewQueue && (
+        <section className="ui-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { id: 'manual', label: t('flash.createManual', "Qo'lda") },
+              { id: 'ai', label: t('flash.createAi', 'AI') },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="ui-btn"
+                onClick={() => setCreateMode(item.id)}
+                style={{ flex: 1, background: createMode === item.id ? 'var(--accent)' : '#F1F5F9', color: createMode === item.id ? '#fff' : '#334155', border: 'none' }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {createMode === 'manual' ? (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                {t('flash.createHint', 'Savol va javobni yozib, o‘z kartangizni qo‘shing')}
+              </p>
+              <textarea className="ui-select" rows={4} value={front} onChange={(e) => setFront(e.target.value)} placeholder={t('flash.front', 'Savol')} style={{ minHeight: 96, height: 'auto', padding: '12px 14px' }} />
+              <textarea className="ui-select" rows={4} value={back} onChange={(e) => setBack(e.target.value)} placeholder={t('flash.back', 'Javob')} style={{ minHeight: 96, height: 'auto', padding: '12px 14px' }} />
+              <button className="ui-btn ui-btn-primary" disabled={busy || !front.trim() || !back.trim()} onClick={handleCreateCard}>
+                {t('flash.manualAdd', 'Qo‘shish')}
+              </button>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                {t('flash.createAiHint', 'Mavzu bo‘yicha AI kartalar yaratadi (tanga yechiladi)')}
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="ui-btn" onClick={() => setAiSource('catalog')} style={{ flex: 1, background: aiSource === 'catalog' ? '#0F172A' : '#F1F5F9', color: aiSource === 'catalog' ? '#fff' : '#334155', border: 'none' }}>
+                  {t('practice.catalogTopic', 'Bo‘lim / mavzu')}
+                </button>
+                <button type="button" className="ui-btn" onClick={() => setAiSource('free')} style={{ flex: 1, background: aiSource === 'free' ? '#0F172A' : '#F1F5F9', color: aiSource === 'free' ? '#fff' : '#334155', border: 'none' }}>
+                  {t('practice.freeTopic', 'Erkin mavzu')}
+                </button>
+              </div>
+              {aiSource === 'free' ? (
+                <textarea
+                  className="ui-select"
+                  rows={3}
+                  value={topicText}
+                  onChange={(e) => setTopicText(e.target.value)}
+                  placeholder={t('practice.topicTextPh', 'Erkin mavzu')}
+                  style={{ minHeight: 80, height: 'auto', padding: '12px 14px' }}
+                />
+              ) : (
+                <>
+                  <select className="ui-select" value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setTopicId(''); }}>
+                    <option value="">{t('modal.randomOption')}</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{formatTitle(cat.name || cat.title)}</option>
+                    ))}
+                  </select>
+                  {categoryId && (
+                    <select className="ui-select" value={topicId} onChange={(e) => setTopicId(e.target.value)}>
+                      <option value="">{t('modal.randomTopic')}</option>
+                      {topics.map((topic) => (
+                        <option key={topic.id} value={topic.id}>{formatTitle(topic.title || topic.name)}</option>
+                      ))}
+                    </select>
+                  )}
+                </>
+              )}
+              <input className="ui-select" type="number" min={5} max={30} value={count} onChange={(e) => setCount(e.target.value)} />
+              <button
+                className="ui-btn ui-btn-primary"
+                disabled={busy || (aiSource === 'free' ? topicText.trim().length < 3 : !categoryId)}
+                onClick={handleOrderDeck}
+              >
+                <Plus size={15} /> {t('flash.orderDeck', 'AI to‘plam')}
+              </button>
+            </>
+          )}
+        </section>
+      )}
+
       {tab === 'all' && !reviewQueue && (
         <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <button className="ui-btn ui-btn-primary" onClick={() => setOrderOpen(true)}>
-              <Plus size={15} /> {t('flash.orderDeck', 'AI to‘plam')}
-            </button>
-            <button className="ui-btn" onClick={() => setManualOpen(true)}>
-              {t('flash.manualAdd', 'Qo‘lda karta')}
-            </button>
-          </div>
           {busy && allCards.length === 0 ? (
             <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
               <RefreshCw size={28} className="animate-spin" color="#94A3B8" />
@@ -372,67 +494,79 @@ export default function FlashcardsView({
 
       {tab === 'decks' && !reviewQueue && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="ui-btn ui-btn-primary" onClick={() => setOrderOpen(true)}>
-              <Plus size={15} /> {t('flash.orderDeck', 'AI to‘plam')}
-            </button>
-            <button className="ui-btn" onClick={() => setManualOpen(true)}>
-              {t('flash.manualAdd', 'Qo‘lda karta')}
-            </button>
-          </div>
-          {decks.map((deck) => (
-            <div key={deck.id} className="ui-card" style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800 }}>
-                  {deck.kind === 'mistakes' ? t('flash.mistakes', 'Xatolarim') : (localizeText(deck.name) || deck.name || 'Deck')}
-                </div>
-                <div style={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>
-                  {deck.card_count || 0} · due {deck.due_count || 0}
-                </div>
-              </div>
-              <button className="ui-btn" onClick={() => { setTab('due'); loadDue(deck.id); }}>{t('flash.due', 'Takrorlash')}</button>
-              {deck.kind !== 'mistakes' && (
-                <button className="ui-icon-btn" onClick={() => handleDeleteDeck(deck.id)} style={{ border: 'none', color: '#DC2626' }}>
-                  <Trash2 size={16} />
+          {openDeck ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button type="button" className="ui-btn" onClick={() => { setOpenDeck(null); setDeckCards([]); }}>
+                  {t('common.back', "Ro'yxatga qaytish")}
                 </button>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800 }}>{deckTitle(openDeck)}</div>
+                  <div style={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>{deckKindLabel(openDeck)}</div>
+                </div>
+                <button className="ui-btn" onClick={() => { setTab('due'); loadDue(openDeck.id); }}>{t('flash.due', 'Takrorlash')}</button>
+              </div>
+              {busy && deckCards.length === 0 ? (
+                <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
+                  <RefreshCw size={28} className="animate-spin" color="#94A3B8" />
+                </section>
+              ) : deckCards.length === 0 ? (
+                <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontWeight: 700 }}>{t('flash.emptyAll', 'Hali fleshkarta yo‘q')}</p>
+                </section>
+              ) : (
+                <div className="ui-grid fc-grid">
+                  {deckCards.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="ui-card ui-card-press fc-grid-card"
+                      onClick={() => openReview(item)}
+                    >
+                      <div className="fc-grid-kicker">{t('flash.front', 'Savol')}</div>
+                      <div className="fc-grid-text">{clip(item.front, 160)}</div>
+                    </button>
+                  ))}
+                </div>
               )}
-            </div>
-          ))}
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+                {t('flash.decksHint', 'Keys va testdagi xatolar hamda mavzu kartalari shu yerda.')}
+              </p>
+              {sortedDecks.length === 0 ? (
+                <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
+                  <Layers size={28} color="#94A3B8" />
+                  <p style={{ marginTop: 10, fontWeight: 700 }}>{t('flash.decksEmpty', 'Hali to‘plam yo‘q. Keys yoki test ishlang.')}</p>
+                </section>
+              ) : sortedDecks.map((deck) => (
+                <div key={deck.id} className="ui-card" style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => openDeckCards(deck)}
+                    style={{ flex: 1, minWidth: 0, textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+                  >
+                    <div style={{ fontWeight: 800 }}>{deckTitle(deck)}</div>
+                    <div style={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>
+                      {deckKindLabel(deck)}
+                      {deckKindLabel(deck) ? ' · ' : ''}
+                      {deck.card_count || 0} · {t('flash.statsDue', 'Bugun')} {deck.due_count || 0}
+                    </div>
+                  </button>
+                  <button className="ui-btn" onClick={() => { setTab('due'); loadDue(deck.id); }}>{t('flash.due', 'Takrorlash')}</button>
+                  {deck.kind !== 'mistakes' && (
+                    <button className="ui-icon-btn" onClick={() => handleDeleteDeck(deck.id)} style={{ border: 'none', color: '#DC2626' }}>
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
 
-      {orderOpen && (
-        <section className="ui-card" style={{ padding: 16, marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <strong>{t('flash.orderDeck', 'AI to‘plam buyurtma')}</strong>
-          <input className="ui-select" value={topicText} onChange={(e) => setTopicText(e.target.value)} placeholder={t('practice.topicTextPh', 'Erkin mavzu')} />
-          <select className="ui-select" value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setTopicId(''); }}>
-            <option value="">{t('modal.randomOption')}</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{formatTitle(cat.name || cat.title)}</option>
-            ))}
-          </select>
-          {categoryId && (
-            <select className="ui-select" value={topicId} onChange={(e) => setTopicId(e.target.value)}>
-              <option value="">{t('modal.randomTopic')}</option>
-              {topics.map((topic) => (
-                <option key={topic.id} value={topic.id}>{formatTitle(topic.title || topic.name)}</option>
-              ))}
-            </select>
-          )}
-          <input className="ui-select" type="number" min={5} max={30} value={count} onChange={(e) => setCount(e.target.value)} />
-          <button className="ui-btn ui-btn-primary" disabled={busy} onClick={handleOrderDeck}>{t('modal.startBtn', 'Boshlash')}</button>
-          <button className="ui-btn" onClick={() => setOrderOpen(false)}>{t('auth.logoutCancelBtn', 'Bekor qilish')}</button>
-        </section>
-      )}
-
-      {manualOpen && (
-        <section className="ui-card" style={{ padding: 16, marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <textarea className="ui-select" rows={3} value={front} onChange={(e) => setFront(e.target.value)} placeholder={t('flash.front', 'Savol')} />
-          <textarea className="ui-select" rows={3} value={back} onChange={(e) => setBack(e.target.value)} placeholder={t('flash.back', 'Javob')} />
-          <button className="ui-btn ui-btn-primary" disabled={busy} onClick={handleCreateCard}>{t('flash.manualAdd', 'Qo‘shish')}</button>
-          <button className="ui-btn" onClick={() => setManualOpen(false)}>{t('auth.logoutCancelBtn', 'Bekor qilish')}</button>
-        </section>
-      )}
     </div>
   );
 }

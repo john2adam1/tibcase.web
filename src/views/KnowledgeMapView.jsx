@@ -15,7 +15,7 @@ function actionLabel(step, t) {
   if (step.action === 'flashcard_review') return t('flash.due', 'Takrorlash');
   if (step.action === 'deck') return t('flash.orderDeck', 'Fleshkarta to‘plami');
   if (step.action === 'test') return t('practice.modeTest', 'Test');
-  return t('practice.modeCase', 'Case');
+  return t('practice.modeCase', 'Keys');
 }
 
 export default function KnowledgeMapView({

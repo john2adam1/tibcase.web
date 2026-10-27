@@ -296,7 +296,7 @@ export default function PracticeView({
           <h2 style={{ margin: 0, fontSize: 20 }}>{t('practice.title', 'AI mashq')}</h2>
           {session && (
             <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
-              {session.mode === 'test' ? t('practice.modeTest', 'Test') : t('practice.modeCase', 'Case')} · {progressLabel}
+              {session.mode === 'test' ? t('practice.modeTest', 'Test') : t('practice.modeCase', 'Keys')} · {progressLabel}
             </div>
           )}
         </div>
@@ -319,7 +319,7 @@ export default function PracticeView({
                 onClick={() => setMode(id)}
                 style={{ flex: 1, background: mode === id ? 'var(--accent)' : '#F1F5F9', color: mode === id ? '#fff' : '#334155', border: 'none' }}
               >
-                {id === 'case' ? t('practice.modeCase', 'Case') : t('practice.modeTest', 'Test')}
+                {id === 'case' ? t('practice.modeCase', 'Keys') : t('practice.modeTest', 'Test')}
               </button>
             ))}
           </div>
@@ -399,7 +399,7 @@ export default function PracticeView({
       {phase === 'loading' && (
         <section className="ui-card" style={{ padding: 28, textAlign: 'center' }}>
           <RefreshCw size={28} className="animate-spin" color="var(--accent)" />
-          <p style={{ marginTop: 12, fontWeight: 700 }}>{t('practice.generating', 'AI case tayyorlamoqda…')}</p>
+          <p style={{ marginTop: 12, fontWeight: 700 }}>{t('practice.generating', 'AI keys tayyorlamoqda…')}</p>
         </section>
       )}
 
