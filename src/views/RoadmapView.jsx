@@ -48,7 +48,7 @@ const ml = (v) => {
 
 const ZIGZAG = [0, 56, 0, -56];
 
-export default function RoadmapView({ category, onStartSimulation, onBack }) {
+export default function RoadmapView({ category, onStartPractice, onBack }) {
   const { t, lang } = useTranslation();
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,30 +99,20 @@ export default function RoadmapView({ category, onStartSimulation, onBack }) {
   }, [topics, t]);
 
   return (
-    <div style={{
-      width: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '16px 16px 32px 16px',
-      background: 'var(--bg-main)',
-      boxSizing: 'border-box',
-    }}>
+    <div className="ui-page" style={{ paddingBottom: 40, alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px 18px', gap: 12 }}>
-          <button
-            onClick={onBack}
-            title={t('common.back', 'Orqaga')}
-            style={{
-              width: 44, height: 44, borderRadius: '50%', background: '#FFFFFF', border: '1px solid #E2E8F0',
-              boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: '#0F172A', flexShrink: 0,
-            }}
-          >
-            <ChevronLeft size={24} strokeWidth={2.4} />
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+            {onBack && (
+              <button
+                className="ui-icon-btn page-inline-back"
+                onClick={onBack}
+                title={t('common.back', 'Orqaga')}
+                aria-label={t('common.back', 'Orqaga')}
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
             {categoryImage ? (
               <img
                 src={categoryImage}
@@ -133,22 +123,21 @@ export default function RoadmapView({ category, onStartSimulation, onBack }) {
                   borderRadius: 10,
                   objectFit: 'cover',
                   flexShrink: 0,
-                  border: '1px solid #FED7AA',
-                  background: '#FFF7ED',
+                  border: '1px solid var(--accent-border)',
+                  background: 'var(--accent-soft)',
                 }}
               />
             ) : (
-              <DeptIcon name={categoryName} size={24} color="#EA580C" />
+              <DeptIcon name={categoryName} size={24} color="var(--accent)" />
             )}
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#EA580C', margin: 0 }}>{categoryTitle}</h2>
+            <h1 className="ui-title" style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>
+              {categoryTitle}
+            </h1>
           </div>
 
-          <div style={{
-            background: '#FFEDD5', border: '1px solid #FDBA74', borderRadius: 99,
-            padding: '4px 12px', fontSize: 13, fontWeight: 700, color: '#EA580C',
-          }}>
+          <span className="ui-chip" style={{ fontSize: 13, fontWeight: 700, padding: '4px 12px' }}>
             {loading ? '…' : topicNodes.length}
-          </div>
+          </span>
         </div>
 
         {loading && (
@@ -198,7 +187,7 @@ export default function RoadmapView({ category, onStartSimulation, onBack }) {
             {topicNodes.length > 1 && (
               <div style={{
                 position: 'absolute', top: 36, bottom: 36, left: '50%', width: 0,
-                borderLeft: '6px dotted #E2E8F0', transform: 'translateX(-3px)', zIndex: 0,
+                borderLeft: '6px dotted var(--accent-border)', transform: 'translateX(-3px)', zIndex: 0,
               }} />
             )}
 
@@ -218,7 +207,7 @@ export default function RoadmapView({ category, onStartSimulation, onBack }) {
               >
                 {i === 0 && (
                   <span style={{
-                    background: '#EA580C', color: '#FFF', borderRadius: 99, padding: '3px 12px',
+                    background: 'var(--accent)', color: '#FFF', borderRadius: 99, padding: '3px 12px',
                     fontSize: 11, fontWeight: 700, letterSpacing: 0.8,
                   }}>
                     {t('roadmap.start', 'START')}
@@ -226,8 +215,9 @@ export default function RoadmapView({ category, onStartSimulation, onBack }) {
                 )}
                 <span style={{
                   width: 72, height: 72, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
-                  border: '4px solid #FFEDD5', boxShadow: 'var(--shadow-sm)',
+                  background: 'linear-gradient(135deg, #22C55E 0%, var(--accent) 100%)',
+                  border: '4px solid var(--accent-soft)',
+                  boxShadow: '0 8px 20px rgba(22, 163, 74, 0.28)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <DeptIcon name={categoryName} size={30} color="#FFF" fill={isHeart ? '#FFF' : 'none'} />
@@ -248,7 +238,14 @@ export default function RoadmapView({ category, onStartSimulation, onBack }) {
         lockedTopic={configTopic}
         onStart={(payload) => {
           setConfigTopic(null);
-          onStartSimulation?.(payload);
+          onStartPractice?.({
+            mode: payload.mode === 'test' ? 'test' : 'case',
+            category_id: payload.categoryId || undefined,
+            topic_ids: payload.topicId ? [payload.topicId] : [],
+            difficulty: payload.difficulty || undefined,
+            count: payload.count,
+            start: true,
+          });
         }}
       />
     </div>

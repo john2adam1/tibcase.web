@@ -22,7 +22,6 @@ import CaseSimulationRoom from './views/CaseSimulationRoom';
 import Leaderboard from './views/Leaderboard';
 import ProfileView from './views/ProfileView';
 import NotificationsView from './views/NotificationsView.jsx';
-import StudyPlanView from './views/StudyPlanView.jsx';
 import StoreTariffs from './views/StoreTariffs';
 import PracticeView from './views/PracticeView.jsx';
 import FlashcardsView from './views/FlashcardsView.jsx';
@@ -68,7 +67,6 @@ export default function App() {
   const [currentView, setCurrentView] = useState('cases'); // 'cases' | 'simulation' | 'store' | 'leaderboard'
   const [activeMode, setActiveMode] = useState('clinical'); // 'clinical' | 'citizen'
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [casesHubSubTab, setCasesHubSubTab] = useState('categories');
   const [notificationsBackView, setNotificationsBackView] = useState('cases');
 
   // Initialize Telegram Web App SDK & closing confirmation
@@ -108,7 +106,7 @@ export default function App() {
         setCurrentView(notificationsBackView || 'cases');
       } else if (['practice', 'flashcards', 'knowledge_map'].includes(currentView)) {
         setCurrentView('cases');
-      } else if (['study_plan', 'leaderboard', 'store', 'tariffs'].includes(currentView)) {
+      } else if (['leaderboard', 'store', 'tariffs'].includes(currentView)) {
         setCurrentView('profile');
       } else if (currentView === 'profile') {
         setCurrentView('cases');
@@ -738,7 +736,7 @@ export default function App() {
       <Sidebar
         currentView={currentView}
         setCurrentView={(id) => {
-          if (id === 'practice') setPracticeConfig(null);
+          if (id === 'practice') setPracticeConfig({ mode: 'case', setup: true });
           setCurrentView(id);
         }}
         user={user}
@@ -779,7 +777,7 @@ export default function App() {
               topicsCount={topicTotal}
               userLimit={userLimit}
               flashcardStats={flashcardStats}
-              onStartPractice={() => openPractice(null)}
+              onStartPractice={(cfg) => openPractice(cfg || { mode: 'case', setup: true })}
               onOpenClinics={() => setCurrentView('clinics')}
               onOpenStore={() => setCurrentView('store')}
               onOpenFlashcards={() => setCurrentView('flashcards')}
@@ -849,38 +847,13 @@ export default function App() {
           />
         )}
 
-        {/* Clinics / Cases Hub View (Bo'limlar, Sevimlilar, Tarix) */}
+        {/* Clinics / Cases Hub View (Bo'limlar) */}
         {currentView === 'clinics' && (
           <CategoriesView
             categories={categories}
-            initialSubTab={casesHubSubTab}
             onSelectCategory={(cat) => {
               setSelectedCategory(cat);
               setCurrentView('roadmap');
-            }}
-            onSelectCase={(caseItem) => {
-              checkLimitAndStartCase(caseItem);
-            }}
-            onOpenDebrief={async (sessionId) => {
-              try {
-                const res = await api.getDebrief(sessionId, { timeoutMs: 30000 });
-                if (res) {
-                  setDebriefData({
-                    final_score: res.final_score ?? 0,
-                    xp_earned: res.xp_earned ?? 0,
-                    coins_earned: res.coins_earned ?? 0,
-                    tokens_used: res.tokens_used ?? 0,
-                    coins_spent: res.coins_spent ?? 0,
-                  });
-                }
-              } catch (err) {
-                if (!isSessionNotActiveError(err) && err?.code !== 'debrief_failed' && err?.code !== 'session_not_found' && err?.code !== 'debrief_not_ready') {
-                  console.warn('Debrief load error:', err?.message);
-                }
-              }
-            }}
-            onStartCase={(caseItem) => {
-              checkLimitAndStartCase(caseItem);
             }}
             onBack={() => setCurrentView('cases')}
           />
@@ -890,7 +863,7 @@ export default function App() {
         {currentView === 'roadmap' && (
           <RoadmapView
             category={selectedCategory || categories[0]}
-            onStartSimulation={handleStartSimulationFromHome}
+            onStartPractice={openPractice}
             onBack={() => setCurrentView('clinics')}
           />
         )}
@@ -907,10 +880,6 @@ export default function App() {
             }}
           />
         )}
-        {currentView === 'study_plan' && (
-          <StudyPlanView onBack={() => setCurrentView('profile')} />
-        )}
-
         {currentView === 'practice' && (
           <PracticeView
             key={JSON.stringify(practiceConfig) || 'practice'}
@@ -1390,9 +1359,6 @@ export default function App() {
         <BottomNavBar
           currentView={currentView}
           onSelectView={(view) => {
-            if (view === 'clinics') {
-              setCasesHubSubTab('categories');
-            }
             setCurrentView(view);
           }}
         />

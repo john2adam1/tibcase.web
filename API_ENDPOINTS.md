@@ -1,6 +1,6 @@
 # User-web endpointlari
 
-Oxirgi tekshiruv: 2026-10-27.
+Oxirgi tekshiruv: 2026-10-29.
 
 Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 
@@ -27,7 +27,7 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 | `GET /mobile/user/limit` | Ishlayapti | App, Profile (eski simulyatsiya) |
 | `GET /mobile/practice/wallet` | Ishlayapti | Home, Profile, App |
 | `GET /mobile/level` | Ishlayapti | App, Profile |
-| `GET /mobile/category` | Ishlayapti | Home, mashq (`is_active=false` filtrlanadi) |
+| `GET /mobile/category` | Ishlayapti | Home, Keyslar/Bo‘limlar (`is_active=false` filtrlanadi) |
 | `GET /mobile/topic` | Ishlayapti | Roadmap, KeysConfig, Practice |
 | `GET /mobile/case` | Ishlayapti | Katalog |
 | `GET /mobile/case/random` | Ishlayapti | Eski Keys |
@@ -35,6 +35,10 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 | `POST /mobile/simulation/{id}/event` | Ishlayapti | CaseSimulationRoom |
 | `PUT /mobile/simulation/{id}/finish` | Ishlayapti | App (auto-finish skip) |
 | `GET /mobile/debrief/{id}` | Ishlayapti | waitForDebrief |
+| `GET /mobile/favorite` | Ishlatilmayapti | Wrapper faqat — Sevimlilar tab olib tashlandi |
+| `POST /mobile/favorite` | Ishlayapti | CaseSimulationRoom |
+| `GET /mobile/simulation/completed` | Ishlayapti | Profile |
+| `GET /mobile/simulation/ongoing` | Ishlayapti | Profile |
 | `GET /mobile/setting/voice` | Ishlayapti | Simulyatsiya (`enabled === true` bo‘lsa tugma) |
 | `GET /mobile/tariff` | Ishlayapti | Store |
 | `POST /mobile/subscription` | Ishlayapti | Store — `coins_used` **yuborilmaydi** |
@@ -42,6 +46,7 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 | `POST /mobile/practice/sessions/{id}/next` | Ishlayapti | PracticeView (60s) |
 | `POST /mobile/practice/items/{id}/answer` | Ishlayapti | PracticeView (60s) |
 | `POST /mobile/practice/sessions/{id}/finish` | Ishlayapti | PracticeView |
+| `GET /mobile/practice/sessions` | Wrapper faqat | UI chaqirmaydi (keys/test tarixi) |
 | `GET /mobile/practice/sessions/{id}` | Ishlayapti | Fleshkarta poll |
 | `POST /mobile/practice/items/{id}/report` | Ishlayapti | PracticeView |
 | `GET /mobile/flashcard/due` | Ishlayapti | FlashcardsView, Home karusel |
@@ -61,6 +66,8 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 | `GET /mobile/app-route` | Ishlayapti | Profile — `support_url` (Telegram), `call_center` |
 | `GET /mobile/banner` | Ishlayapti | Home |
 | `GET /mobile/notification/user` | Ishlayapti | App |
+| `GET /mobile/study-plan` | Ishlatilmayapti | Wrapper faqat — O‘quv rejasi olib tashlandi |
+| `PUT /mobile/study-plan` | Ishlatilmayapti | Wrapper faqat — O‘quv rejasi olib tashlandi |
 
 ## Warninglar
 

@@ -727,7 +727,7 @@ export default function StoreTariffs({
                 </>
               ) : (
                 <span>
-                  💳 {formatPrice(remainingPayAmount)} · inPAY orqali to'lash
+                  {t('store.proceedToPay', "To'lovga o'tish")}
                 </span>
               )}
             </button>

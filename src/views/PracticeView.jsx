@@ -80,6 +80,16 @@ function verdictMeta(verdict, t) {
   return { color: '#DC2626', bg: '#FEE2E2', Icon: XCircle, label: t('practice.verdictWrong', "Noto'g'ri") };
 }
 
+function shouldAutoStart(cfg) {
+  if (!cfg || cfg.setup) return false;
+  return Boolean(
+    cfg.start
+    || String(cfg.topic_text || '').trim()
+    || cfg.category_id
+    || (Array.isArray(cfg.topic_ids) && cfg.topic_ids.length)
+  );
+}
+
 export default function PracticeView({
   categories = [],
   initialConfig = null,
@@ -90,8 +100,9 @@ export default function PracticeView({
   onWalletRefresh,
 }) {
   const { t } = useTranslation();
-  const [phase, setPhase] = useState(initialConfig ? 'loading' : 'setup');
-  const [mode, setMode] = useState(initialConfig?.mode || 'case');
+  const autoStart = shouldAutoStart(initialConfig);
+  const [phase, setPhase] = useState(autoStart ? 'loading' : 'setup');
+  const [mode] = useState(initialConfig?.mode === 'test' ? 'test' : 'case');
   const [source, setSource] = useState(initialConfig?.topic_text ? 'free' : 'catalog');
   const [categoryId, setCategoryId] = useState(initialConfig?.category_id || '');
   const [topicId, setTopicId] = useState(initialConfig?.topic_ids?.[0] || '');
@@ -121,7 +132,7 @@ export default function PracticeView({
   }, [categoryId]);
 
   useEffect(() => {
-    if (!initialConfig) return undefined;
+    if (!autoStart) return undefined;
     startSession(initialConfig);
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,7 +304,9 @@ export default function PracticeView({
           <ChevronLeft size={22} />
         </button>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20 }}>{t('practice.title', 'AI mashq')}</h2>
+          <h2 style={{ margin: 0, fontSize: 20 }}>
+            {mode === 'test' ? t('practice.startTest', 'Test yechish') : t('practice.startCase', 'Keys yechish')}
+          </h2>
           {session && (
             <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
               {session.mode === 'test' ? t('practice.modeTest', 'Test') : t('practice.modeCase', 'Keys')} · {progressLabel}
@@ -311,21 +324,8 @@ export default function PracticeView({
       {phase === 'setup' && (
         <section className="ui-card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            {['case', 'test'].map((id) => (
-              <button
-                key={id}
-                type="button"
-                className="ui-btn"
-                onClick={() => setMode(id)}
-                style={{ flex: 1, background: mode === id ? 'var(--accent)' : '#F1F5F9', color: mode === id ? '#fff' : '#334155', border: 'none' }}
-              >
-                {id === 'case' ? t('practice.modeCase', 'Keys') : t('practice.modeTest', 'Test')}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" className="ui-btn" onClick={() => setSource('catalog')} style={{ flex: 1, background: source === 'catalog' ? '#0F172A' : '#F1F5F9', color: source === 'catalog' ? '#fff' : '#334155', border: 'none' }}>
-              {t('practice.catalogTopic', 'Bo‘lim / mavzu')}
+              {t('practice.catalogTopic', "Bo'lim / mavzu")}
             </button>
             <button type="button" className="ui-btn" onClick={() => setSource('free')} style={{ flex: 1, background: source === 'free' ? '#0F172A' : '#F1F5F9', color: source === 'free' ? '#fff' : '#334155', border: 'none' }}>
               {t('practice.freeTopic', 'Erkin mavzu')}
@@ -347,7 +347,7 @@ export default function PracticeView({
           ) : (
             <>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span className="ui-label">{t('modal.step1')}</span>
+                <span className="ui-label">{t('practice.pickCategory', "Bo'lim")}</span>
                 <select className="ui-select" value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setTopicId(''); }}>
                   <option value="">{t('modal.randomOption')}</option>
                   {categories.map((cat) => (
@@ -355,22 +355,25 @@ export default function PracticeView({
                   ))}
                 </select>
               </label>
-              {categoryId && (
-                <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span className="ui-label">{t('modal.stepTopic')}</span>
-                  <select className="ui-select" value={topicId} onChange={(e) => setTopicId(e.target.value)}>
-                    <option value="">{t('modal.randomTopic')}</option>
-                    {topics.map((topic) => (
-                      <option key={topic.id} value={topic.id}>{formatTitle(topic.title || topic.name)}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span className="ui-label">{t('practice.pickTopic', 'Mavzu')}</span>
+                <select
+                  className="ui-select"
+                  value={topicId}
+                  disabled={!categoryId}
+                  onChange={(e) => setTopicId(e.target.value)}
+                >
+                  <option value="">{categoryId ? t('modal.randomTopic') : t('practice.pickCategoryFirst', "Avval bo'lim tanlang")}</option>
+                  {topics.map((topic) => (
+                    <option key={topic.id} value={topic.id}>{formatTitle(topic.title || topic.name)}</option>
+                  ))}
+                </select>
+              </label>
             </>
           )}
 
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span className="ui-label">{t('modal.step2', 'Qiyinlik')}</span>
+            <span className="ui-label">{t('practice.pickDifficulty', 'Qiyinlik')}</span>
             <select className="ui-select" value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
               {DIFFICULTIES.map((d) => (
                 <option key={d.id} value={d.id}>{t(d.labelKey, d.fallback)}</option>
@@ -380,7 +383,7 @@ export default function PracticeView({
 
           {mode === 'test' && (
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span className="ui-label">{t('practice.count', 'Savollar soni')}</span>
+              <span className="ui-label">{t('practice.count', 'Soni')}</span>
               <input className="ui-select" type="number" min={1} max={50} value={count} onChange={(e) => setCount(e.target.value)} />
             </label>
           )}
@@ -399,7 +402,11 @@ export default function PracticeView({
       {phase === 'loading' && (
         <section className="ui-card" style={{ padding: 28, textAlign: 'center' }}>
           <RefreshCw size={28} className="animate-spin" color="var(--accent)" />
-          <p style={{ marginTop: 12, fontWeight: 700 }}>{t('practice.generating', 'AI keys tayyorlamoqda…')}</p>
+          <p style={{ marginTop: 12, fontWeight: 700 }}>
+            {mode === 'test'
+              ? t('practice.generatingTest', 'AI test tayyorlamoqda…')
+              : t('practice.generating', 'AI keys tayyorlamoqda…')}
+          </p>
         </section>
       )}
 

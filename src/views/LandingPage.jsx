@@ -1,18 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Sparkles, Brain, ListChecks, Layers, Map, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
+import ClinicalFlashcard from '../components/flashcards/ClinicalFlashcard.jsx';
 
 const LANGUAGES = [
   { code: 'uz', short: 'UZ' },
   { code: 'ru', short: 'RU' },
   { code: 'en', short: 'EN' },
-];
-
-const FC_RATINGS = [
-  { id: 'again', color: '#DC2626', bg: '#FEE2E2' },
-  { id: 'hard', color: '#D97706', bg: '#FEF3C7' },
-  { id: 'good', color: '#16A34A', bg: '#DCFCE7' },
-  { id: 'easy', color: '#2563EB', bg: '#DBEAFE' },
 ];
 
 const SLIDE_IDS = ['case', 'test', 'card'];
@@ -162,6 +156,7 @@ export default function LandingPage({
   const [testPick, setTestPick] = useState('');
   const [fcFlipped, setFcFlipped] = useState(false);
   const [fcRated, setFcRated] = useState('');
+  const [fcNonce, setFcNonce] = useState(0);
   const pausedRef = useRef(false);
 
   const demoTab = SLIDE_IDS[slide];
@@ -172,6 +167,7 @@ export default function LandingPage({
     setTestPick('');
     setFcFlipped(false);
     setFcRated('');
+    setFcNonce((n) => n + 1);
   };
 
   useEffect(() => {
@@ -495,38 +491,18 @@ export default function LandingPage({
 
           {demoTab === 'card' && (
             <>
-              <button
-                type="button"
-                className={`landing-fc${fcFlipped ? ' is-flipped' : ''}`}
-                onClick={() => { if (!fcRated) setFcFlipped((v) => !v); }}
-              >
-                <span className="landing-fc-kicker">
-                  {fcFlipped ? card.backLabel : card.frontLabel}
-                </span>
-                <span className="landing-fc-text">{fcFlipped ? card.back : card.front}</span>
-                {!fcFlipped && <span className="landing-fc-flip">{card.flip}</span>}
-              </button>
-
-              {fcFlipped && !fcRated && (
-                <div className="landing-fc-ratings">
-                  {FC_RATINGS.map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      style={{ background: r.bg, color: r.color }}
-                      onClick={() => setFcRated(r.id)}
-                    >
-                      {r.id === 'again'
-                        ? t('flash.again', 'Qayta')
-                        : r.id === 'hard'
-                          ? t('flash.hard', 'Qiyin')
-                          : r.id === 'good'
-                            ? t('flash.good', 'Yaxshi')
-                            : t('flash.easy', 'Oson')}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <ClinicalFlashcard
+                key={`fc-${sampleLang}-${fcNonce}`}
+                card={{ id: 'landing-demo', front: card.front, back: card.back, category_name: card.topic }}
+                index={2}
+                total={15}
+                streak={4}
+                subject={card.topic}
+                locked={Boolean(fcRated)}
+                advanceOnRate={false}
+                onRate={async (rating) => { setFcRated(rating); }}
+                onFlipChange={setFcFlipped}
+              />
 
               {fcRated ? (
                 <>

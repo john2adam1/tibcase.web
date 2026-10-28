@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Layers, Map } from 'lucide-react';
+import { BookOpen, Layers, ListChecks, Map } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
 import DashboardHero, { HomeBanner, HomeCategoryCarousel, HomeFlashcardCarousel } from '../components/features/DashboardHero.jsx';
 
@@ -49,10 +49,26 @@ export default function HomeView({
       )}
 
       <section className="ui-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button id="btn-open-practice" className="ui-btn ui-btn-primary ui-btn-block" onClick={onStartPractice}>
-          <Brain size={18} />
-          {t('home.startPractice', 'AI mashq')}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            id="btn-open-practice"
+            className="ui-btn ui-btn-primary"
+            style={{ flex: 1 }}
+            onClick={() => onStartPractice?.({ mode: 'case', setup: true })}
+          >
+            <BookOpen size={16} />
+            {t('home.startCase', 'Keys yechish')}
+          </button>
+          <button
+            id="btn-open-practice-test"
+            className="ui-btn ui-btn-primary"
+            style={{ flex: 1 }}
+            onClick={() => onStartPractice?.({ mode: 'test', setup: true })}
+          >
+            <ListChecks size={16} />
+            {t('home.startTest', 'Test yechish')}
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="ui-btn" style={{ flex: 1 }} onClick={onOpenFlashcards}>
             <Layers size={16} />
@@ -66,7 +82,7 @@ export default function HomeView({
         </div>
       </section>
 
-      <HomeFlashcardCarousel onViewAll={onOpenFlashcards} />
+      <HomeFlashcardCarousel onViewAll={onOpenFlashcards} streak={flashcardStats?.streak_count} />
 
       <HomeCategoryCarousel
         categories={categories}

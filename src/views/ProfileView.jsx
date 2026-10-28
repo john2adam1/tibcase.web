@@ -21,7 +21,6 @@ import {
   ShieldCheck,
   Info,
   LogOut,
-  CalendarDays,
   Phone,
   ExternalLink,
   HelpCircle,
@@ -889,12 +888,6 @@ export default function ProfileView({
                 icon={<Trophy size={20} color="#0F172A" strokeWidth={2} />}
                 label={t('settings.rating', 'Reyting')}
                 onClick={() => onNavigate && onNavigate('leaderboard')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<CalendarDays size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.studyPlan', "O'quv rejasi")}
-                onClick={() => onNavigate && onNavigate('study_plan')}
               />
             </div>
 

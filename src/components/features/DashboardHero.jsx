@@ -4,6 +4,7 @@ import { api, peekTopicTotal, walletSpendable } from '../../api';
 import { useTranslation } from '../../i18n.jsx';
 import Skeleton from '../common/Skeleton.jsx';
 import { CategoryCover, formatTitle, getCategoryMeta } from '../../views/CategoriesView.jsx';
+import ClinicalFlashcard from '../flashcards/ClinicalFlashcard.jsx';
 
 function Stat({ icon: Icon, value, label, onClick, loading = false }) {
   return (
@@ -174,14 +175,7 @@ export function HomeCategoryCarousel({
   );
 }
 
-const HOME_FC_RATINGS = [
-  { id: 'again', color: '#DC2626', bg: '#FEE2E2' },
-  { id: 'hard', color: '#D97706', bg: '#FEF3C7' },
-  { id: 'good', color: '#16A34A', bg: '#DCFCE7' },
-  { id: 'easy', color: '#2563EB', bg: '#DBEAFE' },
-];
-
-export function HomeFlashcardCarousel({ onViewAll }) {
+export function HomeFlashcardCarousel({ onViewAll, streak }) {
   const { t } = useTranslation();
   const trackRef = useRef(null);
   const pausedRef = useRef(false);
@@ -209,7 +203,7 @@ export function HomeFlashcardCarousel({ onViewAll }) {
     if (!el) return undefined;
     const timer = setInterval(() => {
       if (pausedRef.current) return;
-      const card = el.querySelector('.home-fc-card');
+      const card = el.querySelector('.home-fc-slide');
       if (!card) return;
       const step = card.offsetWidth + 12;
       const max = el.scrollWidth - el.clientWidth;
@@ -220,16 +214,15 @@ export function HomeFlashcardCarousel({ onViewAll }) {
     return () => clearInterval(timer);
   }, [items]);
 
-  const rate = async (card, rating, e) => {
-    e.stopPropagation();
+  const rate = async (card, rating) => {
     if (!card?.id || busyId) return;
     setBusyId(card.id);
     try {
       await api.reviewFlashcard(card.id, rating);
       setItems((prev) => prev.filter((c) => c.id !== card.id));
       setFlippedId(null);
-    } catch {
-      /* keep card */
+    } catch (err) {
+      throw err;
     } finally {
       setBusyId(null);
     }
@@ -252,49 +245,23 @@ export function HomeFlashcardCarousel({ onViewAll }) {
         onPointerEnter={() => { pausedRef.current = true; }}
         onPointerLeave={() => { if (!flippedId) pausedRef.current = false; }}
       >
-        {items.map((card) => {
-          const flipped = flippedId === card.id;
-          return (
-            <div
-              key={card.id}
-              role="button"
-              tabIndex={0}
-              className="home-fc-card ui-card"
-              onClick={() => setFlippedId(flipped ? null : card.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setFlippedId(flipped ? null : card.id);
-                }
+        {items.map((card, i) => (
+          <div key={card.id} className="home-fc-slide">
+            <ClinicalFlashcard
+              card={card}
+              index={i}
+              total={items.length}
+              streak={streak}
+              compact
+              showMeta={false}
+              busy={busyId === card.id}
+              onRate={(rating) => rate(card, rating)}
+              onFlipChange={(open) => {
+                setFlippedId((prev) => (open ? card.id : (prev === card.id ? null : prev)));
               }}
-            >
-              <div className="home-fc-kicker">
-                {flipped ? t('flash.back', 'Javob') : t('flash.front', 'Savol')}
-              </div>
-              <div className="home-fc-text">
-                {flipped ? (card.back || '') : (card.front || '')}
-              </div>
-              {!flipped && (
-                <div className="home-fc-hint">{t('flash.flip', 'Javobni ko‘rish uchun bosing')}</div>
-              )}
-              {flipped && (
-                <div className="home-fc-ratings" onClick={(e) => e.stopPropagation()}>
-                  {HOME_FC_RATINGS.map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      disabled={busyId === card.id}
-                      onClick={(e) => rate(card, r.id, e)}
-                      style={{ background: r.bg, color: r.color }}
-                    >
-                      {r.id === 'again' ? t('flash.again', 'Qayta') : r.id === 'hard' ? t('flash.hard', 'Qiyin') : r.id === 'good' ? t('flash.good', 'Yaxshi') : t('flash.easy', 'Oson')}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            />
+          </div>
+        ))}
       </div>
     </section>
   );

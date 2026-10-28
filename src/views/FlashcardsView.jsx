@@ -9,19 +9,7 @@ import {
 import { api, formatApiError, isInsufficientCoinsError, localizeText } from '../api';
 import { useTranslation } from '../i18n.jsx';
 import { formatTitle } from './CategoriesView.jsx';
-
-const RATINGS = [
-  { id: 'again', color: '#DC2626', bg: '#FEE2E2' },
-  { id: 'hard', color: '#D97706', bg: '#FEF3C7' },
-  { id: 'good', color: '#16A34A', bg: '#DCFCE7' },
-  { id: 'easy', color: '#2563EB', bg: '#DBEAFE' },
-];
-
-function clip(text, n = 140) {
-  const s = String(text || '').trim();
-  if (s.length <= n) return s;
-  return `${s.slice(0, n).trim()}…`;
-}
+import ClinicalFlashcard from '../components/flashcards/ClinicalFlashcard.jsx';
 
 export default function FlashcardsView({
   categories = [],
@@ -35,8 +23,9 @@ export default function FlashcardsView({
   const [allCards, setAllCards] = useState([]);
   const [dueCards, setDueCards] = useState([]);
   const [index, setIndex] = useState(0);
-  const [flipped, setFlipped] = useState(false);
-  const [reviewQueue, setReviewQueue] = useState(null);
+  const [sessionTotal, setSessionTotal] = useState(0);
+  const [sessionPos, setSessionPos] = useState(0);
+  const [busyId, setBusyId] = useState(null);
   const [stats, setStats] = useState(null);
   const [decks, setDecks] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -69,7 +58,8 @@ export default function FlashcardsView({
       const list = Array.isArray(res?.cards) ? res.cards : [];
       setDueCards(list);
       setIndex(0);
-      setFlipped(false);
+      setSessionTotal(list.length);
+      setSessionPos(0);
       return list;
     } catch (err) {
       fail(err);
@@ -122,8 +112,7 @@ export default function FlashcardsView({
     return () => { live = false; };
   }, [categoryId]);
 
-  const dueIds = useMemo(() => new Set(dueCards.map((c) => c?.id).filter(Boolean)), [dueCards]);
-  const reviewing = reviewQueue || (tab === 'due' ? dueCards : null);
+  const reviewing = tab === 'due' ? dueCards : null;
   const card = reviewing?.[index];
 
   const handleReview = async (rating) => {
@@ -131,21 +120,30 @@ export default function FlashcardsView({
     setBusy(true);
     try {
       await api.reviewFlashcard(card.id, rating);
-      const source = reviewQueue || dueCards;
-      const next = source.filter((_, i) => i !== index);
-      if (reviewQueue) {
-        setReviewQueue(next.length ? next : null);
-      } else {
-        setDueCards(next);
-      }
+      setDueCards((source) => source.filter((_, i) => i !== index));
       setIndex(0);
-      setFlipped(false);
+      setSessionPos((pos) => pos + 1);
       loadMeta();
-      loadAll();
     } catch (err) {
       fail(err);
+      throw err;
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleGridRate = async (item, rating) => {
+    if (!item?.id || busyId) return;
+    setBusyId(item.id);
+    try {
+      await api.reviewFlashcard(item.id, rating);
+      setDueCards((list) => list.filter((c) => c.id !== item.id));
+      loadMeta();
+    } catch (err) {
+      fail(err);
+      throw err;
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -235,25 +233,21 @@ export default function FlashcardsView({
     }
   };
 
-  const intervalLabel = (rating) => {
-    const days = card?.next_intervals?.[rating];
-    if (days == null) return '';
-    if (Number(days) === 0) return '10m';
-    return `${days}d`;
-  };
-
-  const ratingLabel = (id) => {
-    if (id === 'again') return t('flash.again', 'Qayta');
-    if (id === 'hard') return t('flash.hard', 'Qiyin');
-    if (id === 'good') return t('flash.good', 'Yaxshi');
-    return t('flash.easy', 'Oson');
-  };
-
-  const openReview = (item) => {
-    setReviewQueue([item]);
-    setIndex(0);
-    setFlipped(false);
-  };
+  const renderCardGrid = (list) => (
+    <div className="ui-grid fc-grid">
+      {list.map((item) => (
+        <ClinicalFlashcard
+          key={item.id}
+          card={item}
+          compact
+          showMeta={false}
+          advanceOnRate={false}
+          busy={busyId === item.id}
+          onRate={(rating) => handleGridRate(item, rating)}
+        />
+      ))}
+    </div>
+  );
 
   const tabs = [
     { id: 'all', label: t('flash.all', 'Kartalar') },
@@ -288,8 +282,6 @@ export default function FlashcardsView({
             className="ui-btn"
             onClick={() => {
               setTab(item.id);
-              setReviewQueue(null);
-              setFlipped(false);
               setIndex(0);
               setOpenDeck(null);
             }}
@@ -306,72 +298,18 @@ export default function FlashcardsView({
         </div>
       )}
 
-      {card && (reviewQueue || tab === 'due') && (
-        <>
-          {reviewQueue && (
-            <button
-              type="button"
-              className="ui-btn"
-              style={{ marginBottom: 10 }}
-              onClick={() => { setReviewQueue(null); setFlipped(false); }}
-            >
-              {t('common.back', 'Ro‘yxatga qaytish')}
-            </button>
-          )}
-          <button
-            type="button"
-            className="fc-flip"
-            onClick={() => setFlipped((v) => !v)}
-            style={{ width: '100%', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
-          >
-            <div className={`fc-inner${flipped ? ' flipped' : ''}`}>
-              <div className="fc-face ui-card" style={{ padding: 24, minHeight: 220 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', marginBottom: 10 }}>{t('flash.front', 'Savol')}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>{card.front}</div>
-                <div style={{ marginTop: 16, fontSize: 12, color: '#64748B' }}>{t('flash.flip', 'Javobni ko‘rish uchun bosing')}</div>
-              </div>
-              <div className="fc-face fc-back ui-card" style={{ padding: 24, minHeight: 220 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', marginBottom: 10 }}>{t('flash.back', 'Javob')}</div>
-                <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{card.back}</div>
-                {Array.isArray(card.sources) && card.sources.length > 0 && (
-                  <div style={{ marginTop: 12, fontSize: 12, color: '#64748B' }}>
-                    {card.sources.map((s, i) => (
-                      <div key={s.source_id || i}>{localizeText(s.title) || s.title}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </button>
-          {flipped && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14 }}>
-              {RATINGS.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => handleReview(r.id)}
-                  style={{
-                    padding: '12px 6px',
-                    borderRadius: 14,
-                    border: 'none',
-                    background: r.bg,
-                    color: r.color,
-                    fontWeight: 800,
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {ratingLabel(r.id)}
-                  <div style={{ fontSize: 11, fontWeight: 700 }}>{intervalLabel(r.id)}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </>
+      {tab === 'due' && card && (
+        <ClinicalFlashcard
+          card={card}
+          index={Math.min(sessionPos, Math.max(sessionTotal - 1, 0))}
+          total={sessionTotal || reviewing.length || 1}
+          streak={stats?.streak_count}
+          busy={busy}
+          onRate={handleReview}
+        />
       )}
 
-      {tab === 'create' && !reviewQueue && (
+      {tab === 'create' && (
         <section className="ui-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             {[
@@ -454,7 +392,7 @@ export default function FlashcardsView({
         </section>
       )}
 
-      {tab === 'all' && !reviewQueue && (
+      {tab === 'all' && (
         <>
           {busy && allCards.length === 0 ? (
             <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
@@ -466,21 +404,7 @@ export default function FlashcardsView({
               <p style={{ marginTop: 10, fontWeight: 700 }}>{t('flash.emptyAll', 'Hali fleshkarta yo‘q')}</p>
             </section>
           ) : (
-            <div className="ui-grid fc-grid">
-              {allCards.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="ui-card ui-card-press fc-grid-card"
-                  onClick={() => openReview(item)}
-                >
-                  <div className="fc-grid-kicker">
-                    {dueIds.has(item.id) ? t('flash.dueBadge', 'Takrorlash') : t('flash.front', 'Savol')}
-                  </div>
-                  <div className="fc-grid-text">{clip(item.front, 160)}</div>
-                </button>
-              ))}
-            </div>
+            renderCardGrid(allCards)
           )}
         </>
       )}
@@ -492,7 +416,7 @@ export default function FlashcardsView({
         </section>
       )}
 
-      {tab === 'decks' && !reviewQueue && (
+      {tab === 'decks' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {openDeck ? (
             <>
@@ -515,19 +439,7 @@ export default function FlashcardsView({
                   <p style={{ margin: 0, fontWeight: 700 }}>{t('flash.emptyAll', 'Hali fleshkarta yo‘q')}</p>
                 </section>
               ) : (
-                <div className="ui-grid fc-grid">
-                  {deckCards.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="ui-card ui-card-press fc-grid-card"
-                      onClick={() => openReview(item)}
-                    >
-                      <div className="fc-grid-kicker">{t('flash.front', 'Savol')}</div>
-                      <div className="fc-grid-text">{clip(item.front, 160)}</div>
-                    </button>
-                  ))}
-                </div>
+                renderCardGrid(deckCards)
               )}
             </>
           ) : (
