@@ -45,6 +45,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from './i18n.jsx';
+import { SiteCredit } from './brand.jsx';
 
 export default function App() {
   const { lang, setLang, t } = useTranslation();
@@ -160,7 +161,6 @@ export default function App() {
     return getStoredUser();
   });
   const [categories, setCategories] = useState([]);
-  const [levels, setLevels] = useState([]);
   const [topicTotal, setTopicTotal] = useState(null);
   const [cases, setCases] = useState([]);
   const [tariffs, setTariffs] = useState([]);
@@ -266,9 +266,6 @@ export default function App() {
         api.getTopicTotal()
           .then((n) => { if (isMounted && typeof n === 'number') setTopicTotal(n); })
           .catch(warn('topics', null));
-        api.getLevels()
-          .then((list) => { if (isMounted && Array.isArray(list) && list.length) setLevels(list); })
-          .catch(warn('levels', []));
 
         const [
           profileData,
@@ -337,23 +334,22 @@ export default function App() {
 
   // Automatic Daily Limit & Midnight Rollover Synchronization
   useEffect(() => {
-    const checkAndSyncLimit = async () => {
+    const syncLimitAndWallet = async () => {
+      if (!isAuthenticated) return;
+      const [freshLimit, freshWallet] = await Promise.all([
+        api.getUserLimit().catch(() => null),
+        api.getPracticeWallet().catch(() => null),
+      ]);
+      if (freshLimit) setUserLimit(freshLimit);
+      if (freshWallet) setWallet(freshWallet);
+      localStorage.setItem('tibcase_last_limit_date', getTodayDateStr());
+    };
+
+    const checkAndSyncLimit = async ({ force = false } = {}) => {
       const today = getTodayDateStr();
       const lastChecked = localStorage.getItem('tibcase_last_limit_date');
-
-      if (!lastChecked || lastChecked !== today) {
-        localStorage.setItem('tibcase_last_limit_date', today);
-        if (isAuthenticated) {
-          try {
-            const freshLimit = await api.getUserLimit();
-            if (freshLimit) setUserLimit(freshLimit);
-          } catch { /* keep existing */ }
-        }
-      } else if (isAuthenticated && !userLimit) {
-        // If logged in and limit state is empty, fetch it
-        api.getUserLimit().then(lim => {
-          if (lim) setUserLimit(lim);
-        }).catch(() => {});
+      if (force || !lastChecked || lastChecked !== today) {
+        await syncLimitAndWallet();
       }
     };
 
@@ -361,20 +357,20 @@ export default function App() {
 
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible') {
-        checkAndSyncLimit();
+        checkAndSyncLimit({ force: true });
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityOrFocus);
     window.addEventListener('focus', handleVisibilityOrFocus);
-    const interval = setInterval(checkAndSyncLimit, 60000); // 1 minute ticker to catch midnight rollover
+    const interval = setInterval(checkAndSyncLimit, 60000);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
       window.removeEventListener('focus', handleVisibilityOrFocus);
       clearInterval(interval);
     };
-  }, [isAuthenticated, userLimit]);
+  }, [isAuthenticated]);
 
   // Auth Handlers
   const handleLoginSuccess = async (loggedInUser) => {
@@ -830,7 +826,6 @@ export default function App() {
             user={user}
             wallet={wallet}
             userLimit={userLimit}
-            levels={levels}
             tariffs={tariffs}
             onRefreshLimit={handleRefreshLimit}
             onUserUpdate={setUser}
@@ -913,22 +908,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Workspace Footer */}
-      <footer className="app-workspace-footer" style={{
-        paddingTop: 24,
-        paddingBottom: 10,
-        borderTop: '1px solid #E2E8F0',
-        background: 'transparent',
-        textAlign: 'center',
-        fontSize: '0.85rem',
-        color: '#64748B',
-      }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <div>© 2026 <strong>TibStation AI</strong>. Shifokorlar va Talabalar uchun Virtual Klinik Simulyator.</div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <span style={{ color: '#16A34A', fontWeight: 700 }}>AHA & ESC Standartlari</span>
-          </div>
-        </div>
+      <footer className="app-workspace-footer">
+        <SiteCredit />
       </footer>
     </div>
 

@@ -14,7 +14,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import { api, formatApiError } from '../api';
+import { api, dailyFreeQuota, formatApiError } from '../api';
 import { useTranslation } from '../i18n.jsx';
 
 /**
@@ -307,8 +307,8 @@ export default function StoreTariffs({
               <span>{(user?.has_subscription || userLimit?.has_subscription || wallet?.has_subscription)
                 ? t('profile.proActive', 'PRO Obuna faol')
                 : t('store.dailyFreeCoins', 'Bugungi bepul tanga: {n}/{m}')
-                  .replace('{n}', String(wallet?.free_coins_left ?? '—'))
-                  .replace('{m}', String(wallet?.daily_free_coins ?? '—'))}</span>
+                  .replace('{n}', String(dailyFreeQuota(wallet).left))
+                  .replace('{m}', String(dailyFreeQuota(wallet).total))}</span>
             </div>
           </div>
         </div>

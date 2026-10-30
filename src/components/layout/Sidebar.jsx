@@ -10,6 +10,7 @@ import {
   Map,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
+import { BrandLockup } from '../../brand.jsx';
 import UserAvatar from '../common/UserAvatar.jsx';
 
 export default function Sidebar({
@@ -60,7 +61,7 @@ export default function Sidebar({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px', minHeight: 48 }}>
           <div onClick={() => handleNavClick('cases')} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-            <img src="/logo-full.svg" alt="TibStation" style={{ height: 42, width: 'auto', maxWidth: 215, display: 'block', objectFit: 'contain' }} />
+            <BrandLockup imgClassName="sidebar-brand-mark" nameClassName="sidebar-brand-name" />
           </div>
           <button
             className="sidebar-close-btn"

@@ -2,6 +2,7 @@ import React from 'react';
 import { Bell, Home } from 'lucide-react';
 import ProfileChip from '../common/ProfileChip.jsx';
 import { useTranslation } from '../../i18n.jsx';
+import { BrandLockup } from '../../brand.jsx';
 
 export default function TabletHeader({
   currentView = 'cases',
@@ -38,7 +39,7 @@ export default function TabletHeader({
         onClick={onGoHome}
         aria-label={t('nav.home', 'Asosiy')}
       >
-        <img src="/logo-full.svg" alt="TibStation" />
+        <BrandLockup />
       </button>
 
       <button id="btn-open-notifications" className="ui-icon-btn" onClick={onOpenNotifications} aria-label="Notifications">

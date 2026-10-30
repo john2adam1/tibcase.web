@@ -1,11 +1,13 @@
 import React from 'react';
 import { BookOpen, Layers, ListChecks, Map } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
+import { dailyFreeQuota } from '../api';
 import DashboardHero, { HomeBanner, HomeCategoryCarousel, HomeFlashcardCarousel } from '../components/features/DashboardHero.jsx';
 
 export default function HomeView({
   user,
   wallet,
+  userLimit,
   categories = [],
   banners = [],
   topicsCount,
@@ -19,8 +21,9 @@ export default function HomeView({
 }) {
   const { t } = useTranslation();
   const due = flashcardStats?.due_today ?? flashcardStats?.due_now ?? 0;
-  const freeLeft = wallet?.free_coins_left;
   const paid = wallet?.coins ?? user?.coins ?? 0;
+  const isSub = Boolean(user?.has_subscription || wallet?.has_subscription || userLimit?.has_subscription);
+  const quota = dailyFreeQuota(wallet);
 
   return (
     <div className="ui-page">
@@ -35,11 +38,11 @@ export default function HomeView({
         onOpenFlashcards={onOpenFlashcards}
       />
 
-      {wallet && !wallet.has_subscription && typeof freeLeft === 'number' && (
+      {!isSub && wallet && (
         <section className="ui-card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B' }}>{t('home.walletFree', 'Bugungi bepul tanga')}</div>
-            <div style={{ fontWeight: 800 }}>{freeLeft} / {wallet.daily_free_coins ?? freeLeft}</div>
+            <div style={{ fontWeight: 800 }}>{quota.left} / {quota.total}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B' }}>{t('home.walletPaid', 'Balans')}</div>

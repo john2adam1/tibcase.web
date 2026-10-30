@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { api, formatApiError, setStoredUser, setToken, setRefreshToken } from '../../api';
 import { useTranslation } from '../../i18n.jsx';
+import { BrandLockup } from '../../brand.jsx';
 import { getCaptchaTokenSafe } from '../../utils/captcha';
 import { openExternalUrl } from '../../utils/openUrl';
 
@@ -582,7 +583,7 @@ export default function AuthModal({
 
         {/* Brand Logo */}
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <img src="/logo-full.svg" alt="TibStation" style={{ height: 46, width: 'auto', maxWidth: 220, display: 'block', margin: '0 auto 16px' }} />
+          <BrandLockup className="auth-brand" imgClassName="auth-brand-mark" />
 
           <h3 style={{
             fontSize: '1.35rem',

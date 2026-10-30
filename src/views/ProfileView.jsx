@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import UserAvatar from '../components/common/UserAvatar';
-import { api, formatApiError, peekLevels, resolveMediaUrl, walletSpendable } from '../api';
+import { api, dailyFreeQuota, formatApiError, walletSpendable } from '../api';
 import { openExternalUrl } from '../utils/openUrl';
-import Skeleton from '../components/common/Skeleton.jsx';
 import StoreTariffs from './StoreTariffs.jsx';
 import {
   Trophy,
@@ -10,7 +9,6 @@ import {
   ChevronRight,
   Globe,
   Trash2,
-  Award,
   Star,
   Check,
   X,
@@ -27,15 +25,14 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
-  Zap,
 } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
+import { SiteCredit } from '../brand.jsx';
 
 export default function ProfileView({
   user,
   wallet,
   userLimit,
-  levels: levelsFromApp = [],
   onRefreshLimit,
   onUserUpdate,
   onOpenStore,
@@ -57,12 +54,6 @@ export default function ProfileView({
     });
   };
   const [activeTab, setActiveTab] = useState('completed'); // 'completed' | 'ongoing'
-  const [levelsList, setLevelsList] = useState(() => {
-    if (Array.isArray(levelsFromApp) && levelsFromApp.length) return levelsFromApp;
-    const cached = peekLevels();
-    return Array.isArray(cached) && cached.length ? cached : [];
-  });
-  const [loadingLevels, setLoadingLevels] = useState(() => !((levelsFromApp && levelsFromApp.length) || peekLevels()?.length));
   const [localLimit, setLocalLimit] = useState(userLimit || null);
 
   useEffect(() => {
@@ -77,30 +68,6 @@ export default function ProfileView({
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-
-  useEffect(() => {
-    if (Array.isArray(levelsFromApp) && levelsFromApp.length) {
-      setLevelsList(levelsFromApp);
-      setLoadingLevels(false);
-    }
-  }, [levelsFromApp]);
-
-  // Levels must not wait on simulation history (completed is ~1s).
-  useEffect(() => {
-    let mounted = true;
-    if (!(levelsFromApp && levelsFromApp.length)) setLoadingLevels(true);
-    api.getLevels()
-      .then((freshLevels) => {
-        if (mounted && Array.isArray(freshLevels) && freshLevels.length > 0) {
-          setLevelsList(freshLevels);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (mounted) setLoadingLevels(false);
-      });
-    return () => { mounted = false; };
-  }, []);
 
   // Load completed/ongoing simulations and real daily limit from API
   useEffect(() => {
@@ -126,7 +93,7 @@ export default function ProfileView({
   }, []);
 
   // Sub-modals for Settings
-  const [modalType, setModalType] = useState(null); // 'profile_info' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'terms' | 'privacy' | 'delete' | 'levels_guide'
+  const [modalType, setModalType] = useState(null); // 'profile_info' | 'about' | 'username' | 'coupon' | 'referral' | 'language' | 'rate' | 'terms' | 'privacy' | 'delete'
   const [tempUsername, setTempUsername] = useState(user?.name || '');
   const [emailCode, setEmailCode] = useState('');
   const [linkBusy, setLinkBusy] = useState(false);
@@ -356,64 +323,11 @@ export default function ProfileView({
     }
   };
 
-  // XP & Level: live catalog may skip numbers (e.g. 1, 4, 5). Next = next existing row.
-  const totalXP = Number(user?.xp) || 0;
-  const userLevelNum = Number(user?.level) || 1;
-  const sortedLevels = Array.isArray(levelsList)
-    ? [...levelsList].sort((a, b) => Number(a.level_number) - Number(b.level_number))
-    : [];
-
-  const currentLevelObj = sortedLevels.find((l) => Number(l.level_number) === userLevelNum)
-    || [...sortedLevels].reverse().find((l) => totalXP >= Number(l.required_xp || 0))
-    || sortedLevels[0]
-    || null;
-  const currentIdx = currentLevelObj
-    ? sortedLevels.findIndex((l) => Number(l.level_number) === Number(currentLevelObj.level_number))
-    : -1;
-  const prevLevelObj = currentIdx > 0 ? sortedLevels[currentIdx - 1] : null;
-  const nextLevelObj = currentIdx >= 0 ? (sortedLevels[currentIdx + 1] || null) : null;
-
-  const currentReqXp = Number(currentLevelObj?.required_xp || 0);
-  const nextReqXp = nextLevelObj != null ? Number(nextLevelObj.required_xp || 0) : null;
-  // Starting rank is granted immediately (user.level=1 with XP below required_xp).
-  const currMinXp = prevLevelObj ? currentReqXp : 0;
-  const nextTargetXp = nextReqXp != null && nextReqXp > currMinXp
-    ? nextReqXp
-    : (currentReqXp > totalXP ? currentReqXp : null);
-  const xpSpan = nextTargetXp != null ? Math.max(1, nextTargetXp - currMinXp) : 1;
-  const xpInCurrentLevel = Math.max(0, totalXP - currMinXp);
-  const xpRemaining = nextTargetXp != null ? Math.max(0, nextTargetXp - totalXP) : 0;
-  const xpProgressPercent = nextTargetXp == null
-    ? (currentLevelObj ? 100 : 0)
-    : Math.min(100, Math.max(0, (xpInCurrentLevel / xpSpan) * 100));
-  const displayLevelNum = Number(currentLevelObj?.level_number) || userLevelNum;
-
-  const completedCount = completedSessions.length || user?.completed_cases_count || 0;
-  const ongoingCount = ongoingSessions.length || user?.ongoing_cases_count || 0;
-
   // Language display
   const getLanguageLabel = () => {
     if (lang === 'uz') return '🇺🇿 Oʻzbek';
     if (lang === 'ru') return '🇷🇺 Русский';
     return '🇺🇸 English';
-  };
-
-  const getTranslatedLevelTitle = (lvl) => {
-    if (!lvl) return '';
-    if (typeof lvl.title === 'object' && lvl.title !== null) {
-      return lvl.title[lang] || lvl.title.uz || lvl.title.ru || lvl.title.en || '';
-    }
-    const slug = (lvl.slug || '').toLowerCase();
-    const raw = (typeof lvl.title === 'string' ? lvl.title : '').toLowerCase();
-    if (slug === 'beginner' || raw.includes('boshlang')) return t('level.beginner', lvl.title || "Boshlang'ich");
-    if (slug === 'student' || raw.includes('talab') || raw.includes('студент')) return t('level.student', lvl.title || 'Talaba');
-    if (slug === 'intern' || raw.includes('intern') || raw.includes('интерн')) return t('level.intern', lvl.title || 'Intern');
-    if (slug === 'resident' || raw.includes('rezident') || raw.includes('ординат')) return t('level.resident', lvl.title || 'Rezident');
-    if (slug === 'doctor' || raw.includes('doktor') || raw.includes('shifokor') || raw.includes('врач')) return t('level.doctor', lvl.title || 'Shifokor');
-    if (slug === 'specialist' || raw.includes('mutaxassis') || raw.includes('специалист')) return t('level.specialist', lvl.title || 'Mutaxassis');
-    if (slug === 'expert' || raw.includes('ekspert') || raw.includes('эксперт')) return t('level.expert', lvl.title || 'Ekspert');
-    if (slug === 'master' || slug === 'professor' || raw.includes('professor') || raw.includes('профессор')) return t('level.master', lvl.title || 'Professor');
-    return lvl.title || '';
   };
 
   return (
@@ -468,23 +382,19 @@ export default function ProfileView({
               borderRadius: 'var(--radius-lg)',
               border: '1px solid #E2E8F0',
               boxShadow: 'var(--shadow-soft)',
-              padding: '32px 28px',
+              padding: '24px 28px',
               display: 'flex',
               flexDirection: 'column',
               gap: 20,
               width: '100%',
               boxSizing: 'border-box',
             }}>
-              {/* Avatar + Name + Trophy Badge */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
                 gap: 16,
               }}>
                 <UserAvatar name={user?.name} src={user?.image_url} size={96} />
-
-                  {/* User Name & Subtitle */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 style={{
                     fontSize: '22px',
@@ -498,181 +408,6 @@ export default function ProfileView({
                     {user?.name || ''}
                   </h2>
                 </div>
-
-                {/* Glowing Green Trophy / Badge */}
-                <div
-                  onClick={() => levelsList.length > 0 && setModalType('levels_guide')}
-                  title={levelsList.length > 0 ? t('profile.levelsTableTitle', 'Klinik Darajalar Tizimi') : ''}
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: '50%',
-                    background: '#DCFCE7',
-                    border: '2.5px solid #86EFAC',
-                    boxShadow: 'var(--shadow-sm)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    cursor: levelsList.length > 0 ? 'pointer' : 'default',
-                    overflow: 'hidden',
-                    transition: 'transform 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => { if (levelsList.length > 0) e.currentTarget.style.transform = 'scale(1.06)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                >
-                  {currentLevelObj?.badge_image_url ? (
-                    <img
-                      src={resolveMediaUrl(currentLevelObj.badge_image_url)}
-                      alt={getTranslatedLevelTitle(currentLevelObj) || 'Badge'}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <Trophy size={26} color="#16A34A" strokeWidth={2.4} />
-                  )}
-                </div>
-              </div>
-
-              {/* Level and Progress Bar strictly with live API values */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 6 }}>
-                {/* Level Numbers & Titles Row */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                }}>
-                  {/* Current Level Info */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {loadingLevels && !currentLevelObj ? (
-                      <Skeleton width={160} height={16} radius={8} />
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '14.5px' }}>
-                          {t('profile.level')} {displayLevelNum}{currentLevelObj ? `: ${getTranslatedLevelTitle(currentLevelObj)}` : ''}
-                        </span>
-                      </div>
-                    )}
-                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
-                      {totalXP} XP
-                    </span>
-                  </div>
-
-                  {/* Target Next Level Info — only a real catalog row, never level+1 guess */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, textAlign: 'right' }}>
-                    {loadingLevels && !nextLevelObj ? (
-                      <Skeleton width={130} height={16} radius={8} />
-                    ) : nextLevelObj ? (
-                      <>
-                        <span style={{ fontWeight: 700, color: '#64748B', fontSize: '13.5px' }}>
-                          {t('profile.level')} {nextLevelObj.level_number}{getTranslatedLevelTitle(nextLevelObj) ? `: ${getTranslatedLevelTitle(nextLevelObj)}` : ''}
-                        </span>
-                        {nextTargetXp != null && (
-                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B' }}>
-                            {nextTargetXp} XP
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span style={{ fontWeight: 700, color: '#64748B', fontSize: '13.5px' }}>
-                        {t('profile.maxLevel', 'Maksimal daraja')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Progress Track */}
-                <div style={{
-                  width: '100%',
-                  height: 14,
-                  background: '#E2E8F0',
-                  borderRadius: 999,
-                  overflow: 'hidden',
-                  position: 'relative',
-                  boxShadow: 'var(--shadow-sm)',
-                }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${xpProgressPercent}%`,
-                    minWidth: xpProgressPercent > 0 ? 10 : 0,
-                    background: 'linear-gradient(90deg, #22C55E 0%, #10B981 100%)',
-                    borderRadius: 999,
-                    transition: 'width 0.4s ease',
-                    boxShadow: 'var(--shadow-sm)',
-                  }} />
-                </div>
-
-                {/* Stats Bar underneath */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: '12px',
-                  paddingTop: 1,
-                  flexWrap: 'wrap',
-                  gap: 6,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontWeight: 700, color: '#16A34A' }}>
-                      {totalXP} XP
-                    </span>
-                    {!loadingLevels && nextTargetXp != null && (
-                      <>
-                        <span style={{ color: '#94A3B8' }}>/</span>
-                        <span style={{ fontWeight: 700, color: '#64748B' }}>
-                          {nextTargetXp} XP ({Math.round(xpProgressPercent)}%)
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  {!loadingLevels && xpRemaining > 0 && (
-                    <span style={{
-                      fontWeight: 700,
-                      color: '#D97706',
-                      background: '#FEF3C7',
-                      padding: '2px 8px',
-                      borderRadius: 8,
-                      border: '1px solid #FDE68A',
-                      fontSize: '11px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4
-                    }}>
-                      <Zap size={12} color="#D97706" />
-                      +{xpRemaining} XP {t('profile.xpRemaining', 'keyingi darajagacha')}
-                    </span>
-                  )}
-                </div>
-
-                {/* Clickable link to open all levels modal only if API returned levels */}
-                {levelsList.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setModalType('levels_guide')}
-                    style={{
-                      alignSelf: 'center',
-                      marginTop: 3,
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#0284C7',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      padding: '3px 8px',
-                      borderRadius: 8,
-                      transition: 'background 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F0F9FF'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <Award size={14} />
-                    <span>{t('profile.allLevels', 'Barcha darajalar jadvalini ko‘rish')} &gt;</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -723,17 +458,15 @@ export default function ProfileView({
                   </div>
                   {wallet && !wallet.has_subscription && (
                     <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginTop: 4 }}>
-                      {t('home.walletFree', 'Bepul')}: {wallet.free_coins_left ?? 0} · {t('home.walletPaid', 'Balans')}: {wallet.coins ?? 0}
+                      {t('home.walletFree', 'Bepul')}: {dailyFreeQuota(wallet).left} · {t('home.walletPaid', 'Balans')}: {wallet.coins ?? 0}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Daily free coins from GET /mobile/practice/wallet */}
               {(() => {
                 const isSub = Boolean(user?.has_subscription || wallet?.has_subscription || localLimit?.has_subscription);
-                const rem = Number(wallet?.free_coins_left ?? 0);
-                const tot = Number(wallet?.daily_free_coins ?? 0);
+                const { left: rem, total: tot } = dailyFreeQuota(wallet);
                 const isExhausted = !isSub && rem === 0;
 
                 return (
@@ -974,15 +707,8 @@ export default function ProfileView({
               </button>
             )}
 
-            {/* Footer App Version */}
-            <div style={{
-              textAlign: 'center',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#94A3B8',
-              paddingBottom: 36,
-            }}>
-              TibStation AI
+            <div style={{ textAlign: 'center', paddingBottom: 36 }}>
+              <SiteCredit />
             </div>
           </div>
         )}
@@ -1110,15 +836,8 @@ export default function ProfileView({
               </button>
             )}
 
-            {/* Footer App Version */}
-            <div style={{
-              textAlign: 'center',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#94A3B8',
-              padding: '12px 0 24px 0',
-            }}>
-              TibStation AI
+            <div style={{ textAlign: 'center', padding: '12px 0 24px 0' }}>
+              <SiteCredit />
             </div>
           </div>
         )}
@@ -1160,7 +879,7 @@ export default function ProfileView({
               {/* Readonly Badges Strip */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateColumns: '1fr 1fr',
                 gap: 8,
                 padding: '10px 12px',
                 background: '#F8FAFC',
@@ -1168,14 +887,6 @@ export default function ProfileView({
                 border: '1px solid #E2E8F0',
                 textAlign: 'center',
               }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('profile.level', 'Daraja')}</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>⭐ {user?.level || 1}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>XP</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>⚡ {user?.xp || 0}</div>
-                </div>
                 <div>
                   <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('profile.coins', 'Tangalar')}</div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#F59E0B' }}>🪙 {user?.coins || 0}</div>
@@ -1600,104 +1311,6 @@ export default function ProfileView({
         </ModalOverlay>
       )}
 
-      {/* 9. Levels Guide Modal (Strictly API data) */}
-      {modalType === 'levels_guide' && (
-        <ModalOverlay onClose={() => setModalType(null)}>
-          <ModalCard title={t('profile.levelsTableTitle', 'Klinik Darajalar Tizimi')} onClose={() => setModalType(null)} maxWidth={480}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '65vh', overflowY: 'auto', paddingRight: 4 }}>
-              {levelsList.length === 0 && !loadingLevels ? (
-                <div style={{ textAlign: 'center', padding: '30px 16px', color: '#64748B' }}>
-                  <Award size={36} style={{ opacity: 0.4, marginBottom: 10 }} />
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#0F172A' }}>
-                    {t('pm.levelsEmpty')}
-                  </p>
-                  <p style={{ margin: '6px 0 0 0', fontSize: '13px' }}>
-                    API orqali hozircha darajalar ro'yxati taqdim etilmagan.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 6px 0', lineHeight: 1.5 }}>
-                    Klinik keyslar yechish va debriefing tahlillaridan yuqori ball olish orqali XP to'plang va yangi darajalarga erishing:
-                  </p>
-
-                  {sortedLevels.map((lvl) => {
-                    const isCurrent = Number(lvl.level_number) === displayLevelNum;
-                    const isFirst = Number(lvl.level_number) === Number(sortedLevels[0]?.level_number);
-                    const isPassed = isFirst || totalXP >= Number(lvl.required_xp || 0);
-
-                    return (
-                      <div
-                        key={lvl.id || lvl.level_number}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '12px 14px',
-                          borderRadius: 16,
-                          background: isCurrent ? '#F0FDF4' : '#F8FAFC',
-                          border: isCurrent ? '1px solid #22C55E' : '1px solid #E2E8F0',
-                          boxShadow: isCurrent ? '0 4px 12px rgba(34, 197, 94, 0.15)' : 'none',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 12,
-                            background: isCurrent ? '#22C55E' : (isPassed ? '#DCFCE7' : '#E2E8F0'),
-                            color: isCurrent ? '#FFFFFF' : (isPassed ? '#16A34A' : '#64748B'),
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 700,
-                            fontSize: '14px',
-                            flexShrink: 0,
-                          }}>
-                            {lvl.level_number}
-                          </div>
-
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
-                                {getTranslatedLevelTitle(lvl) || `${t('profile.level')} ${lvl.level_number}`}
-                              </span>
-                              {isCurrent && (
-                                <span style={{
-                                  fontSize: '10px',
-                                  fontWeight: 700,
-                                  color: '#15803D',
-                                  background: '#DCFCE7',
-                                  padding: '2px 6px',
-                                  borderRadius: 6,
-                                  border: '1px solid #86EFAC',
-                                }}>
-                                  {t('profile.currentLevelBadge', 'Sizda')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: 'right' }}>
-                          <span style={{
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            color: isPassed ? '#16A34A' : '#64748B',
-                          }}>
-                            {lvl.required_xp || 0} XP
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
-            </div>
-          </ModalCard>
-        </ModalOverlay>
-      )}
-
       {/* Toast Notification */}
       {toastMessage && (
         <div style={{
@@ -1772,7 +1385,7 @@ function AboutAppBody({
         borderRadius: 20,
         border: '1px solid #BBF7D0',
       }}>
-        <img src="/logo-full.svg" alt="TibStation" style={{ height: 36, width: 'auto', marginBottom: 12 }} />
+        <img src="/logo.svg" alt="" style={{ height: 48, width: 48, marginBottom: 12 }} />
         <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
           TibStation AI
         </h3>

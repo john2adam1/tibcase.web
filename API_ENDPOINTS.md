@@ -1,6 +1,6 @@
 # User-web endpointlari
 
-Oxirgi tekshiruv: 2026-10-29.
+Oxirgi tekshiruv: 2026-10-30.
 
 Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 
@@ -24,9 +24,9 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 | `POST /mobile/user/email/send` | Ishlayapti | Profile |
 | `POST /mobile/user/email/confirm` | Ishlayapti | Profile |
 | `DELETE /mobile/user/email` | Ishlayapti | Profile |
-| `GET /mobile/user/limit` | Ishlayapti | App, Profile (eski simulyatsiya) |
+| `GET /mobile/user/limit` | Ishlayapti | App, Profile (eski simulyatsiya urinish limiti) |
 | `GET /mobile/practice/wallet` | Ishlayapti | Home, Profile, App |
-| `GET /mobile/level` | Ishlayapti | App, Profile |
+| `GET /mobile/level` | Ishlatilmayapti | Wrapper faqat — profil daraja bloki olib tashlandi |
 | `GET /mobile/category` | Ishlayapti | Home, Keyslar/Bo‘limlar (`is_active=false` filtrlanadi) |
 | `GET /mobile/topic` | Ishlayapti | Roadmap, KeysConfig, Practice |
 | `GET /mobile/case` | Ishlayapti | Katalog |
@@ -72,6 +72,7 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 ## Warninglar
 
 - Eski `/mobile/simulation` billing (`daily_free_limit`, `use_coins`) saqlanadi; practice esa `GET /mobile/practice/wallet` + `insufficient_coins`.
+- Home/Profile "Bugungi bepul tanga" faqat `GET /mobile/practice/wallet` (`daily_free_coins` / `free_coins_left`, jumladan `{ data: wallet }` o‘ramasi). `GET /mobile/user/limit` bu belgi uchun ishlatilmaydi.
 - `POST /mobile/subscription` da `coins_used > 0` → `400 coin_payment_disabled`.
 - `GET /mobile/setting/voice` default `enabled: false` — ovoz tugmasi yashirin.
 - 429 `too_many_requests` / `otp_locked` + `Retry-After` `ApiError.retryAfter` ga yoziladi.

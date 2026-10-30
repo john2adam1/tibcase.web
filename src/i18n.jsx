@@ -318,7 +318,7 @@ export const translations = {
     'cat.back': 'Orqaga',
 
     // Auth
-    'auth.title': 'TibStation AI Profiliga Kirish',
+    'auth.title': 'Profilga kirish',
     'auth.subtitle': 'AI mashq, fleshkartalar va bilim xaritasi',
     'auth.methodEmail': 'Email',
     'auth.methodTelegram': 'Telegram',
@@ -1083,7 +1083,7 @@ export const translations = {
     'cat.back': 'Назад',
 
     // Auth
-    'auth.title': 'Вход в TibStation AI',
+    'auth.title': 'Вход в профиль',
     'auth.subtitle': 'AI-практика, карточки и карта знаний',
     'auth.methodEmail': 'Email',
     'auth.methodTelegram': 'Telegram',
@@ -1848,7 +1848,7 @@ export const translations = {
     'cat.back': 'Back',
 
     // Auth
-    'auth.title': 'Sign in to TibStation AI',
+    'auth.title': 'Sign in',
     'auth.subtitle': 'AI practice, flashcards and knowledge map',
     'auth.methodEmail': 'Email',
     'auth.methodTelegram': 'Telegram',

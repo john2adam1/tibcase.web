@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Sparkles, Brain, ListChecks, Layers, Map, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '../i18n.jsx';
+import { BrandLockup, SiteCredit } from '../brand.jsx';
 import ClinicalFlashcard from '../components/flashcards/ClinicalFlashcard.jsx';
 
 const LANGUAGES = [
@@ -261,7 +262,7 @@ export default function LandingPage({
     <div className="landing-page">
       <header className="landing-header">
         <div className="landing-header-inner">
-          <img src="/logo-full.svg" alt="TibStation" className="landing-logo" />
+          <BrandLockup className="landing-brand" imgClassName="landing-logo" />
 
           <div className="landing-header-actions">
             <div className="landing-lang-pills" role="group" aria-label="Language">
@@ -567,7 +568,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      <footer className="landing-footer">{t('gen.copyright')}</footer>
+      <footer className="landing-footer"><SiteCredit /></footer>
     </div>
   );
 }

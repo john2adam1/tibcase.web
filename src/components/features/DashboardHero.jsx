@@ -54,8 +54,8 @@ export function HomeBanner({ banners = [] }) {
         border: 'none',
       }}
     >
-      <h2 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.02em' }}>{banner.title}</h2>
-      {banner.description && <p style={{ fontSize: 16, opacity: 0.9, maxWidth: 520, lineHeight: 1.5 }}>{banner.description}</p>}
+      {banner.title ? <h2 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.02em' }}>{banner.title}</h2> : null}
+      {banner.description ? <p style={{ fontSize: 16, opacity: 0.9, maxWidth: 520, lineHeight: 1.5 }}>{banner.description}</p> : null}
       {banner.link_url && (
         <a href={banner.link_url} target="_blank" rel="noreferrer" style={{ color: '#fff', fontSize: 14, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
           {t('common.more', 'Batafsil')} <ExternalLink size={13} />

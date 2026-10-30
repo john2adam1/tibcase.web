@@ -141,6 +141,84 @@ export function walletSpendable(wallet) {
   return (Number(wallet.free_coins_left) || 0) + (Number(wallet.coins) || 0);
 }
 
+function num(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function firstDefined(obj, keys) {
+  if (!obj || typeof obj !== 'object') return undefined;
+  for (const key of keys) {
+    if (obj[key] != null && obj[key] !== '') return obj[key];
+  }
+  return undefined;
+}
+
+const WALLET_DAILY_KEYS = ['daily_free_coins', 'dailyFreeCoins', 'DailyFreeCoins', 'daily_free', 'dailyFree'];
+const WALLET_LEFT_KEYS = ['free_coins_left', 'freeCoinsLeft', 'FreeCoinsLeft', 'free_coins', 'freeCoins'];
+const WALLET_WRAP_KEYS = ['data', 'wallet', 'result', 'payload'];
+
+function quotaScore(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return -1;
+  const daily = firstDefined(obj, WALLET_DAILY_KEYS);
+  const left = firstDefined(obj, WALLET_LEFT_KEYS);
+  const dailyN = daily == null ? null : num(daily, NaN);
+  const leftN = left == null ? null : num(left, NaN);
+  const hasDaily = Number.isFinite(dailyN);
+  const hasLeft = Number.isFinite(leftN);
+  if (!hasDaily && !hasLeft) return -1;
+  return (hasDaily ? dailyN : 0) + (hasLeft ? 0.0001 : 0) + (('coins' in obj) ? 0.00001 : 0);
+}
+
+/** Single object / {data: obj} / nested wallet — quota fields qayerda bo'lsa o'shani oladi. */
+function unwrapEntity(res) {
+  if (!res || typeof res !== 'object' || Array.isArray(res)) return res;
+  let best = res;
+  let bestScore = quotaScore(res);
+  const visit = (obj, depth) => {
+    if (!obj || typeof obj !== 'object' || depth > 5) return;
+    if (Array.isArray(obj)) {
+      obj.forEach((item) => visit(item, depth + 1));
+      return;
+    }
+    const score = quotaScore(obj);
+    if (score > bestScore) {
+      best = obj;
+      bestScore = score;
+    }
+    for (const key of WALLET_WRAP_KEYS) {
+      if (key in obj) visit(obj[key], depth + 1);
+    }
+  };
+  visit(res, 0);
+  if (bestScore >= 0) return best;
+  for (const key of ['data', 'wallet', 'limit']) {
+    const inner = res[key];
+    if (inner && typeof inner === 'object' && !Array.isArray(inner)) return inner;
+  }
+  return res;
+}
+
+export function normalizeWallet(res) {
+  const w = unwrapEntity(res) || {};
+  return {
+    ...w,
+    has_subscription: Boolean(w.has_subscription ?? w.hasSubscription),
+    daily_free_coins: num(firstDefined(w, WALLET_DAILY_KEYS)),
+    free_coins_left: num(firstDefined(w, WALLET_LEFT_KEYS)),
+    coins: num(w.coins),
+    coins_per_1k_tokens: num(w.coins_per_1k_tokens ?? w.coinsPer1kTokens ?? w.CoinsPer1kTokens),
+  };
+}
+
+/** Home/Profile "bepul tanga" = GET /mobile/practice/wallet (admin daily-free-coins). */
+export function dailyFreeQuota(wallet) {
+  const left = num(firstDefined(wallet, WALLET_LEFT_KEYS) ?? wallet?.free_coins_left);
+  let total = num(firstDefined(wallet, WALLET_DAILY_KEYS) ?? wallet?.daily_free_coins);
+  if (total < left) total = left;
+  return { left, total };
+}
+
 export function formatApiError(err, t = (_, fb) => fb) {
   if (isRateLimitedError(err)) {
     const sec = Number(err?.retryAfter) || 0;
@@ -534,7 +612,7 @@ export const api = {
 
   /** Get user daily limit */
   getUserLimit: async () => {
-    return await request('/mobile/user/limit');
+    return unwrapEntity(await request('/mobile/user/limit'));
   },
 
   /**
@@ -1062,7 +1140,7 @@ export const api = {
   // ===================== PRACTICE WALLET / SESSIONS =====================
 
   getPracticeWallet: async () => {
-    return await request('/mobile/practice/wallet');
+    return normalizeWallet(await request('/mobile/practice/wallet'));
   },
 
   startPracticeSession: async (payload, opts = {}) => {
