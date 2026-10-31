@@ -1,6 +1,6 @@
 # User-web endpointlari
 
-Oxirgi tekshiruv: 2026-10-30.
+Oxirgi tekshiruv: 2026-11-01.
 
 Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 
@@ -24,6 +24,8 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 | `POST /mobile/user/email/send` | Ishlayapti | Profile |
 | `POST /mobile/user/email/confirm` | Ishlayapti | Profile |
 | `DELETE /mobile/user/email` | Ishlayapti | Profile |
+| `GET /mobile/user/activity` | Ishlatilmayapti | Wrapper faqat — faollik grafigi yo‘q |
+| `GET /mobile/user/rating` | Ishlatilmayapti | Wrapper faqat — profil Reyting arxivda |
 | `GET /mobile/user/limit` | Ishlayapti | App, Profile (eski simulyatsiya urinish limiti) |
 | `GET /mobile/practice/wallet` | Ishlayapti | Home, Profile, App |
 | `GET /mobile/level` | Ishlatilmayapti | Wrapper faqat — profil daraja bloki olib tashlandi |
@@ -63,6 +65,7 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 | `GET /mobile/about` | Ishlayapti | Profile — Ilova haqida |
 | `GET /mobile/faq` | Ishlayapti | Profile — Ilova haqida |
 | `GET /mobile/contact` | Ishlayapti | Profile — Ilova haqida |
+| `GET /mobile/partner` | Ishlatilmayapti | Wrapper faqat — hamkorlar UI yo‘q |
 | `GET /mobile/app-route` | Ishlayapti | Profile — `support_url` (Telegram), `call_center` |
 | `GET /mobile/banner` | Ishlayapti | Home |
 | `GET /mobile/notification/user` | Ishlayapti | App |
@@ -79,3 +82,4 @@ Manba: `src/api.js` + UI chaqiriqlari. Pathlar o‘ylab topilmagan.
 - Captcha: `VITE_TURNSTILE_SITE_KEY` yoki `VITE_CAPTCHA_SITE_KEY` bo‘lsa `X-Captcha-Token` OTP send va telegram start ga qo‘yiladi.
 - Admin `/web/tariff` ishlatilmaydi (403).
 - `GET /mobile/app-route` live `{ data: [{ support_url, call_center, app_version }] }` — Telegram `support_url` (swagger misol: `https://t.me/support`).
+- Arxiv/o‘chirish ro‘yxati: [`ARCHIVE_MOBILE_ENDPOINTS.md`](ARCHIVE_MOBILE_ENDPOINTS.md) (level, favorite, study-plan, partner, rating).

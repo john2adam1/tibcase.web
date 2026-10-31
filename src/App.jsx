@@ -19,7 +19,6 @@ import HomeView from './views/HomeView';
 import CategoriesView from './views/CategoriesView';
 import RoadmapView from './views/RoadmapView';
 import CaseSimulationRoom from './views/CaseSimulationRoom';
-import Leaderboard from './views/Leaderboard';
 import ProfileView from './views/ProfileView';
 import NotificationsView from './views/NotificationsView.jsx';
 import StoreTariffs from './views/StoreTariffs';
@@ -813,11 +812,6 @@ export default function App() {
             onBack={() => setCurrentView('profile')}
             initialTab={storeInitialTab}
           />
-        )}
-
-        {/* Leaderboard View */}
-        {currentView === 'leaderboard' && (
-          <Leaderboard user={user} onBack={() => setCurrentView('profile')} />
         )}
 
         {/* Profile & Settings View (Figma mobile design) */}

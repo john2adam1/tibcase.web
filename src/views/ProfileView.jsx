@@ -4,7 +4,6 @@ import { api, dailyFreeQuota, formatApiError, walletSpendable } from '../api';
 import { openExternalUrl } from '../utils/openUrl';
 import StoreTariffs from './StoreTariffs.jsx';
 import {
-  Trophy,
   ChevronLeft,
   ChevronRight,
   Globe,
@@ -376,39 +375,49 @@ export default function ProfileView({
               </h1>
             </div>
 
-            {/* Profile Main Card */}
-            <div style={{
-              background: '#FFFFFF',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid #E2E8F0',
-              boxShadow: 'var(--shadow-soft)',
-              padding: '24px 28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 20,
-              width: '100%',
-              boxSizing: 'border-box',
-            }}>
-              <div style={{
+            {/* Profile card = ism/rasm + Profil ma'lumoti */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={handleOpenProfileInfo}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenProfileInfo(); } }}
+              style={{
+                background: '#FFFFFF',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid #E2E8F0',
+                boxShadow: 'var(--shadow-soft)',
+                padding: '20px 22px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 16,
-              }}>
-                <UserAvatar name={user?.name} src={user?.image_url} size={96} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h2 style={{
-                    fontSize: '22px',
-                    fontWeight: 700,
-                    color: '#0F172A',
-                    margin: 0,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}>
-                    {user?.name || ''}
-                  </h2>
+                width: '100%',
+                boxSizing: 'border-box',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
+            >
+              <UserAvatar name={user?.name} src={user?.image_url} size={72} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 style={{
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  color: '#0F172A',
+                  margin: 0,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}>
+                  {user?.name || ''}
+                </h2>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', marginTop: 4 }}>
+                  {t('settings.info', "Profil ma'lumoti")}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: '#94A3B8', marginTop: 2 }}>
+                  {t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 </div>
               </div>
+              <ChevronRight size={20} color="#94A3B8" strokeWidth={2.2} style={{ flexShrink: 0 }} />
             </div>
 
             {/* Info / Coins / Limits Top Info */}
@@ -536,20 +545,19 @@ export default function ProfileView({
               })()}
             </div>
 
-            {/* Menu List */}
-            <div style={{
-              background: '#FFFFFF',
-              borderRadius: 18,
-              border: '1px solid #E2E8F0',
-              boxShadow: 'var(--shadow-sm)',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              marginTop: 18,
-              marginBottom: 24,
-            }}>
-              {/* Highlighted: Tanga sotib olish — dropdown, not a separate page */}
-              <div ref={coinsSectionRef}>
+            {/* Tanga sotib olish — alohida, ommabop karta */}
+            <div
+              ref={coinsSectionRef}
+              style={{
+                background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+                borderRadius: 18,
+                border: '1px solid #FDE68A',
+                boxShadow: 'var(--shadow-sm)',
+                overflow: 'hidden',
+                marginTop: 18,
+                marginBottom: 12,
+              }}
+            >
               <div
                 id="btn-buy-coins-profile"
                 role="button"
@@ -563,8 +571,6 @@ export default function ProfileView({
                   gap: 14,
                   padding: '16px 18px',
                   cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
-                  borderBottom: '1px solid #FDE68A',
                   transition: 'filter 0.15s ease',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.97)'; }}
@@ -604,7 +610,7 @@ export default function ProfileView({
                 <div style={{
                   padding: '12px',
                   background: '#FFFBEB',
-                  borderBottom: '1px solid #FDE68A',
+                  borderTop: '1px solid #FDE68A',
                 }}>
                   <StoreTariffs
                     variant="inline"
@@ -616,15 +622,9 @@ export default function ProfileView({
                   />
                 </div>
               )}
-              </div>
-              <SettingsListItem
-                icon={<Trophy size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.rating', 'Reyting')}
-                onClick={() => onNavigate && onNavigate('leaderboard')}
-              />
             </div>
 
-            {/* Settings Group 1: Ma'lumot, Ilova haqida */}
+            {/* Ilova va til — bitta menyu (reyting arxiv: GET /mobile/user/rating) */}
             <div id="profile-settings-group" style={{
               background: '#FFFFFF',
               borderRadius: 18,
@@ -633,24 +633,26 @@ export default function ProfileView({
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              marginBottom: 16,
+              marginBottom: 12,
             }}>
               <SettingsListItem
-                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('settings.info', "Profil ma'lumoti")}
-                subtitle={t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
-                onClick={handleOpenProfileInfo}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
+                icon={<Info size={18} color="#2563EB" strokeWidth={2.2} />}
+                iconBg="#DBEAFE"
                 label={t('settings.about', "Ilova haqida")}
                 subtitle={t('settings.aboutDesc', "Versiya, FAQ va kontaktlar")}
                 onClick={handleOpenAbout}
               />
+              <Divider />
+              <SettingsListItem
+                icon={<Globe size={18} color="#0D9488" strokeWidth={2.2} />}
+                iconBg="#CCFBF1"
+                label={t('profile.language', "Language")}
+                subtitle={getLanguageLabel()}
+                onClick={() => setModalType('language')}
+              />
             </div>
 
-            {/* Settings Group 2: Language, Delete Account */}
+            {/* Hisob: o'chirish va chiqish */}
             <div style={{
               background: '#FFFFFF',
               borderRadius: 18,
@@ -662,50 +664,26 @@ export default function ProfileView({
               marginBottom: 16,
             }}>
               <SettingsListItem
-                icon={<Globe size={20} color="#0F172A" strokeWidth={2} />}
-                label={t('profile.language', "Language")}
-                subtitle={getLanguageLabel()}
-                onClick={() => setModalType('language')}
-              />
-              <Divider />
-              <SettingsListItem
-                icon={<Trash2 size={20} color="#EF4444" strokeWidth={2} />}
+                icon={<Trash2 size={18} color="#EF4444" strokeWidth={2.2} />}
+                iconBg="#FEE2E2"
                 label={t('settings.deleteAccount', "Delete Account")}
-                labelColor="#EF4444"
+                labelColor="#DC2626"
                 onClick={() => setModalType('delete')}
               />
+              {onLogout && (
+                <>
+                  <Divider />
+                  <SettingsListItem
+                    id="btn-profile-logout"
+                    icon={<LogOut size={18} color="#DC2626" strokeWidth={2.2} />}
+                    iconBg="#FEE2E2"
+                    label={t('settings.logOut', 'Chiqish')}
+                    labelColor="#DC2626"
+                    onClick={onLogout}
+                  />
+                </>
+              )}
             </div>
-
-            {/* Logout button */}
-            {onLogout && (
-              <button
-                id="btn-profile-logout"
-                onClick={onLogout}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  borderRadius: 18,
-                  background: '#FEE2E2',
-                  border: '1px solid #FCA5A5',
-                  color: '#DC2626',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  marginBottom: 16,
-                  boxShadow: 'var(--shadow-sm)',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#FECACA'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
-              >
-                <LogOut size={18} />
-                {t('settings.logOut', 'Chiqish')}
-              </button>
-            )}
 
             <div style={{ textAlign: 'center', paddingBottom: 36 }}>
               <SiteCredit />
@@ -1598,19 +1576,31 @@ function AboutAppBody({
   );
 }
 
-function SettingsListItem({ icon, label, subtitle, labelColor = 'var(--text-primary)', onClick }) {
+function SettingsListItem({ icon, label, subtitle, labelColor = 'var(--text-primary)', onClick, iconBg, id }) {
   return (
     <div
+      id={id}
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter') onClick?.(); }}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, padding: '10px 16px', cursor: 'pointer', gap: 12 }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: subtitle ? 62 : 54, padding: '10px 16px', cursor: 'pointer', gap: 12 }}
       onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-muted)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-        <div style={{ width: 24, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
+        <div style={{
+          width: iconBg ? 38 : 24,
+          height: iconBg ? 38 : 24,
+          borderRadius: iconBg ? 11 : 0,
+          background: iconBg || 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {icon}
+        </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: labelColor }}>{label}</div>
           {subtitle && <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</div>}
@@ -1623,7 +1613,7 @@ function SettingsListItem({ icon, label, subtitle, labelColor = 'var(--text-prim
 
 function Divider() {
   return (
-    <div style={{ height: 1, background: '#F1F5F9', marginLeft: 58 }} />
+    <div style={{ height: 1, background: '#F1F5F9', marginLeft: 16, marginRight: 16 }} />
   );
 }
 
