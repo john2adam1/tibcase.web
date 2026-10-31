@@ -43,8 +43,8 @@ export function BrandLockup({ className = '', imgClassName = '', nameClassName =
   );
 }
 
-export const SITE_CREDIT_NAME = 'Zoxidjon Coder';
-export const SITE_CREDIT_URL = 'https://t.me/zoxidjon_coder';
+export const SITE_CREDIT_NAME = 'Ulugbek Zaylobidinov';
+export const SITE_CREDIT_URL = 'https://t.me/Ulugbek_Zaylobidinov';
 
 export function SiteCredit({ className = '' }) {
   const onClick = (e) => {
