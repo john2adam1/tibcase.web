@@ -85,7 +85,7 @@ export default function HomeView({
         </div>
       </section>
 
-      <HomeFlashcardCarousel onViewAll={onOpenFlashcards} streak={flashcardStats?.streak_count} />
+      <HomeFlashcardCarousel onViewAll={onOpenFlashcards} />
 
       <HomeCategoryCarousel
         categories={categories}

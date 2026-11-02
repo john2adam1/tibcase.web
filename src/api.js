@@ -445,26 +445,6 @@ export function extractList(json) {
   return [];
 }
 
-function normalizeLevelItem(item) {
-  if (!item || typeof item !== 'object') return null;
-  const level_number = Number(item.level_number ?? item.level);
-  const required_xp = Number(item.required_xp ?? item.xp_required ?? 0);
-  if (!Number.isFinite(level_number) || level_number <= 0) return null;
-  return {
-    ...item,
-    level_number,
-    required_xp: Number.isFinite(required_xp) ? required_xp : 0,
-  };
-}
-
-/** Level ro‘yxatini level_number bo‘yicha tartiblaydi. */
-export function normalizeLevels(res) {
-  return extractList(res)
-    .map(normalizeLevelItem)
-    .filter(Boolean)
-    .sort((a, b) => a.level_number - b.level_number);
-}
-
 function listTotal(res) {
   if (typeof res?.total === 'number') return res.total;
   if (typeof res?.count === 'number') return res.count;
@@ -473,16 +453,9 @@ function listTotal(res) {
 
 let topicTotalCache = null;
 let topicTotalInflight = null;
-let levelsCache = null;
-let levelsCacheLang = null;
-let levelsInflight = null;
 
 export function peekTopicTotal() {
   return topicTotalCache;
-}
-
-export function peekLevels() {
-  return levelsCache;
 }
 
 // Backend baʼzan matnni {uz,ru,en} obyekt sifatida qaytaradi (admin modellari). UI esa oddiy satr kutadi.
@@ -531,14 +504,6 @@ export const api = {
     });
   },
 
-  /** Check user exists */
-  checkUser: async (identifier) => {
-    return await request('/mobile/auth/user/check', {
-      method: 'POST',
-      body: { identifier },
-    });
-  },
-
   /** Send OTP code (type must be 'email' or 'telegram') */
   sendOtp: async (identifier, type = 'email', captchaToken) => {
     return await request('/mobile/auth/user/otp/send', {
@@ -557,31 +522,6 @@ export const api = {
   },
 
   // ===================== USER PROFILE =====================
-
-  /** Get levels list */
-  getLevels: async () => {
-    const lang = getLang();
-    if (levelsCache?.length && levelsCacheLang === lang) return levelsCache;
-    if (levelsInflight) return levelsInflight;
-    const load = async (path) => normalizeLevels(await request(path));
-    levelsInflight = (async () => {
-      try {
-        const list = await load('/mobile/level');
-        if (list.length) return list;
-      } catch {
-        // /web/level — admin statik jadval, mobile bo‘sh yoki 404 bo‘lsa
-      }
-      return load('/web/level');
-    })();
-    try {
-      const list = await levelsInflight;
-      levelsCache = list;
-      levelsCacheLang = lang;
-      return list;
-    } finally {
-      levelsInflight = null;
-    }
-  },
 
   /** Get user profile */
   getUserProfile: async () => {
@@ -615,23 +555,10 @@ export const api = {
     return unwrapEntity(await request('/mobile/user/limit'));
   },
 
-  /**
-   * Get user activity stats.
-   * `activity` = number of FINISHED cases (counted by the backend automatically on
-   * simulation finish; the client must NOT write it — POST /mobile/user/activity is not used).
-   * Zero-activity days are included. Day boundaries are UTC for now (backend will move to UTC+5).
-   */
-  getUserActivity: async (type = 'day', params = {}) => {
-    const query = new URLSearchParams({ type });
-    if (params.date) query.set('date', params.date);
-    if (params.from) query.set('from', params.from);
-    if (params.to) query.set('to', params.to);
-    return await request(`/mobile/user/activity?${query.toString()}`);
-  },
-
   /** Get leaderboard / rating */
-  getUserRating: async (type = 'total', limit = 10) => {
-    return await request(`/mobile/user/rating?type=${type}&limit=${limit}`);
+  getUserRating: async (type = 'total', limit = 10, sort = 'activity') => {
+    const query = new URLSearchParams({ type, limit: String(limit), sort });
+    return await request(`/mobile/user/rating?${query.toString()}`);
   },
 
   // ===================== DEVICE (FCM Push) =====================
@@ -776,22 +703,6 @@ export const api = {
     }
   },
 
-  // ===================== FAVORITES =====================
-
-  /** Get favorites list */
-  getFavorites: async (limit = 50, page = 1) => {
-    const res = await request(`/mobile/favorite?limit=${limit}&page=${page}`);
-    return extractList(res).map(localizeItem);
-  },
-
-  /** Toggle favorite */
-  toggleFavorite: async (caseId) => {
-    return await request('/mobile/favorite', {
-      method: 'POST',
-      body: { case_id: String(caseId) },
-    });
-  },
-
   // ===================== SIMULATION =====================
 
   /** Get completed simulations */
@@ -930,22 +841,6 @@ export const api = {
     return await request('/mobile/setting/voice');
   },
 
-  // ===================== PROMOCODES =====================
-
-  /** Get my promocodes */
-  getPromocodes: async (limit = 50, page = 1) => {
-    const res = await request(`/mobile/promocode?limit=${limit}&page=${page}`);
-    return res;
-  },
-
-  /** Redeem promocode */
-  redeemPromocode: async (code) => {
-    return await request('/mobile/promocode/redeem', {
-      method: 'POST',
-      body: { code },
-    });
-  },
-
   // ===================== TARIFFS =====================
 
   /** Get all tariffs (live paginated `{ data, total }` bo‘lishi mumkin). */
@@ -1024,21 +919,6 @@ export const api = {
     return await request('/mobile/subscription', {
       method: 'POST',
       body: { tariff_id: tariffId, provider: payProvider },
-    });
-  },
-
-  // ===================== STUDY PLAN =====================
-
-  /** Get study plan */
-  getStudyPlan: async () => {
-    return await request('/mobile/study-plan');
-  },
-
-  /** Update study plan */
-  updateStudyPlan: async (data) => {
-    return await request('/mobile/study-plan', {
-      method: 'PUT',
-      body: data,
     });
   },
 
@@ -1129,14 +1009,6 @@ export const api = {
     return await request(`/mobile/app-route/${id}`);
   },
 
-  // ===================== PARTNERS =====================
-
-  /** Get partners */
-  getPartners: async () => {
-    const res = await request('/mobile/partner');
-    return res.partners || res.data || [];
-  },
-
   // ===================== PRACTICE WALLET / SESSIONS =====================
 
   getPracticeWallet: async () => {
@@ -1172,15 +1044,6 @@ export const api = {
     return await request(`/mobile/practice/sessions/${sessionId}/finish`, {
       method: 'POST',
     });
-  },
-
-  getPracticeSessions: async (limit = 20, page = 1) => {
-    const res = await request(`/mobile/practice/sessions?limit=${limit}&page=${page}`);
-    return {
-      sessions: extractList(res),
-      total: listTotal(res),
-      raw: res,
-    };
   },
 
   getPracticeSession: async (sessionId) => {
@@ -1302,13 +1165,17 @@ export const api = {
     });
   },
 
-  // ===================== FEEDBACK =====================
+  // ===================== FEEDBACK / REFERRAL (arxiv emas, UI yo‘q) =====================
 
   sendFeedback: async (payload) => {
     return await request('/mobile/feedback', {
       method: 'POST',
       body: payload,
     });
+  },
+
+  getReferral: async () => {
+    return await request('/mobile/referral');
   },
 
   // ===================== TELEGRAM LOGIN (OTP'siz) =====================

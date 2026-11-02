@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronLeft,
   ArrowRight,
-  Bookmark,
   Flag,
   Mic,
   Square,
@@ -105,14 +104,6 @@ export default function CaseSimulationRoom({
 }) {
   const { t, lang } = useTranslation();
   const sessionId = caseItem?.sessionId;
-  const caseId = caseItem?.id || caseItem?.case_id;
-
-  const [saved, setSaved] = useState(() => Boolean(caseItem?.is_favorite));
-  const [savingFavorite, setSavingFavorite] = useState(false);
-
-  useEffect(() => {
-    setSaved(Boolean(caseItem?.is_favorite));
-  }, [caseItem?.id, caseItem?.case_id, caseItem?.is_favorite]);
 
   const [patientStatus, setPatientStatus] = useState(
     healthToStatus(caseItem?.health_percent ?? 0)
@@ -296,7 +287,7 @@ export default function CaseSimulationRoom({
       silent: (extra.reason || 'manual') !== 'insufficient_coins',
       finish_result: merged,
       score: merged?.final_score ?? extra.score ?? 0,
-      xp: merged?.xp_earned ?? extra.xp ?? 0,
+      stars: merged?.stars_earned ?? extra.stars ?? 0,
       coins: merged?.coins_earned ?? extra.coins ?? 0,
       tokens_used: merged?.tokens_used ?? extra.tokens_used ?? usageRef.current.tokens_used,
       coins_spent: merged?.coins_spent ?? extra.coins_spent ?? usageRef.current.coins_spent,
@@ -382,7 +373,7 @@ export default function CaseSimulationRoom({
         ...(finish || {}),
         ...(debrief ? {
           final_score: debrief.final_score ?? finish?.final_score,
-          xp_earned: debrief.xp_earned ?? finish?.xp_earned,
+          stars_earned: debrief.stars_earned ?? finish?.stars_earned,
           coins_earned: debrief.coins_earned ?? finish?.coins_earned,
           tokens_used: debrief.tokens_used ?? finish?.tokens_used,
           coins_spent: debrief.coins_spent ?? finish?.coins_spent,
@@ -632,26 +623,6 @@ export default function CaseSimulationRoom({
     completeSession(null, { skipFinishApi: false, sessionEnded: false, force: true });
   };
 
-  const handleToggleSave = async () => {
-    if (!caseId || savingFavorite) return;
-    setSavingFavorite(true);
-    const next = !saved;
-    setSaved(next);
-    try {
-      const res = await api.toggleFavorite(caseId);
-      const isFav = typeof res?.is_favorite === 'boolean' ? res.is_favorite : next;
-      setSaved(isFav);
-      onToast?.(isFav
-        ? t('fav.added', "Keys saqlanganlarga qo'shildi")
-        : t('fav.removed', "Keys saqlanganlardan olib tashlandi"));
-    } catch (err) {
-      setSaved(!next);
-      setErrorBanner(err?.message || t('common.error', 'Xatolik yuz berdi'));
-    } finally {
-      setSavingFavorite(false);
-    }
-  };
-
   const noAttemptsLeft = attemptsLeft !== null && attemptsLeft <= 0;
   const inputsLocked = sessionEnded || sending || noAttemptsLeft;
   const inputBlocked = inputsLocked || recording;
@@ -715,41 +686,6 @@ export default function CaseSimulationRoom({
                 : { background: '#F1F5F9', color: '#94A3B8' })}
             >
               {patientVoiceOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
-            </button>
-          )}
-
-          {caseId && (
-            <button
-              id="btn-save-case"
-              type="button"
-              onClick={handleToggleSave}
-              disabled={savingFavorite}
-              aria-pressed={saved}
-              aria-label={saved
-                ? t('case.removeSaved', "Saqlangan keyslardan o'chirish")
-                : t('sim.saveBtn', 'Saqlash')}
-              title={saved
-                ? t('case.removeSaved', "Saqlangan keyslardan o'chirish")
-                : t('sim.saveBtn', 'Saqlash')}
-              style={{
-                height: 40,
-                padding: '0 12px',
-                borderRadius: 99,
-                background: saved ? '#FEF3C7' : '#FFFFFF',
-                border: saved ? '1px solid #FDE68A' : '1px solid #CBD5E1',
-                color: saved ? '#B45309' : '#0F172A',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: savingFavorite ? 'wait' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                flexShrink: 0,
-                opacity: savingFavorite ? 0.7 : 1,
-              }}
-            >
-              <Bookmark size={14} fill={saved ? '#F59E0B' : 'none'} color={saved ? '#F59E0B' : 'currentColor'} />
-              <span>{saved ? t('sim.saveBtnSaved', 'Saqlangan') : t('sim.saveBtn', 'Saqlash')}</span>
             </button>
           )}
 

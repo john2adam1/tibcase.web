@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Trophy,
   ArrowLeft,
+  Star,
 } from 'lucide-react';
 import { api } from '../api';
 import { useTranslation } from '../i18n.jsx';
@@ -11,12 +12,30 @@ import UserAvatar from '../components/common/UserAvatar';
 
 const imgOf = (u) => u?.image_url || u?.image || u?.avatar_url || '';
 
+function metrics(item, sort, t) {
+  const activity = item?.activity ?? 0;
+  const stars = item?.stars ?? 0;
+  if (sort === 'stars') {
+    return {
+      primary: stars,
+      primaryLabel: t('lead.stars', 'yulduz'),
+      secondary: `${activity} ${t('lead.casesSolved', 'ta keys')}`,
+    };
+  }
+  return {
+    primary: activity,
+    primaryLabel: t('lead.casesSolved', 'ta keys'),
+    secondary: `${stars} ${t('lead.stars', 'yulduz')}`,
+  };
+}
+
 export default function Leaderboard({ onBack }) {
   const { t } = useTranslation();
   const [filterType, setFilterType] = useState('total');
+  const [sort, setSort] = useState('activity');
   const { data: leaderboard, error, reload } = useAsync(
-    () => api.getUserRating(filterType),
-    [filterType],
+    () => api.getUserRating(filterType, 10, sort),
+    [filterType, sort],
   );
 
   const items = leaderboard?.items || [];
@@ -34,6 +53,19 @@ export default function Leaderboard({ onBack }) {
     );
   }
 
+  const pill = (active) => ({
+    padding: '8px 18px',
+    borderRadius: 99,
+    fontSize: '13px',
+    fontWeight: 700,
+    background: active ? '#16A34A' : 'transparent',
+    color: active ? '#FFFFFF' : '#64748B',
+    boxShadow: active ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none',
+    transition: 'all 0.15s ease',
+    border: 'none',
+    cursor: 'pointer',
+  });
+
   return (
     <div style={{
       width: '100%',
@@ -44,7 +76,6 @@ export default function Leaderboard({ onBack }) {
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
     }}>
       <div style={{ maxWidth: 780, margin: '0 auto' }}>
-        {/* Header with Back button */}
         <div style={{ position: 'relative', textAlign: 'center', marginBottom: 28 }}>
           {onBack && (
             <button
@@ -107,12 +138,7 @@ export default function Leaderboard({ onBack }) {
           </p>
         </div>
 
-        {/* Filter Tabs matching Profile style */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: 28,
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
           <div style={{
             display: 'inline-flex',
             background: '#FFFFFF',
@@ -126,28 +152,32 @@ export default function Leaderboard({ onBack }) {
               { id: 'week', label: t('lead.thisWeek') },
               { id: 'month', label: t('lead.thisMonth') },
               { id: 'total', label: t('lead.allTime') },
-            ].map(f => (
-              <button
-                key={f.id}
-                onClick={() => setFilterType(f.id)}
-                style={{
-                  padding: '8px 18px',
-                  borderRadius: 99,
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  background: filterType === f.id ? '#16A34A' : 'transparent',
-                  color: filterType === f.id ? '#FFFFFF' : '#64748B',
-                  boxShadow: filterType === f.id ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none',
-                  transition: 'all 0.15s ease',
-                }}
-              >
+            ].map((f) => (
+              <button key={f.id} onClick={() => setFilterType(f.id)} style={pill(filterType === f.id)}>
                 {f.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Top 3 Podium Cards */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <div style={{
+            display: 'inline-flex',
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: 99,
+            padding: 4,
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <button onClick={() => setSort('activity')} style={pill(sort === 'activity')}>
+              {t('lead.sortActivity', 'Case soni')}
+            </button>
+            <button onClick={() => setSort('stars')} style={pill(sort === 'stars')}>
+              {t('lead.sortStars', 'Yulduzlar')}
+            </button>
+          </div>
+        </div>
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -155,7 +185,6 @@ export default function Leaderboard({ onBack }) {
           marginBottom: 28,
           alignItems: 'flex-end',
         }}>
-          {/* Silver (Rank 2) */}
           {items[1] && (
             <div style={{
               background: '#FFFFFF',
@@ -169,17 +198,13 @@ export default function Leaderboard({ onBack }) {
               <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥈</div>
               <UserAvatar name={items[1].name} src={imgOf(items[1])} size={48} style={{ margin: '0 auto 10px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }} />
               <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[1].name}</div>
-              <div style={{
-                fontSize: '16px',
-                fontWeight: 700,
-                color: '#16A34A',
-              }}>
-                {items[1].activity} {t('lead.casesSolved')}
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A' }}>
+                {sort === 'stars' && <Star size={14} color="#D97706" fill="#D97706" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
+                {metrics(items[1], sort, t).primary} {metrics(items[1], sort, t).primaryLabel}
               </div>
             </div>
           )}
 
-          {/* Gold (Rank 1) */}
           {items[0] && (
             <div style={{
               background: '#FFFFFF',
@@ -194,17 +219,13 @@ export default function Leaderboard({ onBack }) {
               <div style={{ fontSize: '2.2rem', marginBottom: 4 }}>👑</div>
               <UserAvatar name={items[0].name} src={imgOf(items[0])} size={58} style={{ margin: '0 auto 10px', border: '2.5px solid #FACC15', boxSizing: 'border-box' }} />
               <div style={{ fontWeight: 700, fontSize: '15px', color: '#0F172A', marginBottom: 2 }}>{items[0].name}</div>
-              <div style={{
-                fontSize: '18px',
-                fontWeight: 700,
-                color: '#D97706',
-              }}>
-                {items[0].activity} {t('lead.casesSolved')}
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#D97706' }}>
+                {sort === 'stars' && <Star size={16} color="#D97706" fill="#D97706" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
+                {metrics(items[0], sort, t).primary} {metrics(items[0], sort, t).primaryLabel}
               </div>
             </div>
           )}
 
-          {/* Bronze (Rank 3) */}
           {items[2] && (
             <div style={{
               background: '#FFFFFF',
@@ -218,12 +239,9 @@ export default function Leaderboard({ onBack }) {
               <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥉</div>
               <UserAvatar name={items[2].name} src={imgOf(items[2])} size={48} style={{ margin: '0 auto 10px', border: '1px solid #FDBA74', boxSizing: 'border-box' }} />
               <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[2].name}</div>
-              <div style={{
-                fontSize: '16px',
-                fontWeight: 700,
-                color: '#16A34A',
-              }}>
-                {items[2].activity} {t('lead.casesSolved')}
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A' }}>
+                {sort === 'stars' && <Star size={14} color="#D97706" fill="#D97706" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
+                {metrics(items[2], sort, t).primary} {metrics(items[2], sort, t).primaryLabel}
               </div>
             </div>
           )}
@@ -261,21 +279,18 @@ export default function Leaderboard({ onBack }) {
                 {me.name} {t('lead.you')}
               </div>
               <div style={{ fontSize: '12px', color: '#15803D' }}>
-                {me.activity} {t('lead.casesSolved')}
+                {metrics(me, sort, t).primary} {metrics(me, sort, t).primaryLabel}
+                {' · '}
+                {metrics(me, sort, t).secondary}
               </div>
             </div>
           </div>
-          <div style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: '#166534',
-          }}>
+          <div style={{ fontSize: '16px', fontWeight: 700, color: '#166534' }}>
             #{me.rank}
           </div>
         </div>
         )}
 
-        {/* Rankings Table/List */}
         <div style={{
           background: '#FFFFFF',
           borderRadius: 18,
@@ -283,47 +298,50 @@ export default function Leaderboard({ onBack }) {
           boxShadow: 'var(--shadow-sm)',
           overflow: 'hidden',
         }}>
-          {items.map((item, idx) => (
-            <div
-              key={idx}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '14px 20px',
-                borderBottom: idx < items.length - 1 ? '1px solid #F1F5F9' : 'none',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: item.rank <= 3 ? '#D97706' : '#94A3B8',
-                  minWidth: 24,
-                }}>
-                  #{item.rank}
-                </span>
+          {items.map((item, idx) => {
+            const m = metrics(item, sort, t);
+            return (
+              <div
+                key={item.user_id || idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 20px',
+                  borderBottom: idx < items.length - 1 ? '1px solid #F1F5F9' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: item.rank <= 3 ? '#D97706' : '#94A3B8',
+                    minWidth: 24,
+                  }}>
+                    #{item.rank}
+                  </span>
 
-                <UserAvatar name={item.name} src={imgOf(item)} size={36} />
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
-                    {item.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748B' }}>
-                    {item.activity} {t('lead.casesSolved')}
+                  <UserAvatar name={item.name} src={imgOf(item)} size={36} />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748B' }}>
+                      {m.secondary}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{
-                fontSize: '14px',
-                fontWeight: 700,
-                color: item.is_me ? '#166534' : '#16A34A',
-              }}>
-                {item.activity}
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: item.is_me ? '#166534' : '#16A34A',
+                }}>
+                  {m.primary}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
       </div>

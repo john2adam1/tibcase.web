@@ -4,6 +4,7 @@ import { api, dailyFreeQuota, formatApiError, walletSpendable } from '../api';
 import { openExternalUrl } from '../utils/openUrl';
 import StoreTariffs from './StoreTariffs.jsx';
 import {
+  Trophy,
   ChevronLeft,
   ChevronRight,
   Globe,
@@ -410,10 +411,25 @@ export default function ProfileView({
                 }}>
                   {user?.name || ''}
                 </h2>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', marginTop: 4 }}>
-                  {t('settings.info', "Profil ma'lumoti")}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  marginTop: 6,
+                  padding: '4px 10px 4px 8px',
+                  borderRadius: 99,
+                  background: '#FFFBEB',
+                  border: '1px solid #FDE68A',
+                }}>
+                  <Star size={14} color="#D97706" fill="#FACC15" strokeWidth={2} />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#B45309' }}>
+                    {user?.stars ?? 0}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#92400E' }}>
+                    {t('profile.stars', 'Yulduzlar')}
+                  </span>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: '#94A3B8', marginTop: 2 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: '#94A3B8', marginTop: 6 }}>
                   {t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 </div>
               </div>
@@ -624,7 +640,7 @@ export default function ProfileView({
               )}
             </div>
 
-            {/* Ilova va til — bitta menyu (reyting arxiv: GET /mobile/user/rating) */}
+            {/* Reyting, ilova, til */}
             <div id="profile-settings-group" style={{
               background: '#FFFFFF',
               borderRadius: 18,
@@ -635,6 +651,14 @@ export default function ProfileView({
               flexDirection: 'column',
               marginBottom: 12,
             }}>
+              <SettingsListItem
+                icon={<Trophy size={18} color="#D97706" strokeWidth={2.2} />}
+                iconBg="#FEF3C7"
+                label={t('settings.rating', 'Reyting')}
+                subtitle={t('lead.badge', 'Peshqadamlar reytingi')}
+                onClick={() => onNavigate && onNavigate('leaderboard')}
+              />
+              <Divider />
               <SettingsListItem
                 icon={<Info size={18} color="#2563EB" strokeWidth={2.2} />}
                 iconBg="#DBEAFE"
@@ -870,8 +894,8 @@ export default function ProfileView({
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#F59E0B' }}>🪙 {user?.coins || 0}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('nav.streak', 'Streak')}</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#EA580C' }}>🔥 {user?.streak_count || 0}d</div>
+                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('profile.stars', 'Yulduzlar')}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#D97706' }}>★ {user?.stars ?? 0}</div>
                 </div>
               </div>
 

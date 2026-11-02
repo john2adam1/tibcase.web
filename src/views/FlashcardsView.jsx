@@ -266,7 +266,6 @@ export default function FlashcardsView({
           <h2 style={{ margin: 0, fontSize: 20 }}>{t('flash.title', 'Fleshkartalar')}</h2>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
             {allCards.length} · {t('flash.statsDue', 'Bugun')}: {stats?.due_today ?? stats?.due_now ?? dueCards.length}
-            {typeof stats?.streak_count === 'number' ? ` · 🔥 ${stats.streak_count}` : ''}
           </div>
         </div>
         <button className="ui-icon-btn" onClick={reload} style={{ border: 'none' }}>
@@ -303,7 +302,6 @@ export default function FlashcardsView({
           card={card}
           index={Math.min(sessionPos, Math.max(sessionTotal - 1, 0))}
           total={sessionTotal || reviewing.length || 1}
-          streak={stats?.streak_count}
           busy={busy}
           onRate={handleReview}
         />

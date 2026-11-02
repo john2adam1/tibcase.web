@@ -1,24 +1,24 @@
 ---
-description: Keep root API_ENDPOINTS.md in sync with real frontend API usage
+description: Keep root API_MOBILE.md in sync with real frontend API usage
 alwaysApply: true
 ---
 
-# API_ENDPOINTS.md ni yangilab turish
+# API_MOBILE.md ni yangilab turish
 
-Root dagi [`API_ENDPOINTS.md`](API_ENDPOINTS.md) — user-web qaysi backend
-endpointlarni ishlatishining manbasi.
+Root dagi [`API_MOBILE.md`](API_MOBILE.md) — yagona API shartnomasi va
+user-web qaysi endpointni ishlatishining manbasi.
 
-Quyidagilardan biri o‘zgarsa, **shu turni yopmasdan** `API_ENDPOINTS.md` ni yangila:
+Quyidagilardan biri o‘zgarsa, **shu turni yopmasdan** `API_MOBILE.md` ni yangila:
 
 - `src/api.js` da wrapper qo‘shildi / o‘chirildi / path o‘zgardi
 - UI yangi endpoint chaqirdi yoki chaqirishni to‘xtatdi
-- `API_MOBILE.md` yoki swagger contract o‘zgardi
+- swagger contract o‘zgardi
 - Simulyatsiya event `type`, payload yoki auto-finish qoidalari o‘zgardi
 
 Yangilash:
 
-1. Jadvaldagi **Holat**: Ishlayapti | Wrapper faqat | Ishlatilmayapti | Warning | Qo‘shimcha
-2. Warninglar ro‘yxati — eskirganini olib tashla, yangisini qo‘sh
-3. **Oxirgi tekshiruv** sanasini bugungi qil
+1. Tegishli endpoint ostidagi **FE** qatori
+2. Yuqoridagi **User-web holati** jadvali / warninglar
+3. Holat sanasini bugungi qil
 
 Endpointni o‘ylab topma. Path `API_MOBILE.md` yoki `src/api.js` dagi real so‘rovga mos bo‘lsin.

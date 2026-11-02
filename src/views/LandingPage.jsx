@@ -497,7 +497,6 @@ export default function LandingPage({
                 card={{ id: 'landing-demo', front: card.front, back: card.back, category_name: card.topic }}
                 index={2}
                 total={15}
-                streak={4}
                 subject={card.topic}
                 locked={Boolean(fcRated)}
                 advanceOnRate={false}

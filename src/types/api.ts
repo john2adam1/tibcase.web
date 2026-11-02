@@ -44,7 +44,7 @@ export interface UserProfile {
   phone_number?: string;
   image_url?: string;
   level: number;
-  xp: number;
+  stars: number;
   coins: number;
   streak_count: number;
   specialization?: string;
@@ -64,7 +64,7 @@ export interface UserLimitRes {
 export interface ActivityStatItem {
   date?: string;
   activity?: number;
-  xp?: number;
+  stars?: number;
   simulations_count?: number;
   [key: string]: any;
 }
@@ -81,11 +81,10 @@ export interface RatingUserItem {
   user_id?: string;
   name?: string;
   image_url?: string;
-  xp?: number;
-  level?: number;
+  activity?: number;
+  stars?: number;
   rank?: number;
-  coins?: number;
-  specialization?: string;
+  is_me?: boolean;
 }
 
 export interface LeaderboardRes {
@@ -93,6 +92,7 @@ export interface LeaderboardRes {
   limit: number;
   me?: RatingUserItem;
   type: 'day' | 'week' | 'month' | 'year' | 'total';
+  sort?: 'activity' | 'stars';
 }
 
 export interface CategoryMobileRes {
@@ -170,7 +170,7 @@ export interface SimulationSessionRes {
   health_percent?: number;
   status?: string;
   coins_earned?: number;
-  xp_earned?: number;
+  stars_earned?: number;
   final_score?: number;
   started_at?: string;
   ended_at?: string;
@@ -209,7 +209,7 @@ export interface SimulationFinishRes {
   session_id: string;
   final_score: number;
   coins_earned: number;
-  xp_earned: number;
+  stars_earned: number;
   debrief_ready: boolean;
   tokens_used?: number;
   coins_spent?: number;
@@ -219,7 +219,7 @@ export interface DebriefReportRes {
   session_id: string;
   final_score: number;
   coins_earned: number;
-  xp_earned: number;
+  stars_earned: number;
   tokens_used?: number;
   coins_spent?: number;
   correct_steps?: string[];

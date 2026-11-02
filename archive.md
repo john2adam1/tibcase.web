@@ -1,0 +1,11 @@
+Archive funsctions:
+o‘quv reja (GET/PUT /mobile/study-plan)
+promokod (GET /mobile/promocode, POST …/redeem)
+hamkor (GET /mobile/partner)
+auth check (POST /mobile/auth/user/check)
+daraja (GET /mobile/level, /web/level)
+sevimlilar (GET/POST /mobile/favorite + Keys «Saqlash»)
+faollik grafigi (GET /mobile/user/activity)
+practice tarix ro‘yxati (GET /mobile/practice/sessions — GET {id} ishlayveradi)
+logout device (DELETE /mobile/user/device)
+ketma-ketlik (profil va fleshkarta 🔥)

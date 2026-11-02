@@ -9,7 +9,7 @@ import {
   XCircle,
   MinusCircle,
   Coins,
-  Zap,
+  Star,
   Layers,
 } from 'lucide-react';
 import {
@@ -541,7 +541,7 @@ export default function PracticeView({
           <h3 style={{ margin: 0 }}>{t('practice.results', 'Natija')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
             <ResultStat icon={BookOpen} label={t('practice.score', 'Ball')} value={Math.round(session.score || 0)} />
-            <ResultStat icon={Zap} label={t('practice.xp', 'XP')} value={session.xp_earned || 0} />
+            <ResultStat icon={Star} label={t('practice.xp', 'Yulduz')} value={session.stars_earned || 0} />
             <ResultStat icon={Layers} label={t('practice.tokens', 'Token')} value={session.tokens_used || 0} />
             <ResultStat icon={Coins} label={t('practice.coinsSpent', 'Sarflangan tanga')} value={session.coins_spent || 0} />
           </div>

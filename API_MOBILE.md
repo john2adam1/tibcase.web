@@ -11,18 +11,60 @@ urinishlar) shu yerda to'liq yuritiladi.
 - **Xatolik formati:** xatolik bo'lsa `4xx/5xx` status + `{"error": "..."}` shaklidagi JSON qaytadi.
 - **Simulyatsiya xatolari:** `404 session_not_found` — sessiya yo'q; `409 session_not_active` — allaqachon yakunlangan sessiyaga `/event` yoki `/finish` (xato UI emas, natijani ko'rsatish).
 - Pastdagi "Auth" qatori shu endpoint uchun haqiqatda routerda auth middleware borligini bildiradi.
-- Google login tugmasi: [`GOOGLE_AUTH_FRONTEND.md`](GOOGLE_AUTH_FRONTEND.md). FE endpoint holati: [`API_ENDPOINTS.md`](API_ENDPOINTS.md).
+- Google: GIS `id_token` → `POST /mobile/auth/google`. Frontend `VITE_GOOGLE_CLIENT_ID` backend `GOOGLE_CLIENT_ID` bilan bir xil bo‘lsin; origin Google Cloud Web client ga yoziladi.
 - Telegram Mini App: `window.Telegram.WebApp.ready()` / `expand()` chaqirish tavsiya etiladi.
+- User-web holati (2026-11-02): pastdagi **FE** qatorlari + «User-web holati». Wrapper/UI o‘zgarsa shu faylni yangila. Path o‘ylab topilmasin.
+- **Breaking:** `xp` → `stars`, `xp_earned` → `stars_earned`, `required_xp` → `required_stars`. Eski nom qoldirilmadi.
 
 ---
 
+## User-web holati
+
+**Arxiv** (wrapper o‘chirildi, UI chaqirmaydi; backend o‘chirish mumkin):
+
+| Endpoint | Izoh |
+|---|---|
+| `GET/PUT /mobile/study-plan` | O‘quv rejasi |
+| `GET /mobile/promocode`, `POST /mobile/promocode/redeem` | Promokod (tarifga qo‘shilmaguncha) |
+| `GET /mobile/partner` | Hamkorlar |
+| `POST /mobile/auth/user/check` | Login `otp/send` ga to‘g‘ri ketadi |
+| `GET /mobile/level`, `GET /web/level` | Daraja bloki |
+| `GET/POST /mobile/favorite` | Sevimlilar tab + Keys «Saqlash» |
+| `GET /mobile/user/activity` | Faollik grafigi. `POST` ni FE yozmasin |
+| `GET /mobile/practice/sessions` | Keys/test tarix ro‘yxati. `GET {id}` va POST’lar ishlayapti |
+| `DELETE /mobile/user/device` | Logout da chaqirilmaydi. `POST /mobile/user/device` ishlayapti |
+| profil `streak_count`, flashcard `streak_count` / `longest_streak` | Ketma-ketlik UI olib tashlandi |
+
+**Wrapper qoldi, UI yo‘q** (arxiv emas):
+
+| Endpoint | Izoh |
+|---|---|
+| `GET /mobile/referral` | Do‘st taklif. Auth `referral_code` ixtiyoriy maydoni ishlayapti |
+| `POST /mobile/feedback` | Profil formasi yo‘q. Practice AI `item.feedback` — boshqa narsa |
+
+`GET /mobile/user/rating` — **Ishlayapti** (profil Reyting). `sort=activity|stars`.
+
+**Warninglar**
+
+- Home/Profile «Bugungi bepul tanga» faqat `GET /mobile/practice/wallet` (`daily_free_coins` / `free_coins_left`, jumladan `{ data: wallet }`). `GET /mobile/user/limit` — eski simulyatsiya urinish limiti.
+- Eski `/mobile/simulation` billing: `daily_free_limit`, `use_coins`. Practice: wallet + `insufficient_coins`.
+- `POST /mobile/subscription` da `coins_used > 0` → `400 coin_payment_disabled`. FE `coins_used` yubormaydi.
+- `GET /mobile/setting/voice` default `enabled: false`.
+- 429 `too_many_requests` / `otp_locked` + `Retry-After` → `ApiError.retryAfter`.
+- Captcha: `VITE_TURNSTILE_SITE_KEY` / `VITE_CAPTCHA_SITE_KEY` bo‘lsa `X-Captcha-Token` OTP send va telegram start ga.
+- Admin `/web/tariff`, `/web/setting/daily-free-coins` user tokenida 403.
+- `GET /mobile/app-route` live `{ data: [{ support_url, call_center, app_version }] }`.
+- `GET /mobile/banner` — faqat backend; FE default rasm/matn qo‘ymaydi.
+- Category: `is_active=false` filtrlanadi.
+
+---
 
 ## Autentifikatsiya (Login/Register/Token)
 
 ### `POST /mobile/auth/google`
 **Google orqali kirish (1 bosqichli)**
 Google Identity Services (GIS) tugmasi `id_token` beradi — qo'lda paste yo'q.
-To'liq FE ulash: [`GOOGLE_AUTH_FRONTEND.md`](GOOGLE_AUTH_FRONTEND.md).
+`VITE_GOOGLE_CLIENT_ID` = backend `GOOGLE_CLIENT_ID`. Mos kelmasa `401 google_token_invalid`.
 - Auth: kerak emas
 **Body** (GoogleLoginReq) (majburiy):
   - `id_token`: string
@@ -35,7 +77,7 @@ To'liq FE ulash: [`GOOGLE_AUTH_FRONTEND.md`](GOOGLE_AUTH_FRONTEND.md).
 
 ### `POST /mobile/auth/user/check`
 **Check user**
-Check user
+**FE:** arxiv. Login `otp/send` ga to‘g‘ri ketadi.
 - Auth: kerak emas
 **Body** (UserCheckReq) (majburiy):
   - `identifier`: string
@@ -64,11 +106,33 @@ Send a confirmation code to the provided email address
 **Javob (200):**
 `string`
 
+### `POST /mobile/auth/telegram/start`
+**OTP’siz Telegram kirish — token olish**
+Captcha yoqilgan bo‘lsa `X-Captcha-Token`.
+- Auth: kerak emas
+**Javob (200):**
+- `token`: string
+- `bot_url`: string (`https://t.me/<bot>?start=login_<token>`)
+- `expires_in`: integer (300)
+
+### `POST /mobile/auth/telegram/check`
+**Telegram tasdiqni poll (2 s)**
+Body: `{ "token", "referral_code"? }`.
+- `pending` — kutish
+- `confirmed` + `auth` (`access_token`, `refresh_token`, `role`, `id`) — kirdi
+- `400 otp_expired` — qaytadan `start`
+- Auth: kerak emas
+
+### `POST /auth/token/refresh`
+**Access/refresh juftini yangilash** (`/mobile` ostida emas).
+Body: `{ "refresh_token": "..." }`.
+
 ## Foydalanuvchi profili
 
 ### `GET /mobile/user/activity`
 **Get user activity stats**
 Returns user activity stats by type: day|week|month|year|range. For day: optional ?date=YYYY-MM-DD. For range: required ?from=YYYY-MM-DD&to=YYYY-MM-DD
+**FE:** arxiv. Faollik grafigi yo‘q.
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `type` (query, string) (majburiy): Stats type: day|week|month|year|range
@@ -83,7 +147,7 @@ Returns user activity stats by type: day|week|month|year|range. For day: optiona
 
 ### `POST /mobile/user/activity`
 **Activity user**
-Frontend yozmasin — sessiya tugagach backend o'zi hisoblaydi. Faqat `GET` o'qiladi.
+Frontend yozmasin — sessiya tugagach backend o'zi hisoblaydi.
 - Auth: kerak (Bearer token)
 **Body** (UserActivityCreateBody) (majburiy):
   - `activity`: integer
@@ -113,6 +177,7 @@ Til o'zgaganda eski topic'dan `unsubscribe`, yangisiga `subscribe`; logout'da ik
 
 ### `DELETE /mobile/user/device`
 **Push token'ni o'chirish (logout)**
+**FE:** arxiv. Logout da chaqirilmaydi.
 - Auth: kerak (Bearer token)
 **Body** (object) (majburiy):
   - `fcm_token`: string
@@ -134,12 +199,13 @@ Get user profile
 - `name`: string
 - `phone_number`: string
 - `specialization`: string
-- `streak_count`: integer
+- `streak_count`: integer (**FE:** ko‘rsatilmaydi, arxiv)
 - `updated_at`: string
-- `xp`: integer
+- `stars`: integer
 
 ### `GET /mobile/user/limit`
-**Kunlik bepul urinish limiti holati (home ekranidagi "35/50 Limit" belgisi)**
+**Eski simulyatsiya kunlik urinish limiti**
+Home/Profile «Bugungi bepul tanga» uchun **emas** — u `GET /mobile/practice/wallet`.
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `has_subscription`: boolean
@@ -150,16 +216,20 @@ Get user profile
 
 ### `GET /mobile/user/rating`
 **Reyting (leaderboard) olish**
-Reytingni qaytaradi: day|week|month|year|total. Default: total. 0 activity bo'lgan userlar avtomatik oxirida turadi. Response ichida TOP list va "Me" (mening o'rnim) qaytadi.
+`type`: day|week|month|year|total (default total). `sort`: `activity` (default, yakunlangan case soni) | `stars` (davrdagi yulduzlar; `total` da profildagi jami `stars`). Boshqa `sort` → 400.
+Har elementda `activity` va `stars`. Teng ballda ikkinchi mezon, so‘ng ism. Top 30 s kesh (`type`+`sort`+`limit`).
+**FE:** profil Reyting. Almashtirgich `sort` yuboradi.
 - Auth: kerak (Bearer token)
 **Parametrlar:**
-- `type` (query, string): Filter type: day|week|month|year|total (default: total)
-- `limit` (query, integer): Top list limit (default: 10, max: 100)
+- `type` (query, string): day|week|month|year|total (default: total)
+- `limit` (query, integer): default 10, max 100
+- `sort` (query, string): activity|stars (default: activity)
 **Javob (200):**
-- `items`: RatingUserItem[]
+- `items`: RatingUserItem[] (`user_id`, `name`, `image_url`, `activity`, `stars`, `rank`, `is_me`)
 - `limit`: integer
 - `me`: RatingUserItem
 - `type`: RatingType
+- `sort`: activity|stars
 
 ### `PUT /mobile/user/update/profile`
 **Update a user profile**
@@ -179,6 +249,7 @@ Updates user profile fields via multipart/form-data. Image is optional.
 ### `GET /mobile/referral`
 **Referral ma'lumotlari (do'stlarni taklif qilish)**
 O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
+**FE:** arxiv emas. Wrapper bor, UI yo‘q. Auth `referral_code` ixtiyoriy.
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `invited`: ReferralInvitedItem[]
@@ -304,6 +375,7 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 
 ### `GET /mobile/favorite`
 **Sevimlilar ro'yxati (GET /api/v1/favorites - BACKEND_STRUCTURE.md 3-bo'lim)**
+**FE:** arxiv.
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `limit` (query, integer): Limit
@@ -315,6 +387,7 @@ O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
 
 ### `POST /mobile/favorite`
 **Sevimlilarga qo'shish/olib tashlash (BACKEND_STRUCTURE.md 3-bo'lim)**
+**FE:** arxiv. Keys «Saqlash» olib tashlandi.
 - Auth: kerak (Bearer token)
 **Body** (object) (majburiy):
   - `case_id`: string
@@ -370,7 +443,7 @@ Davom ettirilganda urinish hisoblagichini tiklash uchun `max_attempts` + `attemp
 - `started_at`: string
 - `status`: string
 - `user_id`: string
-- `xp_earned`: integer
+- `stars_earned`: integer
 - `max_attempts`: integer
 - `attempts_used`: integer
 
@@ -398,7 +471,7 @@ hisoblanmaydi.
 - `tokens_used`: integer (sessiya bo'yicha jami token)
 - `coins_spent`: integer (sessiya bo'yicha yechilgan tanga, `reason=ai_usage`)
 - `session_ended`: boolean (`health_percent=0`, `attempts_left=0` yoki to'g'ri javob)
-- `finish_result`: object (faqat `session_ended: true` da) — `session_id`, `final_score`, `xp_earned`, `coins_earned`, `debrief_ready`, `tokens_used`, `coins_spent`
+- `finish_result`: object (faqat `session_ended: true` da) — `session_id`, `final_score`, `stars_earned`, `coins_earned`, `debrief_ready`, `tokens_used`, `coins_spent`
 - `response`: object
   - `patient_reply` / `feedback`: string (AI tahlili; FE chatda AI sifatida ko'rsatadi)
   - `transcript`: string (ovozdan Gemini STT matni)
@@ -426,7 +499,7 @@ qayta chaqirilsa **`409 session_not_active`** — xato UI emas, natijani ko'rsat
 - `debrief_ready`: boolean
 - `final_score`: integer
 - `session_id`: string
-- `xp_earned`: integer
+- `stars_earned`: integer
 - `tokens_used`: integer
 - `coins_spent`: integer
 
@@ -464,7 +537,7 @@ Frontend alohida hisoblamaydi.
 - `incorrect_steps`: string[]
 - `session_id`: string
 - `weak_topics`: string[]
-- `xp_earned`: integer
+- `stars_earned`: integer
 - `tokens_used`: integer
 - `coins_spent`: integer
 
@@ -474,7 +547,7 @@ Frontend alohida hisoblamaydi.
 **Ovozli funksiya global yoqilganmi**
 `enabled: false` bo'lsa FE mikrofon/TTS UI ni yashiradi. Yoqilganda audio
 backendda Gemini STT+TTS orqali `/event` javobidagi `reply_audio_base64` dan
-keladi (brauzer `speechSynthesis` asosiy yo'l emas).
+keladi (brauzer `speechSynthesis` asosiy yo'l emas). Default `enabled: false`.
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `enabled`: boolean
@@ -483,6 +556,7 @@ keladi (brauzer `speechSynthesis` asosiy yo'l emas).
 
 ### `GET /mobile/promocode`
 **Mening Promokodlarim (ishlatganlarim, BACKEND_STRUCTURE.md 5-bo'lim)**
+**FE:** arxiv. Tarifga qo‘shilmaguncha chaqirilmaydi.
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `limit` (query, integer): Limit
@@ -493,6 +567,7 @@ keladi (brauzer `speechSynthesis` asosiy yo'l emas).
 
 ### `POST /mobile/promocode/redeem`
 **Promokodni kiritib tanga olish (TZ 2.3-bo'lim)**
+**FE:** arxiv.
 - Auth: kerak (Bearer token)
 **Body** (object) (majburiy):
   - `code`: string
@@ -532,6 +607,7 @@ Get a tariff by their ID
 
 ### `POST /mobile/subscription`
 **Premium obunaga buyurtma (BACKEND_STRUCTURE.md 5-bo'lim, Click orqali to'lov)**
+`coins_used > 0` → `400 coin_payment_disabled`. FE `coins_used` yubormaydi.
 - Auth: kerak (Bearer token)
 **Body** (OrderCreateBody) (majburiy):
   - `coins_used`: integer
@@ -542,6 +618,7 @@ Get a tariff by their ID
 ## O'quv rejasi (eslatma)
 
 ### `GET /mobile/study-plan`
+**FE:** arxiv.
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `is_enabled`: boolean
@@ -552,7 +629,7 @@ Get a tariff by their ID
 ### `PUT /mobile/study-plan`
 **O'quv rejasi va eslatma vaqtini belgilash (BACKEND_STRUCTURE.md 2-bo'lim)**
 Cron `remind_time` / `remind_minutes_before` da push yuboradi (`EventStudyReminder`).
-FE alohida cron qilmaydi — push'ni UI da ko'rsatish kifoya.
+**FE:** arxiv.
 - Auth: kerak (Bearer token)
 **Body** (StudyPlanUpsertReq) (majburiy):
   - `is_enabled`: boolean
@@ -730,7 +807,157 @@ Get a appRoute by their ID
 
 ### `GET /mobile/partner`
 **Home ekranidagi "Hamkor kurslari" banneri (TZ 2.1-bo'lim)**
+**FE:** arxiv.
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `count`: integer
 - `partners`: PartnerMobileRes[]
+
+## Profil: telefon / email ulash
+
+### `POST /mobile/user/phone/start`
+Telegram orqali tasdiqlash. Javob: `{token, bot_url, expires_in}`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/user/phone/confirm`
+Body: `{ "token" }` → `pending` / `confirmed`. Boshqa hisobda bo‘lsa `409 identifier_taken`.
+- Auth: kerak (Bearer token)
+
+### `DELETE /mobile/user/phone`
+Uzish. Boshqa kirish usuli yo‘q bo‘lsa `400 auth_method_required`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/user/email/send`
+Body: `{ "email" }`. Band: `409 identifier_taken`. 3 ta / 10 daqiqa.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/user/email/confirm`
+Body: `{ "email", "code" }`. `400 invalid_otp` / `otp_expired` / `429 otp_locked`.
+- Auth: kerak (Bearer token)
+
+### `DELETE /mobile/user/email`
+Uzish (kamida bitta boshqa usul qolishi shart).
+- Auth: kerak (Bearer token)
+
+## Daraja (arxiv)
+
+### `GET /mobile/level`
+Klinik daraja katalogi. Maydonlar: `required_stars`, `stars_reward`.
+**FE:** arxiv. `/web/level` fallback ham olib tashlandi.
+- Auth: kerak (Bearer token)
+
+## Practice hamyon
+
+### `GET /mobile/practice/wallet`
+Kunlik bepul tanga + balans. Home/Profile «Bugungi bepul tanga» shu yerdan.
+```json
+{ "has_subscription": false, "daily_free_coins": 10, "free_coins_left": 7, "coins": 120, "coins_per_1k_tokens": 1 }
+```
+`free_coins_left + coins` = sarflash mumkin. Avval bepul (Toshkent 24 soat, to‘planmaydi), keyin balans. Premiumdan yechilmaydi. `coins_per_1k_tokens = 0` — yechilmaydi.
+- Auth: kerak (Bearer token)
+
+## AI mashq (practice)
+
+`Accept-Language: uz|ru|en`. `next`/`answer` timeout 60 s. Bo‘sh hamyon + obuna yo‘q → `400 insufficient_coins`.
+
+### `POST /mobile/practice/sessions`
+Sessiya boshlash. `mode`: `case|test`. `difficulty`: `easy|medium|hard`. `topic_ids` bo‘sh = aralash. `count` faqat testda (1..50, default 10).
+Yoki erkin mavzu: `{ "mode": "case", "topic_text": "…", "difficulty": "medium" }` — `category_id`/`topic_ids` bilan aralashmaydi. `400 topic_not_medical`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/practice/sessions/{id}/next`
+Keyingi case/savol. Javobsiz element bo‘lsa yangisini yaratmaydi. Case 50 ta → `409 practice_limit_reached`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/practice/items/{id}/answer`
+Test: `{ "answer": "A" }`. Case: erkin matn. Javobda `item` (`verdict`, `feedback`, `sources`), `session_finished`, `session`.
+Test oxirgi savol → sessiya o‘zi yopiladi. Ikki marta: `409 item_already_answered`. AI xato: `502 practice_generation_failed`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/practice/sessions/{id}/finish`
+Yakun. Javobda `stars_earned` (eski `xp_earned` yo‘q). Javobsiz → `abandoned`. Yakunlangan sessiyaga `next`/`finish`/`answer` → `409 session_not_active`.
+Yakunida xato javoblar bo‘lsa fonda fleshkarta: `flashcards_status` `none|pending|done|failed`. Poll: `GET /mobile/practice/sessions/{id}`.
+- Auth: kerak (Bearer token)
+
+### `GET /mobile/practice/sessions/{id}`
+Bitta sessiya (fleshkarta poll).
+- Auth: kerak (Bearer token)
+
+### `GET /mobile/practice/sessions`
+Tarix (`limit`, `page`).
+**FE:** arxiv. `GET {id}` va POST’lar ishlayapti.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/practice/items/{id}/report`
+Noto‘g‘ri kontent: `{ "reason": "..." }`.
+- Auth: kerak (Bearer token)
+
+## Fleshkartalar
+
+Takrorlash (`due`/`review`) va qo‘lda karta — **bepul**. Deck buyurtmasi tanga yechadi.
+
+| `rating` | Keyingi |
+|---|---|
+| `again` | ~10 daqiqa |
+| `hard` | ~1 kun |
+| `good` | 3 → 7 → 21 kun |
+| `easy` | 7 → 14 kun |
+
+### `GET /mobile/flashcard/due`
+Query: `limit`, `deck_id`. Javob: `{cards[], due_total}`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/flashcard/cards/{id}/review`
+Body: `{ "rating": "good" }`. Javob: `{card, next_interval_days, due_at, streak_count}`.
+**FE:** review chaqiriladi; `streak_count` ko‘rsatilmaydi (arxiv).
+- Auth: kerak (Bearer token)
+
+### `GET /mobile/flashcard/stats`
+`total, due_now, due_today, new, learned, reviews_today, retention_30d, decks, streak_count, longest_streak`.
+**FE:** stats chaqiriladi (`due_*`, `total`); `streak_count` / `longest_streak` ko‘rsatilmaydi (arxiv).
+- Auth: kerak (Bearer token)
+
+### `GET /mobile/flashcard/decks`
+To‘plamlar: `kind` = `mistakes` | `topic` | `manual`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/flashcard/decks`
+AI to‘plam (tanga). `{ "category_id", "topic_id"?, "count" }` yoki `{ "topic_text", "count" }`.
+- Auth: kerak (Bearer token)
+
+### `DELETE /mobile/flashcard/decks/{id}`
+To‘plam va kartalari.
+- Auth: kerak (Bearer token)
+
+### `GET /mobile/flashcard/cards`
+Ro‘yxat: `deck_id`, `limit`, `page`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/flashcard/cards`
+Qo‘lda: `{front, back, deck_id?}`. Takror: `409 conflict`.
+- Auth: kerak (Bearer token)
+
+### `PUT /mobile/flashcard/cards/{id}`
+Tahrir: `{front?, back?, status?: active|suspended}`.
+- Auth: kerak (Bearer token)
+
+### `DELETE /mobile/flashcard/cards/{id}`
+O‘chirish.
+- Auth: kerak (Bearer token)
+
+## Bilim xaritasi
+
+### `GET /mobile/roadmap`
+Bepul. `map[]` (`mastery`, `level`: unexplored|learning|weak|medium|strong), `path[]`, `summary`.
+- Auth: kerak (Bearer token)
+
+### `POST /mobile/roadmap/refresh`
+AI izoh (tanga, 24 soat kesh). Natija yo‘q: `400`. Hamyon bo‘sh: `400 insufficient_coins`. Limit 3 / 10 daqiqa.
+- Auth: kerak (Bearer token)
+
+## Fikr
+
+### `POST /mobile/feedback`
+`{ "rating"?, "kind": "general|bug|idea|content|nps", "message"?, "context"?, "app_version"? }`.
+**FE:** arxiv emas. Wrapper qoldi, profil formasi yo‘q. Practice `item.feedback` — boshqa narsa.
+- Auth: kerak (Bearer token)

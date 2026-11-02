@@ -19,6 +19,7 @@ import HomeView from './views/HomeView';
 import CategoriesView from './views/CategoriesView';
 import RoadmapView from './views/RoadmapView';
 import CaseSimulationRoom from './views/CaseSimulationRoom';
+import Leaderboard from './views/Leaderboard';
 import ProfileView from './views/ProfileView';
 import NotificationsView from './views/NotificationsView.jsx';
 import StoreTariffs from './views/StoreTariffs';
@@ -611,7 +612,7 @@ export default function App() {
             finishResult = finishResult || {
               session_id: sessionId,
               final_score: sim?.final_score,
-              xp_earned: sim?.xp_earned,
+              stars_earned: sim?.stars_earned,
               coins_earned: sim?.coins_earned,
               debrief_ready: true,
             };
@@ -632,7 +633,7 @@ export default function App() {
           .filter((v) => typeof v === 'number');
         return vals.find((v) => v > 0) ?? vals[0] ?? 0;
       };
-      const earnedXp = pick('xp_earned', result?.xp);
+      const earnedStars = pick('stars_earned', result?.stars);
       const earnedCoins = pick('coins_earned', result?.coins);
       const usageTokens = [result?.tokens_used, finishResult?.tokens_used, sessionRec?.tokens_used]
         .find((v) => typeof v === 'number') ?? 0;
@@ -642,7 +643,7 @@ export default function App() {
       if (!result?.silent) {
         setDebriefData({
           final_score: pick('final_score', result?.score),
-          xp_earned: earnedXp,
+          stars_earned: earnedStars,
           coins_earned: earnedCoins,
           tokens_used: usageTokens,
           coins_spent: usageCoins,
@@ -673,7 +674,7 @@ export default function App() {
       showToast(err?.message || t('common.error', "Xatolik yuz berdi"));
       setDebriefData({
         final_score: 0,
-        xp_earned: 0,
+        stars_earned: 0,
         coins_earned: 0,
         tokens_used: 0,
         coins_spent: 0,
@@ -812,6 +813,11 @@ export default function App() {
             onBack={() => setCurrentView('profile')}
             initialTab={storeInitialTab}
           />
+        )}
+
+        {/* Leaderboard View */}
+        {currentView === 'leaderboard' && (
+          <Leaderboard user={user} onBack={() => setCurrentView('profile')} />
         )}
 
         {/* Profile & Settings View (Figma mobile design) */}

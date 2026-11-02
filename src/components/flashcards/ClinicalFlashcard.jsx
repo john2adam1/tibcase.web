@@ -57,7 +57,6 @@ export default function ClinicalFlashcard({
   card,
   index = 0,
   total = 1,
-  streak,
   subject,
   compact = false,
   busy = false,
@@ -119,11 +118,6 @@ export default function ClinicalFlashcard({
         <div className="cf-meta">
           <span className="cf-meta-index">{pad(index + 1)}/{pad(total)}</span>
           <span className="cf-meta-subject">{topic}</span>
-          {typeof streak === 'number' && (
-            <span className="cf-meta-streak" title={t('flash.streak', 'Kunlik seriya')}>
-              🔥 {streak}
-            </span>
-          )}
         </div>
       )}
 

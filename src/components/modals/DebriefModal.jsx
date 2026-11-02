@@ -4,7 +4,7 @@ import {
   Share2,
   Sparkles,
   X,
-  Zap,
+  Star,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n.jsx';
 
@@ -18,7 +18,7 @@ export default function DebriefModal({
   if (!debriefData) return null;
 
   const score = debriefData.final_score ?? 0;
-  const xp = debriefData.xp_earned ?? 0;
+  const stars = debriefData.stars_earned ?? 0;
   const coins = debriefData.coins_earned ?? 0;
   const tokensUsed = debriefData.tokens_used ?? 0;
   const coinsSpent = debriefData.coins_spent ?? 0;
@@ -26,7 +26,7 @@ export default function DebriefModal({
   const isSuccess = score >= 75;
 
   const handleShare = async () => {
-    const text = `TibStation AI simulyatorida klinik keysni ${score}% aniqlik bilan yechdim va +${xp} XP to'pladim!`;
+    const text = `TibStation AI simulyatorida klinik keysni ${score}% aniqlik bilan yechdim va +${stars} yulduz to'pladim!`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -191,7 +191,7 @@ export default function DebriefModal({
             </div>
           </div>
 
-          {/* XP Card */}
+          {/* Stars Card */}
           <div style={{
             background: '#F0F9FF',
             border: '1px solid #BAE6FD',
@@ -205,7 +205,7 @@ export default function DebriefModal({
             justifyContent: 'center',
           }}>
             <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              {t('debrief.earnedXp', "To'plangan XP")}
+              {t('debrief.earnedXp', "To'plangan yulduz")}
             </div>
             <div style={{
               fontSize: '26px',
@@ -218,11 +218,11 @@ export default function DebriefModal({
               gap: 4,
               lineHeight: 1.1,
             }}>
-              <Zap size={22} color="#0284C7" fill="#0284C7" />
-              <span>+{xp}</span>
+              <Star size={22} color="#0284C7" fill="#0284C7" />
+              <span>+{stars}</span>
             </div>
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369A1' }}>
-              {t('debrief.xpDesc', 'Tajriba ochkosi')}
+              {t('debrief.xpDesc', 'Yulduz')}
             </div>
           </div>
 

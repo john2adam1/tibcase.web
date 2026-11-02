@@ -175,7 +175,7 @@ export function HomeCategoryCarousel({
   );
 }
 
-export function HomeFlashcardCarousel({ onViewAll, streak }) {
+export function HomeFlashcardCarousel({ onViewAll }) {
   const { t } = useTranslation();
   const trackRef = useRef(null);
   const pausedRef = useRef(false);
@@ -251,7 +251,6 @@ export function HomeFlashcardCarousel({ onViewAll, streak }) {
               card={card}
               index={i}
               total={items.length}
-              streak={streak}
               compact
               showMeta={false}
               busy={busyId === card.id}
