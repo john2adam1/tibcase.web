@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BookOpen, ChevronRight, Coins, Layers, Library, ExternalLink } from 'lucide-react';
+import { BookOpen, ChevronRight, Coins, Gift, Layers, Library, ExternalLink } from 'lucide-react';
 import { api, peekTopicTotal, walletSpendable } from '../../api';
 import { useTranslation } from '../../i18n.jsx';
 import Skeleton from '../common/Skeleton.jsx';
@@ -275,6 +275,7 @@ export default function DashboardHero({
   onOpenClinics,
   onOpenStore,
   onOpenFlashcards,
+  freeQuota = null,
 }) {
   const { t } = useTranslation();
   const coinValue = wallet?.has_subscription
@@ -306,7 +307,7 @@ export default function DashboardHero({
   }, []);
 
   return (
-    <div className="ui-stats">
+    <div className="ui-stats ui-stats-compact">
       <Stat icon={Layers} value={categories?.length ?? 0} label={t('home.statDepartments', "Bo'limlar")} onClick={onOpenClinics} />
       <Stat
         icon={BookOpen}
@@ -323,6 +324,14 @@ export default function DashboardHero({
         onClick={onOpenFlashcards}
       />
       <Stat icon={Coins} value={coinValue} label={t('nav.coins', 'Tangalar')} onClick={onOpenStore} />
+      {freeQuota && (
+        <Stat
+          icon={Gift}
+          value={`${freeQuota.left} / ${freeQuota.total}`}
+          label={t('home.walletFree', 'Bugungi bepul tanga')}
+          onClick={onOpenStore}
+        />
+      )}
     </div>
   );
 }

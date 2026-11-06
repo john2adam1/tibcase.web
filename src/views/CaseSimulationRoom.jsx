@@ -10,6 +10,7 @@ import {
   Clock,
 } from 'lucide-react';
 import PatientAvatar from '../components/features/PatientAvatar';
+import ClinicalReport from '../components/features/ClinicalReport';
 import { useTranslation } from '../i18n.jsx';
 import { api, isSessionNotActiveError, isInsufficientCoinsError, isDebriefTerminalError } from '../api';
 import { onPlaybackChange, speakReply, startMicRecorder, stopPlayback } from '../utils/audioRecord';
@@ -92,6 +93,20 @@ function formatDebriefChat(debrief, t) {
     lines.push(notes);
   }
   return lines.length > 1 ? lines.join('\n') : '';
+}
+
+function buildDebriefReport(debrief, finish) {
+  if (!debrief || typeof debrief !== 'object') return null;
+  const correct = asTextList(debrief.correct_steps);
+  const incorrect = asTextList(debrief.incorrect_steps);
+  const weak = asTextList(debrief.weak_topics);
+  const notes = asTextList(debrief.guideline_notes).join('\n');
+  if (!correct.length && !incorrect.length && !weak.length && !notes) return null;
+  const rawScore = debrief.final_score ?? finish?.final_score;
+  return {
+    score: typeof rawScore === 'number' ? rawScore : undefined,
+    correct, incorrect, weak, notes,
+  };
 }
 
 export default function CaseSimulationRoom({
@@ -359,6 +374,7 @@ export default function CaseSimulationRoom({
             ...msg,
             loading: false,
             text: analysisText,
+            report: analysisUnavailable ? null : buildDebriefReport(debrief, finish),
             evaluation: extra.evaluation || msg.evaluation || null,
           }
           : msg
@@ -407,7 +423,7 @@ export default function CaseSimulationRoom({
           || t('sim.aiAnalysisEmpty', 'AI tahlili mavjud emas.');
         setMessages((prev) => prev.map((msg) => (
           msg.id === 'ai-analysis-loading'
-            ? { ...msg, loading: false, text }
+            ? { ...msg, loading: false, text, report: buildDebriefReport(debrief, null) }
             : msg
         )));
         analysisDoneRef.current = true;
@@ -763,7 +779,7 @@ export default function CaseSimulationRoom({
             const isPatient = msg.sender === 'patient';
             const isAi = msg.sender === 'ai';
             return (
-              <div key={msg.id} style={{ alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: 5, maxWidth: '92%' }}>
+              <div key={msg.id} style={{ alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: 5, maxWidth: '92%', width: msg.report && !msg.loading ? '92%' : undefined }}>
                 {(isPatient || isAi) && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: isPatient ? '#0F766E' : '#4F46E5' }}>
                     {isPatient ? t('sim.patientLabel', 'Bemor') : t('sim.aiLabel', 'AI')}
@@ -804,7 +820,21 @@ export default function CaseSimulationRoom({
                       ))}
                     </span>
                   )}
-                  <span style={{ flex: 1, wordBreak: 'break-word' }}>{msg.text}</span>
+                  {msg.report && !msg.loading ? (
+                    <ClinicalReport report={{
+                      ...msg.report,
+                      patient: [
+                        [caseItem?.patient_gender, caseItem?.patient_age != null && caseItem?.patient_age !== ''
+                          ? `${caseItem.patient_age} ${t('report.years', 'yosh')}` : '']
+                          .filter(Boolean).join(', '),
+                        caseItem?.title,
+                      ].filter(Boolean).join(' · '),
+                      complaint: caseItem?.chief_complaint || '',
+                      answer: [...messages].reverse().find((m) => m.sender === 'user')?.text || '',
+                    }} />
+                  ) : (
+                    <span style={{ flex: 1, wordBreak: 'break-word' }}>{msg.text}</span>
+                  )}
                 </div>
               </div>
             );

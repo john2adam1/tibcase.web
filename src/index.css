@@ -2247,3 +2247,15 @@ body { background: var(--bg-main); }
 
 :root[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--bg-main); }
 :root[data-theme="dark"] img.theme-invert { filter: invert(1) hue-rotate(180deg); }
+
+/* Home: katalog raqamlari — kichik bir qator */
+.ui-stats.ui-stats-compact { display: flex; flex-wrap: wrap; gap: 8px; --stat-skel-h: 16px; }
+.ui-stats.ui-stats-compact .ui-stat {
+  flex-direction: row; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px;
+}
+.ui-stats.ui-stats-compact .ui-stat > svg {
+  width: 16px; height: 16px; padding: 0; margin: 0; background: transparent; border-radius: 0;
+}
+.ui-stats.ui-stats-compact .ui-stat:hover > svg { transform: none; }
+.ui-stats.ui-stats-compact .ui-stat b { font-size: 15px; font-weight: 700; letter-spacing: 0; font-family: var(--font-mono, monospace); }
+.ui-stats.ui-stats-compact .ui-stat span { font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; }

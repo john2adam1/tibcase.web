@@ -13,7 +13,7 @@ urinishlar) shu yerda to'liq yuritiladi.
 - Pastdagi "Auth" qatori shu endpoint uchun haqiqatda routerda auth middleware borligini bildiradi.
 - Google: GIS `id_token` → `POST /mobile/auth/google`. Frontend `VITE_GOOGLE_CLIENT_ID` backend `GOOGLE_CLIENT_ID` bilan bir xil bo‘lsin; origin Google Cloud Web client ga yoziladi.
 - Telegram Mini App: `window.Telegram.WebApp.ready()` / `expand()` chaqirish tavsiya etiladi.
-- User-web holati (2026-11-04): pastdagi **FE** qatorlari + «User-web holati». Wrapper/UI o‘zgarsa shu faylni yangila. Path o‘ylab topilmasin.
+- User-web holati (2026-11-06): pastdagi **FE** qatorlari + «User-web holati». Wrapper/UI o‘zgarsa shu faylni yangila. Path o‘ylab topilmasin.
 - **Breaking:** `xp` → `stars`, `xp_earned` → `stars_earned`, `required_xp` → `required_stars`. Eski nom qoldirilmadi.
 
 ---
@@ -526,6 +526,7 @@ Eski 400 “not found” o‘rniga 404 + slug. `PUT /finish` auto-finish’dan k
 `final_score` sof `health_percent` emas: har bir `incorrect_steps` elementi uchun
 10% jarima (masalan health=80%, 2 xato → 60%). XP/coin shu ballga mutanosib.
 Frontend alohida hisoblamaydi.
+**FE:** simulyatsiya xonasida `correct_steps`, `incorrect_steps`, `weak_topics`, `guideline_notes` strukturalangan «Klinik hisobot» kartochkasi (`ClinicalReport`) sifatida chiqadi; bemor/shikoyat/javob qatorlari case va foydalanuvchi xabaridan olinadi (alohida `diagnosis` maydoni backendda yo‘q).
 - Auth: kerak (Bearer token)
 **Parametrlar:**
 - `session_id` (path, string) (majburiy): Session ID
@@ -950,6 +951,7 @@ O‘chirish.
 
 ### `GET /mobile/roadmap`
 Bepul. `map[]` (`mastery`, `level`: unexplored|learning|weak|medium|strong), `path[]`, `summary`.
+**FE:** `KnowledgeMapView` + Home «Bugungi mashq» (`TodayPractice`): `map[]` dan `level=weak` va eng past `mastery` — «Eng zaif mavzu»; `path[]` dan `flashcard_review` bo‘lmagan birinchi qadam — «Keyingi qadam» (`deck` Home dan buyurtma qilinmaydi, xaritaga yo‘naltiriladi). Faqat GET, `refresh` Home dan chaqirilmaydi.
 - Auth: kerak (Bearer token)
 
 ### `POST /mobile/roadmap/refresh`
