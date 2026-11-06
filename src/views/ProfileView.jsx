@@ -27,10 +27,12 @@ import {
   ChevronDown,
   ChevronUp,
   Moon,
+  Gift,
 } from 'lucide-react';
 import { useTheme } from '../theme.js';
 import { useTranslation } from '../i18n.jsx';
 import { SiteCredit } from '../brand.jsx';
+import ReferralModal from '../components/modals/ReferralModal.jsx';
 
 export default function ProfileView({
   user,
@@ -677,6 +679,15 @@ export default function ProfileView({
                 subtitle={t('settings.aboutDesc', "Versiya, FAQ va kontaktlar")}
                 onClick={handleOpenAbout}
               />
+              <Divider />
+              <SettingsListItem
+                id="btn-profile-referral"
+                icon={<Gift size={18} color="#16A34A" strokeWidth={2.2} />}
+                iconBg="var(--tint-green)"
+                label={t('settings.referral', "Do'stlarni taklif qilish")}
+                subtitle={t('referral.rowDesc', 'Kod ulashing, ikkalangiz tanga olasiz')}
+                onClick={() => setModalType('referral')}
+              />
               {onOpenFeedback && (
                 <>
                   <Divider />
@@ -1213,6 +1224,8 @@ export default function ProfileView({
           </ModalCard>
         </ModalOverlay>
       )}
+
+      <ReferralModal isOpen={modalType === 'referral'} onClose={() => setModalType(null)} onToast={showToast} />
 
       {/* Theme Selection Modal */}
       {modalType === 'theme' && (

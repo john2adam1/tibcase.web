@@ -1165,7 +1165,7 @@ export const api = {
     });
   },
 
-  // ===================== FEEDBACK / REFERRAL (arxiv emas, UI yo‘q) =====================
+  // ===================== FEEDBACK / REFERRAL =====================
 
   sendFeedback: async (payload) => {
     return await request('/mobile/feedback', {

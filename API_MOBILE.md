@@ -39,7 +39,7 @@ urinishlar) shu yerda to'liq yuritiladi.
 
 | Endpoint | Izoh |
 |---|---|
-| `GET /mobile/referral` | Do‘st taklif. Auth `referral_code` ixtiyoriy maydoni ishlayapti |
+| `GET /mobile/referral` | Do‘st taklif. **Ishlayapti** (Profil → «Do‘stlarni taklif qilish», `ReferralModal`). Auth `referral_code` ixtiyoriy maydoni ishlayapti |
 
 `POST /mobile/feedback` — **Ishlayapti** (Home kartasi + Sidebar + Profil → «Fikr bildirish», `FeedbackModal`). Practice AI `item.feedback` — boshqa narsa.
 
@@ -250,7 +250,7 @@ Updates user profile fields via multipart/form-data. Image is optional.
 ### `GET /mobile/referral`
 **Referral ma'lumotlari (do'stlarni taklif qilish)**
 O'z referral_code'i, taklif qilganlar soni va ular evaziga olingan tangalar
-**FE:** arxiv emas. Wrapper bor, UI yo‘q. Auth `referral_code` ixtiyoriy.
+**FE:** Profil → «Do‘stlarni taklif qilish» → `ReferralModal` → `api.getReferral`: kod (nusxalash/ulashish), `referrer_reward`/`referred_reward`, `invited_count`, `total_coins_earned`, `invited[]` (`name`, `joined_at`, `coins_given`). Havola (`?ref=`) yo‘q — do‘st kodni ro‘yxatdan o‘tishda «Taklif kodi» maydoniga kiritadi (Auth `referral_code`).
 - Auth: kerak (Bearer token)
 **Javob (200):**
 - `invited`: ReferralInvitedItem[]
