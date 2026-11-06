@@ -36,6 +36,7 @@ import PushBanner from './components/common/PushBanner.jsx';
 // Modals
 import AuthModal from './components/modals/AuthModal';
 import LogoutConfirmModal from './components/modals/LogoutConfirmModal';
+import FeedbackModal from './components/modals/FeedbackModal';
 import ProfileModal from './components/modals/ProfileModal';
 import QuickGuideModal from './components/modals/QuickGuideModal';
 import DebriefModal from './components/modals/DebriefModal';
@@ -200,6 +201,7 @@ export default function App() {
   });
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
   const [storeInitialTab, setStoreInitialTab] = useState('all');
   const [toast, setToast] = useState(null);
@@ -738,6 +740,7 @@ export default function App() {
         user={user}
         onOpenProfile={() => setCurrentView('profile')}
         onLogout={handleLogout}
+        onOpenFeedback={() => setFeedbackOpen(true)}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -778,6 +781,7 @@ export default function App() {
               onOpenStore={() => setCurrentView('store')}
               onOpenFlashcards={() => setCurrentView('flashcards')}
               onOpenKnowledgeMap={() => setCurrentView('knowledge_map')}
+              onOpenFeedback={() => setFeedbackOpen(true)}
               onSelectCategory={(cat) => {
                 setSelectedCategory(cat);
                 setCurrentView('roadmap');
@@ -839,6 +843,7 @@ export default function App() {
             lang={lang}
             onLangChange={handleLangChange}
             onLogout={handleLogout}
+            onOpenFeedback={() => setFeedbackOpen(true)}
           />
         )}
 
@@ -966,6 +971,14 @@ export default function App() {
         user={user}
       />
 
+      {/* Feedback Modal (POST /mobile/feedback) */}
+      <FeedbackModal
+        isOpen={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        context={currentView}
+        onSent={showToast}
+      />
+
       {/* Quick Guide Modal */}
       {showQuickGuide && (
         <QuickGuideModal
@@ -996,10 +1009,10 @@ export default function App() {
           animation: 'fadeIn 0.2s ease-out',
         }}>
           <div style={{
-            background: '#FFFFFF',
+            background: 'var(--surface)',
             borderRadius: 18,
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25), 0 6px 0 #E2E8F0',
+            border: '1px solid var(--line)',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25), 0 6px 0 var(--line)',
             maxWidth: 480,
             width: '100%',
             padding: '28px 24px',
@@ -1016,13 +1029,13 @@ export default function App() {
                 width: 36,
                 height: 36,
                 borderRadius: '50%',
-                background: '#F1F5F9',
-                border: '1px solid #E2E8F0',
+                background: 'var(--surface-3)',
+                border: '1px solid var(--line)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: '#64748B',
+                color: 'var(--ink-3)',
               }}
             >
               <X size={18} />
@@ -1035,8 +1048,8 @@ export default function App() {
                     width: 52,
                     height: 52,
                     borderRadius: 18,
-                    background: '#FEF3C7',
-                    border: '1px solid #FDE68A',
+                    background: 'var(--tint-amber)',
+                    border: '1px solid var(--tint-amber-border)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1045,48 +1058,48 @@ export default function App() {
                     🪙
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: '#0F172A' }}>
+                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: 'var(--ink)' }}>
                       {t('limitModal.continueWithCoins', 'Tanga orqali davom etish')}
                     </h3>
-                    <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#64748B', fontWeight: 600 }}>
+                    <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: 'var(--ink-3)', fontWeight: 600 }}>
                       {t('limitModal.freeLimitExhausted', 'Bugungi bepul urinishlar limiti tugagan')}
                     </p>
                   </div>
                 </div>
 
                 <div style={{
-                  background: '#F8FAFC',
+                  background: 'var(--surface-2)',
                   borderRadius: 18,
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--line)',
                   padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 10,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.selectedCase', 'Tanlangan keys:')}</span>
-                    <span style={{ color: '#0F172A', fontWeight: 700, maxWidth: 240, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>{t('limitModal.selectedCase', 'Tanlangan keys:')}</span>
+                    <span style={{ color: 'var(--ink)', fontWeight: 700, maxWidth: 240, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {limitModal.caseItem?.title || t('case.title', 'Klinik keys')}
                     </span>
                   </div>
-                  <div style={{ width: '100%', height: 1, background: '#E2E8F0' }} />
+                  <div style={{ width: '100%', height: 1, background: 'var(--line)' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.yourBalance', 'Sizning balansingiz:')}</span>
+                    <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>{t('limitModal.yourBalance', 'Sizning balansingiz:')}</span>
                     <span style={{ color: '#16A34A', fontWeight: 700 }}>
                       🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')}
                     </span>
                   </div>
                   {typeof limitModal.coinsPer1k === 'number' && limitModal.coinsPer1k > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                      <span style={{ color: '#64748B', fontWeight: 600 }}>{t('limitModal.rateLabel', 'Tarif:')}</span>
-                      <span style={{ color: '#475569', fontWeight: 700 }}>
+                      <span style={{ color: 'var(--ink-3)', fontWeight: 600 }}>{t('limitModal.rateLabel', 'Tarif:')}</span>
+                      <span style={{ color: 'var(--ink-2)', fontWeight: 700 }}>
                         {limitModal.coinsPer1k} / 1k token
                       </span>
                     </div>
                   )}
                 </div>
 
-                <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.5 }}>
                   {t('limitModal.continueWithCoinsDesc', "AI ishlatganicha tanga yechiladi. Balans 0 bo'lsa sessiya to'xtaydi. Cheksiz kirish uchun Premium obuna ham mumkin.")}
                 </p>
 
@@ -1139,8 +1152,8 @@ export default function App() {
                     width: 52,
                     height: 52,
                     borderRadius: 18,
-                    background: '#FEE2E2',
-                    border: '1px solid #FECACA',
+                    background: 'var(--tint-red)',
+                    border: '1px solid var(--tint-red-border)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1149,22 +1162,22 @@ export default function App() {
                     🔒
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: '#0F172A' }}>
+                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 700, color: 'var(--ink)' }}>
                       {t('limitModal.outOfLimitAndCoins', 'Bepul limit va tangalar tugadi')}
                     </h3>
-                    <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#DC2626', fontWeight: 700 }}>
+                    <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: 'var(--on-red)', fontWeight: 700 }}>
                       {t('limitModal.needCoinsOrPremium', 'Keysni ochish uchun Premium yoki tanga kerak')}
                     </p>
                   </div>
                 </div>
 
                 <div style={{
-                  background: '#FEF2F2',
+                  background: 'var(--tint-red-soft)',
                   borderRadius: 18,
-                  border: '1px solid #FECACA',
+                  border: '1px solid var(--tint-red-border)',
                   padding: '14px 16px',
                   fontSize: '13px',
-                  color: '#991B1B',
+                  color: 'var(--on-red)',
                   lineHeight: 1.5,
                 }}>
                   {t('limitModal.outOfCoinsMessage', 'Bugungi bepul urinishlar limitingiz tugagan.')} {t('limitModal.youHave', 'Sizda hozir:')} <strong>🪙 {limitModal.userCoins} {t('nav.coins', 'tanga')}</strong>. {t('limitModal.needCoinsForAi', "Davom etish uchun tanga yoki Premium kerak.")}
@@ -1172,7 +1185,7 @@ export default function App() {
 
                 {/* Recommendations */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {t('limitModal.recommendedSolutions', 'Tavsiya etiladigan yechimlar:')}
                   </div>
 
@@ -1188,7 +1201,7 @@ export default function App() {
                       justifyContent: 'space-between',
                       padding: '12px 14px',
                       borderRadius: 16,
-                      background: '#FFFFFF',
+                      background: 'var(--surface)',
                       border: '1px solid #22C55E',
                       boxShadow: 'var(--shadow-sm)',
                       cursor: 'pointer',
@@ -1199,7 +1212,7 @@ export default function App() {
                         width: 38,
                         height: 38,
                         borderRadius: 12,
-                        background: '#DCFCE7',
+                        background: 'var(--tint-green)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1209,7 +1222,7 @@ export default function App() {
                         👑
                       </div>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
                           {t('limitModal.buyPremium', 'Premium Obuna xarid qilish')}
                         </div>
                         <div style={{ fontSize: '12px', color: '#16A34A', fontWeight: 700 }}>
@@ -1232,8 +1245,8 @@ export default function App() {
                       justifyContent: 'space-between',
                       padding: '12px 14px',
                       borderRadius: 16,
-                      background: '#FFFBEB',
-                      border: '1px solid #FDE68A',
+                      background: 'var(--tint-amber-soft)',
+                      border: '1px solid var(--tint-amber-border)',
                       cursor: 'pointer',
                     }}
                   >
@@ -1242,7 +1255,7 @@ export default function App() {
                         width: 38,
                         height: 38,
                         borderRadius: 12,
-                        background: '#FEF3C7',
+                        background: 'var(--tint-amber)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1252,10 +1265,10 @@ export default function App() {
                         🪙
                       </div>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
                           {t('limitModal.buyCoins', 'Tanga paketi sotib olish')}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600 }}>
+                        <div style={{ fontSize: '12px', color: 'var(--on-amber)', fontWeight: 600 }}>
                           {t('limitModal.coinPackages', '50, 150 yoki 500 tanga paketlari')}
                         </div>
                       </div>
@@ -1271,9 +1284,9 @@ export default function App() {
                       flex: 1,
                       padding: '12px',
                       borderRadius: 16,
-                      background: '#F1F5F9',
-                      border: '1px solid #CBD5E1',
-                      color: '#475569',
+                      background: 'var(--surface-3)',
+                      border: '1px solid var(--line-2)',
+                      color: 'var(--ink-2)',
                       fontSize: '14px',
                       fontWeight: 700,
                       cursor: 'pointer',

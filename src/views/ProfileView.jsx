@@ -19,13 +19,16 @@ import {
   ShieldCheck,
   Info,
   LogOut,
+  MessageSquare,
   Phone,
   ExternalLink,
   HelpCircle,
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from '../theme.js';
 import { useTranslation } from '../i18n.jsx';
 import { SiteCredit } from '../brand.jsx';
 
@@ -39,9 +42,11 @@ export default function ProfileView({
   onNavigate,
   onLangChange,
   onLogout,
+  onOpenFeedback,
   tariffs = [],
 }) {
   const { t, lang: appLang, setLang } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const lang = appLang || 'uz';
   const [currentScreen, setCurrentScreen] = useState('profile'); // 'profile' | 'settings'
   const [coinsOpen, setCoinsOpen] = useState(false);
@@ -323,6 +328,12 @@ export default function ProfileView({
     }
   };
 
+  const getThemeLabel = () => {
+    if (theme === 'dark') return t('theme.dark', "Qorong'i");
+    if (theme === 'light') return t('theme.light', "Yorug'");
+    return t('theme.system', 'Tizim sozlamasi');
+  };
+
   // Language display
   const getLanguageLabel = () => {
     if (lang === 'uz') return '🇺🇿 Oʻzbek';
@@ -367,7 +378,7 @@ export default function ProfileView({
               <h1 style={{
                 fontSize: '26px',
                 fontWeight: 700,
-                color: '#0F172A',
+                color: 'var(--ink)',
                 letterSpacing: '-0.02em',
                 margin: 0,
                 textAlign: 'center',
@@ -383,9 +394,9 @@ export default function ProfileView({
               onClick={handleOpenProfileInfo}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenProfileInfo(); } }}
               style={{
-                background: '#FFFFFF',
+                background: 'var(--surface)',
                 borderRadius: 'var(--radius-lg)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--line)',
                 boxShadow: 'var(--shadow-soft)',
                 padding: '20px 22px',
                 display: 'flex',
@@ -395,15 +406,15 @@ export default function ProfileView({
                 boxSizing: 'border-box',
                 cursor: 'pointer',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface)'; }}
             >
               <UserAvatar name={user?.name} src={user?.image_url} size={72} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h2 style={{
                   fontSize: '20px',
                   fontWeight: 700,
-                  color: '#0F172A',
+                  color: 'var(--ink)',
                   margin: 0,
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -418,22 +429,22 @@ export default function ProfileView({
                   marginTop: 6,
                   padding: '4px 10px 4px 8px',
                   borderRadius: 99,
-                  background: '#FFFBEB',
-                  border: '1px solid #FDE68A',
+                  background: 'var(--tint-amber-soft)',
+                  border: '1px solid var(--tint-amber-border)',
                 }}>
                   <Star size={14} color="#D97706" fill="#FACC15" strokeWidth={2} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#B45309' }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--on-amber)' }}>
                     {user?.stars ?? 0}
                   </span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#92400E' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-amber)' }}>
                     {t('profile.stars', 'Yulduzlar')}
                   </span>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: '#94A3B8', marginTop: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink-4)', marginTop: 6 }}>
                   {t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 </div>
               </div>
-              <ChevronRight size={20} color="#94A3B8" strokeWidth={2.2} style={{ flexShrink: 0 }} />
+              <ChevronRight size={20} color="var(--ink-4)" strokeWidth={2.2} style={{ flexShrink: 0 }} />
             </div>
 
             {/* Info / Coins / Limits Top Info */}
@@ -449,9 +460,9 @@ export default function ProfileView({
                 title={t('pm.buyCoinsTitle')}
                 style={{
                   flex: 1,
-                  background: '#FFFFFF',
+                  background: 'var(--surface)',
                   borderRadius: 18,
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--line)',
                   padding: '16px',
                   display: 'flex',
                   alignItems: 'center',
@@ -462,27 +473,27 @@ export default function ProfileView({
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 0 #E2E8F0, 0 10px 20px rgba(245, 158, 11, 0.15)';
+                  e.currentTarget.style.boxShadow = '0 6px 0 var(--line), 0 10px 20px rgba(245, 158, 11, 0.15)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 0 #E2E8F0';
+                  e.currentTarget.style.boxShadow = '0 4px 0 var(--line)';
                 }}
               >
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FEF9C3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--tint-amber)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Coins size={24} color="#CA8A04" strokeWidth={2.4} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-3)', marginBottom: 2 }}>
                     {t('profile.coins', 'Tangalar')}
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1 }}>
                     {wallet?.has_subscription
                       ? t('profile.unlimited', 'Cheksiz')
                       : (wallet ? walletSpendable(wallet) : (user?.coins || 0))}
                   </div>
                   {wallet && !wallet.has_subscription && (
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginTop: 4 }}>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600, marginTop: 4 }}>
                       {t('home.walletFree', 'Bepul')}: {dailyFreeQuota(wallet).left} · {t('home.walletPaid', 'Balans')}: {wallet.coins ?? 0}
                     </div>
                   )}
@@ -502,14 +513,14 @@ export default function ProfileView({
                     }}
                     style={{
                       flex: 1,
-                      background: isSub ? '#F0FDF4' : (rem > 0 ? '#FFFFFF' : '#FEF2F2'),
+                      background: isSub ? 'var(--tint-green-soft)' : (rem > 0 ? 'var(--surface)' : 'var(--tint-red-soft)'),
                       borderRadius: 18,
-                      border: isSub ? '1px solid #86EFAC' : (rem > 0 ? '1px solid #E2E8F0' : '1px solid #FECACA'),
+                      border: isSub ? '1px solid var(--tint-green-border)' : (rem > 0 ? '1px solid var(--line)' : '1px solid var(--tint-red-border)'),
                       padding: '16px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 14,
-                      boxShadow: isSub ? '0 4px 0 #86EFAC' : (rem > 0 ? '0 4px 0 #E2E8F0' : '0 4px 0 #FCA5A5'),
+                      boxShadow: isSub ? '0 4px 0 var(--tint-green-border)' : (rem > 0 ? '0 4px 0 var(--line)' : '0 4px 0 var(--tint-red-border)'),
                       cursor: isExhausted ? 'pointer' : 'default',
                       transition: 'all 0.15s ease',
                       minWidth: 0,
@@ -520,7 +531,7 @@ export default function ProfileView({
                       width: 42,
                       height: 42,
                       borderRadius: 12,
-                      background: isSub ? '#DCFCE7' : (rem > 0 ? '#DBEAFE' : '#FEE2E2'),
+                      background: isSub ? 'var(--tint-green)' : (rem > 0 ? 'var(--tint-blue)' : 'var(--tint-red)'),
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -529,17 +540,17 @@ export default function ProfileView({
                       {isSub ? (
                         <ShieldCheck size={24} color="#16A34A" strokeWidth={2.4} />
                       ) : (
-                        <ShieldAlert size={24} color={rem > 0 ? "#2563EB" : "#DC2626"} strokeWidth={2.4} />
+                        <ShieldAlert size={24} color={rem > 0 ? "#2563EB" : "var(--on-red)"} strokeWidth={2.4} />
                       )}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-3)', marginBottom: 2 }}>
                         {t('profile.dailyLimit', 'Kunlik limit')}
                       </div>
                       <div style={{
                         fontSize: isSub ? '17px' : '20px',
                         fontWeight: 700,
-                        color: isSub ? '#16A34A' : (rem > 0 ? '#0F172A' : '#DC2626'),
+                        color: isSub ? '#16A34A' : (rem > 0 ? 'var(--ink)' : 'var(--on-red)'),
                         lineHeight: 1.1
                       }}>
                         {isSub ? t('profile.unlimited', 'Cheksiz') : `${rem}/${tot}`}
@@ -547,7 +558,7 @@ export default function ProfileView({
                       <div style={{
                         fontSize: '11px',
                         fontWeight: 600,
-                        color: isSub ? '#15803D' : (rem > 0 ? '#64748B' : '#DC2626'),
+                        color: isSub ? 'var(--on-green)' : (rem > 0 ? 'var(--ink-3)' : 'var(--on-red)'),
                         marginTop: 2,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -565,9 +576,9 @@ export default function ProfileView({
             <div
               ref={coinsSectionRef}
               style={{
-                background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+                background: 'linear-gradient(135deg, var(--tint-amber-soft) 0%, var(--tint-amber) 100%)',
                 borderRadius: 18,
-                border: '1px solid #FDE68A',
+                border: '1px solid var(--tint-amber-border)',
                 boxShadow: 'var(--shadow-sm)',
                 overflow: 'hidden',
                 marginTop: 18,
@@ -601,7 +612,7 @@ export default function ProfileView({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '15.5px', fontWeight: 800, color: '#92400E' }}>
+                    <span style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--on-amber)' }}>
                       {t('profile.coinTariffs', 'Tanga sotib olish')}
                     </span>
                     <span style={{
@@ -611,7 +622,7 @@ export default function ProfileView({
                       {t('profile.popular', 'Ommabop')}
                     </span>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#B45309', fontWeight: 600, marginTop: 2 }}>
+                  <div style={{ fontSize: '12px', color: 'var(--on-amber)', fontWeight: 600, marginTop: 2 }}>
                     {t('profile.buyCoinsDesc', 'Klinik keyslar va simulyatsiyalar uchun tanga paketlari')}
                   </div>
                 </div>
@@ -625,8 +636,8 @@ export default function ProfileView({
               {coinsOpen && (
                 <div style={{
                   padding: '12px',
-                  background: '#FFFBEB',
-                  borderTop: '1px solid #FDE68A',
+                  background: 'var(--tint-amber-soft)',
+                  borderTop: '1px solid var(--tint-amber-border)',
                 }}>
                   <StoreTariffs
                     variant="inline"
@@ -642,9 +653,9 @@ export default function ProfileView({
 
             {/* Reyting, ilova, til */}
             <div id="profile-settings-group" style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 18,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
@@ -653,7 +664,7 @@ export default function ProfileView({
             }}>
               <SettingsListItem
                 icon={<Trophy size={18} color="#D97706" strokeWidth={2.2} />}
-                iconBg="#FEF3C7"
+                iconBg="var(--tint-amber)"
                 label={t('settings.rating', 'Reyting')}
                 subtitle={t('lead.badge', 'Peshqadamlar reytingi')}
                 onClick={() => onNavigate && onNavigate('leaderboard')}
@@ -661,26 +672,48 @@ export default function ProfileView({
               <Divider />
               <SettingsListItem
                 icon={<Info size={18} color="#2563EB" strokeWidth={2.2} />}
-                iconBg="#DBEAFE"
+                iconBg="var(--tint-blue)"
                 label={t('settings.about', "Ilova haqida")}
                 subtitle={t('settings.aboutDesc', "Versiya, FAQ va kontaktlar")}
                 onClick={handleOpenAbout}
               />
+              {onOpenFeedback && (
+                <>
+                  <Divider />
+                  <SettingsListItem
+                    id="btn-profile-feedback"
+                    icon={<MessageSquare size={18} color="#16A34A" strokeWidth={2.2} />}
+                    iconBg="var(--tint-green)"
+                    label={t('feedback.open', 'Fikr bildirish')}
+                    subtitle={t('feedback.openDesc', "G'oya, xato haqida yozing yoki ilovani baholang")}
+                    onClick={onOpenFeedback}
+                  />
+                </>
+              )}
               <Divider />
               <SettingsListItem
                 icon={<Globe size={18} color="#0D9488" strokeWidth={2.2} />}
-                iconBg="#CCFBF1"
+                iconBg="var(--tint-teal)"
                 label={t('profile.language', "Language")}
                 subtitle={getLanguageLabel()}
                 onClick={() => setModalType('language')}
+              />
+              <Divider />
+              <SettingsListItem
+                id="btn-profile-theme"
+                icon={<Moon size={18} color="var(--on-violet)" strokeWidth={2.2} />}
+                iconBg="var(--tint-violet)"
+                label={t('theme.title', 'Mavzu')}
+                subtitle={getThemeLabel()}
+                onClick={() => setModalType('theme')}
               />
             </div>
 
             {/* Hisob: o'chirish va chiqish */}
             <div style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 18,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
@@ -689,9 +722,9 @@ export default function ProfileView({
             }}>
               <SettingsListItem
                 icon={<Trash2 size={18} color="#EF4444" strokeWidth={2.2} />}
-                iconBg="#FEE2E2"
+                iconBg="var(--tint-red)"
                 label={t('settings.deleteAccount', "Delete Account")}
-                labelColor="#DC2626"
+                labelColor="var(--on-red)"
                 onClick={() => setModalType('delete')}
               />
               {onLogout && (
@@ -699,10 +732,10 @@ export default function ProfileView({
                   <Divider />
                   <SettingsListItem
                     id="btn-profile-logout"
-                    icon={<LogOut size={18} color="#DC2626" strokeWidth={2.2} />}
-                    iconBg="#FEE2E2"
+                    icon={<LogOut size={18} color="var(--on-red)" strokeWidth={2.2} />}
+                    iconBg="var(--tint-red)"
                     label={t('settings.logOut', 'Chiqish')}
-                    labelColor="#DC2626"
+                    labelColor="var(--on-red)"
                     onClick={onLogout}
                   />
                 </>
@@ -742,7 +775,7 @@ export default function ProfileView({
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#0F172A',
+                  color: 'var(--ink)',
                 }}
               >
                 <ChevronLeft size={28} strokeWidth={2.4} />
@@ -752,7 +785,7 @@ export default function ProfileView({
                 flex: 1,
                 fontSize: '24px',
                 fontWeight: 700,
-                color: '#0F172A',
+                color: 'var(--ink)',
                 letterSpacing: '-0.02em',
                 margin: 0,
                 textAlign: 'center',
@@ -764,9 +797,9 @@ export default function ProfileView({
 
             {/* Settings Menu List */}
             <div style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 18,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
@@ -774,14 +807,14 @@ export default function ProfileView({
               marginTop: 6,
             }}>
               <SettingsListItem
-                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
+                icon={<Info size={20} color="var(--ink)" strokeWidth={2} />}
                 label={t('settings.info', "Profil ma'lumoti")}
                 subtitle={t('settings.infoDesc', "Profil va shaxsiy ma'lumotlar")}
                 onClick={handleOpenProfileInfo}
               />
               <Divider />
               <SettingsListItem
-                icon={<Info size={20} color="#0F172A" strokeWidth={2} />}
+                icon={<Info size={20} color="var(--ink)" strokeWidth={2} />}
                 label={t('settings.about', "Ilova haqida")}
                 subtitle={t('settings.aboutDesc', "Versiya, FAQ va kontaktlar")}
                 onClick={handleOpenAbout}
@@ -789,16 +822,16 @@ export default function ProfileView({
             </div>
 
             <div style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 18,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
             }}>
               <SettingsListItem
-                icon={<Globe size={20} color="#0F172A" strokeWidth={2} />}
+                icon={<Globe size={20} color="var(--ink)" strokeWidth={2} />}
                 label={t('profile.language')}
                 subtitle={getLanguageLabel()}
                 onClick={() => setModalType('language')}
@@ -807,7 +840,7 @@ export default function ProfileView({
               <SettingsListItem
                 icon={<Trash2 size={20} color="#EF4444" strokeWidth={2} />}
                 label={t('settings.deleteAccount')}
-                labelColor="#EF4444"
+                labelColor="var(--on-red)"
                 onClick={() => setModalType('delete')}
               />
             </div>
@@ -820,9 +853,9 @@ export default function ProfileView({
                   width: '100%',
                   padding: '14px',
                   borderRadius: 18,
-                  background: '#FEE2E2',
-                  border: '1px solid #FCA5A5',
-                  color: '#DC2626',
+                  background: 'var(--tint-red)',
+                  border: '1px solid var(--tint-red-border)',
+                  color: 'var(--on-red)',
                   fontSize: '14px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -884,24 +917,24 @@ export default function ProfileView({
                 gridTemplateColumns: '1fr 1fr',
                 gap: 8,
                 padding: '10px 12px',
-                background: '#F8FAFC',
+                background: 'var(--surface-2)',
                 borderRadius: 16,
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--line)',
                 textAlign: 'center',
               }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('profile.coins', 'Tangalar')}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--ink-3)', fontWeight: 600 }}>{t('profile.coins', 'Tangalar')}</div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#F59E0B' }}>🪙 {user?.coins || 0}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('profile.stars', 'Yulduzlar')}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--ink-3)', fontWeight: 600 }}>{t('profile.stars', 'Yulduzlar')}</div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#D97706' }}>★ {user?.stars ?? 0}</div>
                 </div>
               </div>
 
               {/* Ism Field */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-2)' }}>
                   {t('settings.yourName', 'Ism va familiya')}
                 </label>
                 <input
@@ -914,10 +947,10 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--line)',
                     fontSize: '14px',
                     fontWeight: 600,
-                    color: '#0F172A',
+                    color: 'var(--ink)',
                     boxSizing: 'border-box',
                     outline: 'none',
                   }}
@@ -926,7 +959,7 @@ export default function ProfileView({
 
               {/* Telefon Field */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-2)' }}>
                   {t('auth.phoneLabel', 'Telefon raqam')}
                 </label>
                 <input
@@ -938,13 +971,13 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--line)',
                     fontSize: '14px',
                     fontWeight: 600,
-                    color: '#0F172A',
+                    color: 'var(--ink)',
                     boxSizing: 'border-box',
                     outline: 'none',
-                    background: '#F8FAFC',
+                    background: 'var(--surface-2)',
                   }}
                 />
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -961,7 +994,7 @@ export default function ProfileView({
 
               {/* Email Field */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-2)' }}>
                   {t('auth.emailLabel', 'Elektron pochta (Email)')}
                 </label>
                 <input
@@ -973,10 +1006,10 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--line)',
                     fontSize: '14px',
                     fontWeight: 600,
-                    color: '#0F172A',
+                    color: 'var(--ink)',
                     boxSizing: 'border-box',
                     outline: 'none',
                   }}
@@ -1000,10 +1033,10 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--line)',
                     fontSize: '14px',
                     fontWeight: 600,
-                    color: '#0F172A',
+                    color: 'var(--ink)',
                     boxSizing: 'border-box',
                     outline: 'none',
                   }}
@@ -1015,7 +1048,7 @@ export default function ProfileView({
 
               {/* Til Select */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-2)' }}>
                   {t('profile.language', 'Ilova tili')}
                 </label>
                 <select
@@ -1030,13 +1063,13 @@ export default function ProfileView({
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: 14,
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--line)',
                     fontSize: '14px',
                     fontWeight: 600,
-                    color: '#0F172A',
+                    color: 'var(--ink)',
                     boxSizing: 'border-box',
                     outline: 'none',
-                    background: '#FFFFFF',
+                    background: 'var(--surface)',
                   }}
                 >
                   <option value="uz">🇺🇿 Oʻzbekcha</option>
@@ -1068,7 +1101,7 @@ export default function ProfileView({
                 }}
               >
                 {saveLoading ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} strokeWidth={3} />}
-                {saveLoading ? t('studyPlan.saving', 'Saqlanmoqda...') : t('profile.saveChanges', "O'zgarishlarni saqlash")}
+                {saveLoading ? t('profile.saving', 'Saqlanmoqda...') : t('profile.saveChanges', "O'zgarishlarni saqlash")}
               </button>
             </form>
           </ModalCard>
@@ -1097,7 +1130,7 @@ export default function ProfileView({
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title={t('pm.usernameTitle')} onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#64748B' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-3)' }}>
                 {t('pm.usernameLabel')}
               </label>
               <input
@@ -1109,10 +1142,10 @@ export default function ProfileView({
                   width: '100%',
                   padding: '12px 14px',
                   borderRadius: 14,
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--line)',
                   fontSize: '15px',
                   fontWeight: 600,
-                  color: '#0F172A',
+                  color: 'var(--ink)',
                   boxSizing: 'border-box',
                 }}
               />
@@ -1161,12 +1194,12 @@ export default function ProfileView({
                     justifyContent: 'space-between',
                     padding: '14px 16px',
                     borderRadius: 16,
-                    border: lang === item.code ? '1px solid #22C55E' : '1px solid #E2E8F0',
-                    background: lang === item.code ? '#F0FDF4' : '#FFFFFF',
+                    border: lang === item.code ? '1px solid #22C55E' : '1px solid var(--line)',
+                    background: lang === item.code ? 'var(--tint-green-soft)' : 'var(--surface)',
                     cursor: 'pointer',
                     fontWeight: 700,
                     fontSize: '15px',
-                    color: '#0F172A',
+                    color: 'var(--ink)',
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1181,12 +1214,55 @@ export default function ProfileView({
         </ModalOverlay>
       )}
 
+      {/* Theme Selection Modal */}
+      {modalType === 'theme' && (
+        <ModalOverlay onClose={() => setModalType(null)}>
+          <ModalCard title={t('theme.select', 'Mavzuni tanlang')} onClose={() => setModalType(null)}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { code: 'system', emoji: '🖥️', label: t('theme.system', 'Tizim sozlamasi') },
+                { code: 'light', emoji: '☀️', label: t('theme.light', "Yorug'") },
+                { code: 'dark', emoji: '🌙', label: t('theme.dark', "Qorong'i") },
+              ].map((item) => (
+                <button
+                  key={item.code}
+                  id={`theme-option-${item.code}`}
+                  onClick={() => {
+                    setTheme(item.code);
+                    setModalType(null);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px 16px',
+                    borderRadius: 16,
+                    border: theme === item.code ? '1px solid #22C55E' : '1px solid var(--line)',
+                    background: theme === item.code ? 'var(--tint-green-soft)' : 'var(--surface)',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    color: 'var(--ink)',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: '20px' }}>{item.emoji}</span>
+                    <span>{item.label}</span>
+                  </span>
+                  {theme === item.code && <Check size={20} color="#16A34A" strokeWidth={3} />}
+                </button>
+              ))}
+            </div>
+          </ModalCard>
+        </ModalOverlay>
+      )}
+
       {/* 4. Rate Us Modal */}
       {modalType === 'rate' && (
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title={t('pm.rateTitle')} onClose={() => setModalType(null)}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
-              <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
+              <p style={{ fontSize: '14px', color: 'var(--ink-3)', margin: 0 }}>
                 {t('pm.rateQuestion')}
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -1234,7 +1310,7 @@ export default function ProfileView({
       {modalType === 'terms' && (
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title={t('pm.termsTitle')} onClose={() => setModalType(null)}>
-            <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, maxHeight: 300, overflowY: 'auto' }}>
+            <div style={{ fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.6, maxHeight: 300, overflowY: 'auto' }}>
               <p>
                 <strong>{t('pm.terms1h')}</strong> {t('pm.terms1')}
               </p>
@@ -1250,7 +1326,7 @@ export default function ProfileView({
       {modalType === 'privacy' && (
         <ModalOverlay onClose={() => setModalType(null)}>
           <ModalCard title={t('pm.privacyTitle')} onClose={() => setModalType(null)}>
-            <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, maxHeight: 300, overflowY: 'auto' }}>
+            <div style={{ fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.6, maxHeight: 300, overflowY: 'auto' }}>
               <p>
                 <strong>{t('pm.privacyH')}</strong> {t('pm.privacy')}
               </p>
@@ -1267,7 +1343,7 @@ export default function ProfileView({
               <div style={{ color: '#EF4444', display: 'flex', justifyContent: 'center' }}>
                 <AlertCircle size={44} />
               </div>
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#334155', margin: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', margin: 0 }}>
                 {t('settings.deleteWarning')}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
@@ -1276,9 +1352,9 @@ export default function ProfileView({
                   style={{
                     padding: '12px',
                     borderRadius: 14,
-                    background: '#F1F5F9',
-                    border: '1px solid #CBD5E1',
-                    color: '#475569',
+                    background: 'var(--surface-3)',
+                    border: '1px solid var(--line-2)',
+                    color: 'var(--ink-2)',
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
@@ -1383,12 +1459,12 @@ function AboutAppBody({
         alignItems: 'center',
         textAlign: 'center',
         padding: '22px 16px 20px',
-        background: 'linear-gradient(180deg, #ECFDF5 0%, #F0FDF4 100%)',
+        background: 'linear-gradient(180deg, var(--tint-green-soft) 0%, var(--tint-green-soft) 100%)',
         borderRadius: 20,
-        border: '1px solid #BBF7D0',
+        border: '1px solid var(--tint-green-border)',
       }}>
         <img src="/logo.svg" alt="" style={{ height: 48, width: 48, marginBottom: 12 }} />
-        <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+        <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
           TibStation AI
         </h3>
         {version ? (
@@ -1396,17 +1472,17 @@ function AboutAppBody({
             display: 'inline-flex',
             padding: '3px 10px',
             borderRadius: 99,
-            background: '#FFFFFF',
-            border: '1px solid #BBF7D0',
+            background: 'var(--surface)',
+            border: '1px solid var(--tint-green-border)',
             fontSize: 11,
             fontWeight: 800,
-            color: '#15803D',
+            color: 'var(--on-green)',
             marginBottom: 8,
           }}>
             {t('about.version', 'Versiya')} {version}
           </div>
         ) : null}
-        <p style={{ fontSize: 13, color: '#475569', margin: 0, maxWidth: 340, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0, maxWidth: 340, lineHeight: 1.5 }}>
           {t('about.tagline', 'Tibbiyot talabalari va amaliyotchi shifokorlar uchun interaktiv klinik vaziyatlar simulyatori.')}
         </p>
       </div>
@@ -1462,18 +1538,18 @@ function AboutAppBody({
               key={item.id || idx}
               style={{
                 padding: '14px 16px',
-                background: '#F8FAFC',
+                background: 'var(--surface-2)',
                 borderRadius: 16,
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--line)',
               }}
             >
               {item.title ? (
-                <h5 style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>
+                <h5 style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
                   {item.title}
                 </h5>
               ) : null}
               {item.description ? (
-                <p style={{ fontSize: 13, color: '#475569', margin: 0, lineHeight: 1.55 }}>
+                <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0, lineHeight: 1.55 }}>
                   {item.description}
                 </p>
               ) : null}
@@ -1506,7 +1582,7 @@ function AboutAppBody({
 
       {hasContacts && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <h4 style={{ fontSize: 13, fontWeight: 800, color: '#64748B', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-3)', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             {t('about.contact', "Aloqa")}
           </h4>
           {appRoute?.call_center ? (
@@ -1517,11 +1593,11 @@ function AboutAppBody({
                 alignItems: 'center',
                 gap: 12,
                 padding: '12px 14px',
-                background: '#F0FDF4',
-                border: '1px solid #BBF7D0',
+                background: 'var(--tint-green-soft)',
+                border: '1px solid var(--tint-green-border)',
                 borderRadius: 14,
                 textDecoration: 'none',
-                color: '#15803D',
+                color: 'var(--on-green)',
               }}
             >
               <Phone size={16} />
@@ -1537,13 +1613,13 @@ function AboutAppBody({
                 alignItems: 'center',
                 gap: 12,
                 padding: '12px 14px',
-                background: '#F8FAFC',
+                background: 'var(--surface-2)',
                 borderRadius: 14,
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--line)',
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: 13 }}>{c.name}</div>
+                <div style={{ fontWeight: 800, color: 'var(--ink)', fontSize: 13 }}>{c.name}</div>
                 {c.phone_number ? (
                   <a href={`tel:${c.phone_number}`} style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none', fontSize: 12 }}>
                     {c.phone_number}
@@ -1562,7 +1638,7 @@ function AboutAppBody({
 
       {faqList.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <h4 style={{ fontSize: 13, fontWeight: 800, color: '#64748B', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-3)', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
             <HelpCircle size={14} /> {t('about.faq', 'Savollar')}
           </h4>
           {faqList.map((faq, fIdx) => {
@@ -1575,19 +1651,19 @@ function AboutAppBody({
                 style={{
                   padding: '12px 14px',
                   borderRadius: 14,
-                  background: open ? '#F0FDF4' : '#F8FAFC',
-                  border: open ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
+                  background: open ? 'var(--tint-green-soft)' : 'var(--surface-2)',
+                  border: open ? '1px solid var(--tint-green-border)' : '1px solid var(--line)',
                   cursor: 'pointer',
                   textAlign: 'left',
                   fontFamily: 'inherit',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{faq.question}</span>
-                  {open ? <ChevronUp size={16} color="#16A34A" /> : <ChevronDown size={16} color="#94A3B8" />}
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>{faq.question}</span>
+                  {open ? <ChevronUp size={16} color="#16A34A" /> : <ChevronDown size={16} color="var(--ink-4)" />}
                 </div>
                 {open && (
-                  <p style={{ fontSize: 13, color: '#475569', margin: '8px 0 0', lineHeight: 1.55 }}>
+                  <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '8px 0 0', lineHeight: 1.55 }}>
                     {faq.answer}
                   </p>
                 )}
@@ -1637,7 +1713,7 @@ function SettingsListItem({ icon, label, subtitle, labelColor = 'var(--text-prim
 
 function Divider() {
   return (
-    <div style={{ height: 1, background: '#F1F5F9', marginLeft: 16, marginRight: 16 }} />
+    <div style={{ height: 1, background: 'var(--surface-3)', marginLeft: 16, marginRight: 16 }} />
   );
 }
 
@@ -1672,9 +1748,9 @@ function ModalCard({ title, children, onClose, maxWidth = 420 }) {
         maxWidth,
         maxHeight: '88vh',
         overflowY: 'auto',
-        background: '#FFFFFF',
+        background: 'var(--surface)',
         borderRadius: 18,
-        border: '1px solid #E2E8F0',
+        border: '1px solid var(--line)',
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
         padding: '22px 20px',
         position: 'relative',
@@ -1684,7 +1760,7 @@ function ModalCard({ title, children, onClose, maxWidth = 420 }) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
           {title}
         </h3>
         <button
@@ -1693,13 +1769,13 @@ function ModalCard({ title, children, onClose, maxWidth = 420 }) {
             width: 32,
             height: 32,
             borderRadius: 10,
-            background: '#F1F5F9',
+            background: 'var(--surface-3)',
             border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            color: '#64748B',
+            color: 'var(--ink-3)',
           }}
         >
           <X size={18} />

@@ -13,7 +13,7 @@ urinishlar) shu yerda to'liq yuritiladi.
 - Pastdagi "Auth" qatori shu endpoint uchun haqiqatda routerda auth middleware borligini bildiradi.
 - Google: GIS `id_token` → `POST /mobile/auth/google`. Frontend `VITE_GOOGLE_CLIENT_ID` backend `GOOGLE_CLIENT_ID` bilan bir xil bo‘lsin; origin Google Cloud Web client ga yoziladi.
 - Telegram Mini App: `window.Telegram.WebApp.ready()` / `expand()` chaqirish tavsiya etiladi.
-- User-web holati (2026-11-02): pastdagi **FE** qatorlari + «User-web holati». Wrapper/UI o‘zgarsa shu faylni yangila. Path o‘ylab topilmasin.
+- User-web holati (2026-11-04): pastdagi **FE** qatorlari + «User-web holati». Wrapper/UI o‘zgarsa shu faylni yangila. Path o‘ylab topilmasin.
 - **Breaking:** `xp` → `stars`, `xp_earned` → `stars_earned`, `required_xp` → `required_stars`. Eski nom qoldirilmadi.
 
 ---
@@ -40,7 +40,8 @@ urinishlar) shu yerda to'liq yuritiladi.
 | Endpoint | Izoh |
 |---|---|
 | `GET /mobile/referral` | Do‘st taklif. Auth `referral_code` ixtiyoriy maydoni ishlayapti |
-| `POST /mobile/feedback` | Profil formasi yo‘q. Practice AI `item.feedback` — boshqa narsa |
+
+`POST /mobile/feedback` — **Ishlayapti** (Home kartasi + Sidebar + Profil → «Fikr bildirish», `FeedbackModal`). Practice AI `item.feedback` — boshqa narsa.
 
 `GET /mobile/user/rating` — **Ishlayapti** (profil Reyting). `sort=activity|stars`.
 
@@ -959,5 +960,5 @@ AI izoh (tanga, 24 soat kesh). Natija yo‘q: `400`. Hamyon bo‘sh: `400 insuff
 
 ### `POST /mobile/feedback`
 `{ "rating"?, "kind": "general|bug|idea|content|nps", "message"?, "context"?, "app_version"? }`.
-**FE:** arxiv emas. Wrapper qoldi, profil formasi yo‘q. Practice `item.feedback` — boshqa narsa.
+**FE:** `FeedbackModal` (Home kartasi + Sidebar + Profil «Fikr bildirish») → `api.sendFeedback`. Yuboriladi: `kind: "general"` (doim), `message` (majburiy, ≤2000), `context` = joriy view nomi (masalan `cases`), `app_version` = `web-<package.json version>`. `rating` va boshqa `kind` lar (`bug|idea|content|nps`) FE da ishlatilmaydi. Practice `item.feedback` — boshqa narsa.
 - Auth: kerak (Bearer token)

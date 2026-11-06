@@ -264,7 +264,7 @@ export default function FlashcardsView({
         </button>
         <div style={{ flex: 1 }}>
           <h2 style={{ margin: 0, fontSize: 20 }}>{t('flash.title', 'Fleshkartalar')}</h2>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)' }}>
             {allCards.length} · {t('flash.statsDue', 'Bugun')}: {stats?.due_today ?? stats?.due_now ?? dueCards.length}
           </div>
         </div>
@@ -284,7 +284,7 @@ export default function FlashcardsView({
               setIndex(0);
               setOpenDeck(null);
             }}
-            style={{ flex: 1, background: tab === item.id ? 'var(--accent)' : '#F1F5F9', color: tab === item.id ? '#fff' : '#334155', border: 'none', padding: '10px 8px', fontSize: 13 }}
+            style={{ flex: 1, background: tab === item.id ? 'var(--accent)' : 'var(--surface-3)', color: tab === item.id ? '#fff' : 'var(--ink-2)', border: 'none', padding: '10px 8px', fontSize: 13 }}
           >
             {item.label}
           </button>
@@ -292,7 +292,7 @@ export default function FlashcardsView({
       </div>
 
       {error && (
-        <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 600 }}>
+        <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 12, background: 'var(--tint-red-soft)', color: 'var(--on-red)', fontSize: 13, fontWeight: 600 }}>
           {error}
         </div>
       )}
@@ -319,7 +319,7 @@ export default function FlashcardsView({
                 type="button"
                 className="ui-btn"
                 onClick={() => setCreateMode(item.id)}
-                style={{ flex: 1, background: createMode === item.id ? 'var(--accent)' : '#F1F5F9', color: createMode === item.id ? '#fff' : '#334155', border: 'none' }}
+                style={{ flex: 1, background: createMode === item.id ? 'var(--accent)' : 'var(--surface-3)', color: createMode === item.id ? '#fff' : 'var(--ink-2)', border: 'none' }}
               >
                 {item.label}
               </button>
@@ -328,7 +328,7 @@ export default function FlashcardsView({
 
           {createMode === 'manual' ? (
             <>
-              <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>
                 {t('flash.createHint', 'Savol va javobni yozib, o‘z kartangizni qo‘shing')}
               </p>
               <textarea className="ui-select" rows={4} value={front} onChange={(e) => setFront(e.target.value)} placeholder={t('flash.front', 'Savol')} style={{ minHeight: 96, height: 'auto', padding: '12px 14px' }} />
@@ -339,14 +339,14 @@ export default function FlashcardsView({
             </>
           ) : (
             <>
-              <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>
                 {t('flash.createAiHint', 'Mavzu bo‘yicha AI kartalar yaratadi (tanga yechiladi)')}
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" className="ui-btn" onClick={() => setAiSource('catalog')} style={{ flex: 1, background: aiSource === 'catalog' ? '#0F172A' : '#F1F5F9', color: aiSource === 'catalog' ? '#fff' : '#334155', border: 'none' }}>
+                <button type="button" className="ui-btn" onClick={() => setAiSource('catalog')} style={{ flex: 1, background: aiSource === 'catalog' ? '#0F172A' : 'var(--surface-3)', color: aiSource === 'catalog' ? '#fff' : 'var(--ink-2)', border: 'none' }}>
                   {t('practice.catalogTopic', 'Bo‘lim / mavzu')}
                 </button>
-                <button type="button" className="ui-btn" onClick={() => setAiSource('free')} style={{ flex: 1, background: aiSource === 'free' ? '#0F172A' : '#F1F5F9', color: aiSource === 'free' ? '#fff' : '#334155', border: 'none' }}>
+                <button type="button" className="ui-btn" onClick={() => setAiSource('free')} style={{ flex: 1, background: aiSource === 'free' ? '#0F172A' : 'var(--surface-3)', color: aiSource === 'free' ? '#fff' : 'var(--ink-2)', border: 'none' }}>
                   {t('practice.freeTopic', 'Erkin mavzu')}
                 </button>
               </div>
@@ -394,11 +394,11 @@ export default function FlashcardsView({
         <>
           {busy && allCards.length === 0 ? (
             <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
-              <RefreshCw size={28} className="animate-spin" color="#94A3B8" />
+              <RefreshCw size={28} className="animate-spin" color="var(--ink-4)" />
             </section>
           ) : allCards.length === 0 ? (
             <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
-              <Layers size={28} color="#94A3B8" />
+              <Layers size={28} color="var(--ink-4)" />
               <p style={{ marginTop: 10, fontWeight: 700 }}>{t('flash.emptyAll', 'Hali fleshkarta yo‘q')}</p>
             </section>
           ) : (
@@ -409,7 +409,7 @@ export default function FlashcardsView({
 
       {tab === 'due' && !card && (
         <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
-          <Layers size={28} color="#94A3B8" />
+          <Layers size={28} color="var(--ink-4)" />
           <p style={{ marginTop: 10, fontWeight: 700 }}>{t('flash.empty', 'Bugungi takrorlash tugadi')}</p>
         </section>
       )}
@@ -424,13 +424,13 @@ export default function FlashcardsView({
                 </button>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800 }}>{deckTitle(openDeck)}</div>
-                  <div style={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>{deckKindLabel(openDeck)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 700 }}>{deckKindLabel(openDeck)}</div>
                 </div>
                 <button className="ui-btn" onClick={() => { setTab('due'); loadDue(openDeck.id); }}>{t('flash.due', 'Takrorlash')}</button>
               </div>
               {busy && deckCards.length === 0 ? (
                 <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
-                  <RefreshCw size={28} className="animate-spin" color="#94A3B8" />
+                  <RefreshCw size={28} className="animate-spin" color="var(--ink-4)" />
                 </section>
               ) : deckCards.length === 0 ? (
                 <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
@@ -442,12 +442,12 @@ export default function FlashcardsView({
             </>
           ) : (
             <>
-              <p style={{ margin: 0, fontSize: 13, color: '#64748B', fontWeight: 600 }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)', fontWeight: 600 }}>
                 {t('flash.decksHint', 'Keys va testdagi xatolar hamda mavzu kartalari shu yerda.')}
               </p>
               {sortedDecks.length === 0 ? (
                 <section className="ui-card" style={{ padding: 24, textAlign: 'center' }}>
-                  <Layers size={28} color="#94A3B8" />
+                  <Layers size={28} color="var(--ink-4)" />
                   <p style={{ marginTop: 10, fontWeight: 700 }}>{t('flash.decksEmpty', 'Hali to‘plam yo‘q. Keys yoki test ishlang.')}</p>
                 </section>
               ) : sortedDecks.map((deck) => (
@@ -458,7 +458,7 @@ export default function FlashcardsView({
                     style={{ flex: 1, minWidth: 0, textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
                   >
                     <div style={{ fontWeight: 800 }}>{deckTitle(deck)}</div>
-                    <div style={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 700 }}>
                       {deckKindLabel(deck)}
                       {deckKindLabel(deck) ? ' · ' : ''}
                       {deck.card_count || 0} · {t('flash.statsDue', 'Bugun')} {deck.due_count || 0}
@@ -466,7 +466,7 @@ export default function FlashcardsView({
                   </button>
                   <button className="ui-btn" onClick={() => { setTab('due'); loadDue(deck.id); }}>{t('flash.due', 'Takrorlash')}</button>
                   {deck.kind !== 'mistakes' && (
-                    <button className="ui-icon-btn" onClick={() => handleDeleteDeck(deck.id)} style={{ border: 'none', color: '#DC2626' }}>
+                    <button className="ui-icon-btn" onClick={() => handleDeleteDeck(deck.id)} style={{ border: 'none', color: 'var(--on-red)' }}>
                       <Trash2 size={16} />
                     </button>
                   )}

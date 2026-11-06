@@ -54,9 +54,9 @@ export default function LogoutConfirmModal({
         style={{
           width: '100%',
           maxWidth: '430px',
-          background: '#FFFFFF',
+          background: 'var(--surface)',
           borderRadius: 18,
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--line)',
           padding: '28px 24px 24px 24px',
           position: 'relative',
           display: 'flex',
@@ -78,22 +78,22 @@ export default function LogoutConfirmModal({
             width: 34,
             height: 34,
             borderRadius: 12,
-            background: '#F8FAFC',
-            border: '1px solid #E2E8F0',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#64748B',
+            color: 'var(--ink-3)',
             cursor: 'pointer',
             transition: 'all 0.15s ease'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#F1F5F9';
-            e.currentTarget.style.color = '#0F172A';
+            e.currentTarget.style.background = 'var(--surface-3)';
+            e.currentTarget.style.color = 'var(--ink)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#F8FAFC';
-            e.currentTarget.style.color = '#64748B';
+            e.currentTarget.style.background = 'var(--surface-2)';
+            e.currentTarget.style.color = 'var(--ink-3)';
           }}
         >
           <X size={18} strokeWidth={2.4} />
@@ -105,12 +105,12 @@ export default function LogoutConfirmModal({
             width: 68,
             height: 68,
             borderRadius: '50%',
-            background: '#FEE2E2',
-            border: '5px solid #FEF2F2',
+            background: 'var(--tint-red)',
+            border: '5px solid var(--tint-red-soft)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#DC2626',
+            color: 'var(--on-red)',
             boxShadow: 'var(--shadow-sm)',
             marginBottom: 16
           }}
@@ -124,7 +124,7 @@ export default function LogoutConfirmModal({
             margin: '0 0 8px 0',
             fontSize: '21px',
             fontWeight: 700,
-            color: '#0F172A',
+            color: 'var(--ink)',
             letterSpacing: '-0.3px',
           }}
         >
@@ -136,7 +136,7 @@ export default function LogoutConfirmModal({
           style={{
             margin: '0 0 20px 0',
             fontSize: '14px',
-            color: '#64748B',
+            color: 'var(--ink-3)',
             lineHeight: 1.55,
             maxWidth: '350px'
           }}
@@ -149,8 +149,8 @@ export default function LogoutConfirmModal({
           style={{
             width: '100%',
             boxSizing: 'border-box',
-            background: '#F8FAFC',
-            border: '1px solid #E2E8F0',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--line)',
             borderRadius: 18,
             padding: '12px 14px',
             display: 'flex',
@@ -165,11 +165,11 @@ export default function LogoutConfirmModal({
               width: 40,
               height: 40,
               borderRadius: 12,
-              background: '#E2E8F0',
+              background: 'var(--line)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#475569',
+              color: 'var(--ink-2)',
               fontWeight: 700,
               fontSize: '16px',
               flexShrink: 0
@@ -182,7 +182,7 @@ export default function LogoutConfirmModal({
               style={{
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#1E293B',
+                color: 'var(--ink)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis'
@@ -190,7 +190,7 @@ export default function LogoutConfirmModal({
             >
               {displayName}
             </div>
-            <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 500 }}>
+            <div style={{ fontSize: '12px', color: 'var(--ink-4)', fontWeight: 500 }}>
               {roleDisplay}
             </div>
           </div>
@@ -199,10 +199,10 @@ export default function LogoutConfirmModal({
               fontSize: '11px',
               fontWeight: 700,
               color: '#059669',
-              background: '#ECFDF5',
+              background: 'var(--tint-green-soft)',
               padding: '4px 8px',
               borderRadius: 8,
-              border: '1px solid #A7F3D0'
+              border: '1px solid var(--tint-green-border)'
             }}
           >
             {t('auth.activeStatus', 'Faol')}
@@ -226,21 +226,21 @@ export default function LogoutConfirmModal({
               flex: 1,
               padding: '13px 16px',
               borderRadius: 16,
-              background: '#F1F5F9',
-              border: '1px solid #E2E8F0',
-              color: '#475569',
+              background: 'var(--surface-3)',
+              border: '1px solid var(--line)',
+              color: 'var(--ink-2)',
               fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#E2E8F0';
-              e.currentTarget.style.color = '#1E293B';
+              e.currentTarget.style.background = 'var(--line)';
+              e.currentTarget.style.color = 'var(--ink)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#F1F5F9';
-              e.currentTarget.style.color = '#475569';
+              e.currentTarget.style.background = 'var(--surface-3)';
+              e.currentTarget.style.color = 'var(--ink-2)';
             }}
           >
             {t('auth.logoutCancelBtn', 'Bekor qilish')}

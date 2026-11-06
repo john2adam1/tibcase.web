@@ -2,14 +2,6 @@
 
 export type LanguageCode = 'uz' | 'ru' | 'en';
 
-export interface UserCheckReq {
-  identifier: string;
-}
-
-export interface UserCheckRes {
-  has_account: boolean;
-}
-
 export interface SendOtpReq {
   identifier: string;
   type: 'email' | 'telegram';
@@ -46,7 +38,6 @@ export interface UserProfile {
   level: number;
   stars: number;
   coins: number;
-  streak_count: number;
   specialization?: string;
   language?: string;
   created_at?: string;
@@ -59,21 +50,6 @@ export interface UserLimitRes {
   total: number;
   used: number;
   coins_per_1k_tokens?: number;
-}
-
-export interface ActivityStatItem {
-  date?: string;
-  activity?: number;
-  stars?: number;
-  simulations_count?: number;
-  [key: string]: any;
-}
-
-export interface UserActivityRes {
-  items: ActivityStatItem[];
-  total: number;
-  type: string;
-  user_id: string;
 }
 
 export interface RatingUserItem {
@@ -241,22 +217,6 @@ export interface TariffRes {
   updated_at?: string;
 }
 
-export interface PromoCodeRes {
-  id?: string;
-  code?: string;
-  discount_percent?: number;
-  coins_added?: number;
-  used_at?: string;
-  created_at?: string;
-}
-
-export interface StudyPlanRes {
-  is_enabled: boolean;
-  remind_minutes_before: number;
-  remind_time: string;
-  user_id: string;
-}
-
 export interface UserNotificationRes {
   id: string;
   title: string;
@@ -314,13 +274,4 @@ export interface AppRouteRes {
   payment_min_version?: string;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface PartnerMobileRes {
-  id: string;
-  name: string;
-  description?: string;
-  logo_url?: string;
-  link_url?: string;
-  order_num?: number;
 }

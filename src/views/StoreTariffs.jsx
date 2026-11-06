@@ -239,9 +239,9 @@ export default function StoreTariffs({
               gap: 8,
               padding: '10px 18px',
               borderRadius: 16,
-              background: '#FFFFFF',
-              border: '1px solid #E2E8F0',
-              color: '#0F172A',
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
+              color: 'var(--ink)',
               fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -262,8 +262,8 @@ export default function StoreTariffs({
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            background: '#FEF3C7',
-            border: '1px solid #FDE68A',
+            background: 'var(--tint-amber)',
+            border: '1px solid var(--tint-amber-border)',
             color: '#D97706',
             fontSize: '12px',
             fontWeight: 700,
@@ -277,10 +277,10 @@ export default function StoreTariffs({
             <span>{t('store.badge', 'Tariflar va To\'lov')}</span>
           </div>
 
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#0F172A', margin: '4px 0 6px 0', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--ink)', margin: '4px 0 6px 0', letterSpacing: '-0.02em' }}>
             {t('store.coinTariffsTitle', 'Tariflar va Obuna')}
           </h1>
-          <p style={{ color: '#64748B', fontSize: '14px', maxWidth: 560, margin: '0 auto', lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--ink-3)', fontSize: '14px', maxWidth: 560, margin: '0 auto', lineHeight: 1.5 }}>
             {t('store.coinTariffsSubtitle', 'Klinik keyslar yechish va tibbiy simulyatsiyalardan cheklovlarsiz foydalanish uchun o\'zingizga mos tarifni tanlang.')}
           </p>
 
@@ -293,17 +293,17 @@ export default function StoreTariffs({
             marginTop: 16,
             padding: '10px 16px',
             borderRadius: 16,
-            background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            background: 'var(--surface)',
+            border: '1px solid var(--line)',
             boxShadow: 'var(--shadow-sm)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 700, color: '#D97706' }}>
               <span>🪙</span>
               <span>{user?.coins ?? 0} tanga mavjud</span>
             </div>
-            <div style={{ width: 1, height: 18, background: '#CBD5E1' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 700, color: (user?.has_subscription || userLimit?.has_subscription) ? '#15803D' : '#64748B' }}>
-              <ShieldCheck size={16} color={(user?.has_subscription || userLimit?.has_subscription) ? '#16A34A' : '#94A3B8'} />
+            <div style={{ width: 1, height: 18, background: 'var(--line-2)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '14px', fontWeight: 700, color: (user?.has_subscription || userLimit?.has_subscription) ? 'var(--on-green)' : 'var(--ink-3)' }}>
+              <ShieldCheck size={16} color={(user?.has_subscription || userLimit?.has_subscription) ? '#16A34A' : 'var(--ink-4)'} />
               <span>{(user?.has_subscription || userLimit?.has_subscription || wallet?.has_subscription)
                 ? t('profile.proActive', 'PRO Obuna faol')
                 : t('store.dailyFreeCoins', 'Bugungi bepul tanga: {n}/{m}')
@@ -343,9 +343,9 @@ export default function StoreTariffs({
                   fontSize: '13px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  border: isActive ? '1.5px solid #16A34A' : '1px solid #E2E8F0',
-                  background: isActive ? '#DCFCE7' : '#FFFFFF',
-                  color: isActive ? '#15803D' : '#475569',
+                  border: isActive ? '1.5px solid #16A34A' : '1px solid var(--line)',
+                  background: isActive ? 'var(--tint-green)' : 'var(--surface)',
+                  color: isActive ? 'var(--on-green)' : 'var(--ink-2)',
                   boxShadow: 'var(--shadow-sm)',
                   transition: 'all 0.15s ease',
                 }}
@@ -360,16 +360,16 @@ export default function StoreTariffs({
         {/* Tariffs Empty State */}
         {!loading && displayedTariffs.length === 0 && (
           <div style={{
-            background: '#FFFFFF',
+            background: 'var(--surface)',
             borderRadius: 18,
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--line)',
             padding: inline ? '24px 12px' : '50px 20px',
             textAlign: 'center',
-            color: '#64748B',
+            color: 'var(--ink-3)',
             marginBottom: inline ? 0 : 30,
           }}>
             <Coins size={36} style={{ marginBottom: 12, opacity: 0.5 }} />
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px 0' }}>
               {t('store.tariffsEmpty', 'Hozircha tariflar mavjud emas.')}
             </h3>
             <p style={{ fontSize: '13px', margin: 0 }}>
@@ -394,10 +394,10 @@ export default function StoreTariffs({
                 <div
                   key={tariff.id}
                   style={{
-                    background: '#FFFFFF',
+                    background: 'var(--surface)',
                     borderRadius: 18,
-                    border: isPopular ? '2px solid #22C55E' : '1px solid #E2E8F0',
-                    boxShadow: isPopular ? '0 12px 30px rgba(34, 197, 94, 0.15), 0 4px 0 #16A34A' : '0 4px 0 #E2E8F0',
+                    border: isPopular ? '2px solid #22C55E' : '1px solid var(--line)',
+                    boxShadow: isPopular ? '0 12px 30px rgba(34, 197, 94, 0.15), 0 4px 0 #16A34A' : '0 4px 0 var(--line)',
                     padding: inline ? '16px 14px' : '24px 22px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -435,8 +435,8 @@ export default function StoreTariffs({
                       <span style={{
                         padding: '4px 10px',
                         borderRadius: 10,
-                        background: isCoinPkg ? '#FEF3C7' : '#DCFCE7',
-                        color: isCoinPkg ? '#D97706' : '#15803D',
+                        background: isCoinPkg ? 'var(--tint-amber)' : 'var(--tint-green)',
+                        color: isCoinPkg ? '#D97706' : 'var(--on-green)',
                         fontSize: '11px',
                         fontWeight: 700,
                         textTransform: 'uppercase',
@@ -445,7 +445,7 @@ export default function StoreTariffs({
                       </span>
 
                       {tariff.duration > 0 && (
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
                           <Clock size={13} /> {tariff.duration} {t('store.month', 'oy')}
                         </span>
                       )}
@@ -454,34 +454,34 @@ export default function StoreTariffs({
                     {isCoinPkg ? (
                       <>
                         {tariff.name ? (
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', margin: '4px 0 6px 0' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-3)', margin: '4px 0 6px 0' }}>
                             {tariff.name}
                           </div>
                         ) : null}
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '4px 0 6px 0' }}>
-                          <span style={{ fontSize: '32px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                          <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.03em', lineHeight: 1 }}>
                             {formatCoins(tariff.coins)}
                           </span>
                           <span style={{ fontSize: '15px', fontWeight: 700, color: '#D97706' }}>
                             {t('store.coinsUnit', 'tanga')}
                           </span>
                         </div>
-                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#64748B', marginBottom: inline ? 12 : 20 }}>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink-3)', marginBottom: inline ? 12 : 20 }}>
                           {formatPrice(tariff.price)}
                         </div>
                       </>
                     ) : (
                       <>
-                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '4px 0 8px 0', lineHeight: 1.3 }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: '4px 0 8px 0', lineHeight: 1.3 }}>
                           {tariff.name}
                         </h3>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-                          <span style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A' }}>
+                          <span style={{ fontSize: '26px', fontWeight: 700, color: 'var(--ink)' }}>
                             {formatPrice(tariff.price)}
                           </span>
                         </div>
                         {tariff.description ? (
-                          <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 16px 0', lineHeight: 1.5, fontWeight: 500 }}>
+                          <p style={{ fontSize: '13px', color: 'var(--ink-2)', margin: '0 0 16px 0', lineHeight: 1.5, fontWeight: 500 }}>
                             {tariff.description}
                           </p>
                         ) : null}
@@ -490,18 +490,18 @@ export default function StoreTariffs({
                           flexDirection: 'column',
                           gap: 8,
                           paddingTop: 12,
-                          borderTop: '1px solid #F1F5F9',
+                          borderTop: '1px solid var(--line)',
                           marginBottom: 20,
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: 'var(--ink-2)', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
                             <span>{tariff.duration} oy davomida CHEKSIZ klinik keyslar</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: 'var(--ink-2)', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
                             <span>Barcha bo'limlar va murakkab darajalar ochiq</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: '#334155', fontWeight: 600 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: 'var(--ink-2)', fontWeight: 600 }}>
                             <Check size={16} color="#16A34A" strokeWidth={3} />
                             <span>AI Debriefing va to'liq tibbiy xatolar tahlili</span>
                           </div>
@@ -526,10 +526,10 @@ export default function StoreTariffs({
                       borderRadius: 16,
                       background: isPopular 
                         ? '#16A34A' 
-                        : '#FFFFFF',
-                      border: isPopular ? 'none' : '1px solid #E2E8F0',
-                      boxShadow: isPopular ? '0 4px 0 #15803D' : '0 3px 0 #E2E8F0',
-                      color: isPopular ? '#FFFFFF' : '#0F172A',
+                        : 'var(--surface)',
+                      border: isPopular ? 'none' : '1px solid var(--line)',
+                      boxShadow: isPopular ? '0 4px 0 #15803D' : '0 3px 0 var(--line)',
+                      color: isPopular ? '#FFFFFF' : 'var(--ink)',
                       fontSize: '14px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -576,9 +576,9 @@ export default function StoreTariffs({
             style={{
               width: '100%',
               maxWidth: 440,
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 20,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
               padding: '24px 22px',
               textAlign: 'left',
@@ -592,7 +592,7 @@ export default function StoreTariffs({
                 position: 'absolute',
                 top: 18,
                 right: 18,
-                background: '#F1F5F9',
+                background: 'var(--surface-3)',
                 border: 'none',
                 borderRadius: '50%',
                 width: 32,
@@ -601,7 +601,7 @@ export default function StoreTariffs({
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: '#64748B',
+                color: 'var(--ink-3)',
               }}
             >
               <X size={16} />
@@ -611,8 +611,8 @@ export default function StoreTariffs({
               width: 48,
               height: 48,
               borderRadius: 14,
-              background: '#DCFCE7',
-              color: '#15803D',
+              background: 'var(--tint-green)',
+              color: 'var(--on-green)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -621,11 +621,11 @@ export default function StoreTariffs({
               <CreditCard size={24} strokeWidth={2.2} />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px 0' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px 0' }}>
               {t('store.confirmPayment', "To'lovni tasdiqlash")}
             </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0' }}>
-              Tarif: <strong style={{ color: '#0F172A' }}>{selectedTariff?.name}</strong> • Narxi: <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
+            <p style={{ fontSize: '13px', color: 'var(--ink-3)', margin: '0 0 16px 0' }}>
+              Tarif: <strong style={{ color: 'var(--ink)' }}>{selectedTariff?.name}</strong> • Narxi: <strong style={{ color: '#16A34A' }}>{formatPrice(selectedTariff?.price || 0)}</strong>
             </p>
 
             {/* Dedicated inPAY Gateway Card */}
@@ -636,7 +636,7 @@ export default function StoreTariffs({
                 justifyContent: 'space-between',
                 padding: '14px 16px',
                 borderRadius: 14,
-                background: '#F0FDF4',
+                background: 'var(--tint-green-soft)',
                 border: '1.5px solid #16A34A',
                 marginBottom: 18,
                 gap: 12,
@@ -663,7 +663,7 @@ export default function StoreTariffs({
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)' }}>
                       inPAY
                     </span>
                     <span
@@ -672,14 +672,14 @@ export default function StoreTariffs({
                         fontWeight: 700,
                         padding: '2px 7px',
                         borderRadius: 6,
-                        background: '#DCFCE7',
-                        color: '#15803D',
+                        background: 'var(--tint-green)',
+                        color: 'var(--on-green)',
                       }}
                     >
                       Rasmiy to'lov tizimi
                     </span>
                   </div>
-                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#475569', lineHeight: 1.35 }}>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--ink-2)', lineHeight: 1.35 }}>
                     Uzcard, Humo, Visa va Mastercard orqali
                   </p>
                 </div>
@@ -690,7 +690,7 @@ export default function StoreTariffs({
                   height: 22,
                   borderRadius: '50%',
                   border: '6px solid #16A34A',
-                  background: '#FFFFFF',
+                  background: 'var(--surface)',
                   boxSizing: 'border-box',
                   flexShrink: 0,
                 }}
@@ -740,7 +740,7 @@ export default function StoreTariffs({
                 padding: '10px',
                 background: 'transparent',
                 border: 'none',
-                color: '#64748B',
+                color: 'var(--ink-3)',
                 fontWeight: 700,
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -776,9 +776,9 @@ export default function StoreTariffs({
             style={{
               width: '100%',
               maxWidth: 440,
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 20,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
               padding: '24px 22px',
               textAlign: 'center',
@@ -789,8 +789,8 @@ export default function StoreTariffs({
               width: 52,
               height: 52,
               borderRadius: 16,
-              background: '#DCFCE7',
-              color: '#15803D',
+              background: 'var(--tint-green)',
+              color: 'var(--on-green)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -799,22 +799,22 @@ export default function StoreTariffs({
               <ExternalLink size={26} strokeWidth={2.2} />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px 0' }}>
               {t('store.payLinkModalTitle', "To'lov havolasi")}
             </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+            <p style={{ fontSize: '13px', color: 'var(--ink-3)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
               {t('store.payLinkModalDesc', "To'lovni xavfsiz yakunlash uchun quyidagi havola orqali to'lov tizimi oynasiga o'ting:")}
             </p>
 
             {payLinkModal.orderId && (
               <div style={{
                 display: 'inline-block',
-                background: '#F1F5F9',
+                background: 'var(--surface-3)',
                 padding: '4px 10px',
                 borderRadius: 8,
                 fontSize: '12px',
                 fontWeight: 700,
-                color: '#475569',
+                color: 'var(--ink-2)',
                 marginBottom: 14,
               }}>
                 Buyurtma: #{payLinkModal.orderId}
@@ -855,9 +855,9 @@ export default function StoreTariffs({
                 width: '100%',
                 padding: '12px',
                 borderRadius: 14,
-                background: '#FFFFFF',
-                border: '1px solid #CBD5E1',
-                color: linkCopied ? '#16A34A' : '#334155',
+                background: 'var(--surface)',
+                border: '1px solid var(--line-2)',
+                color: linkCopied ? '#16A34A' : 'var(--ink-2)',
                 fontSize: '13px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -887,7 +887,7 @@ export default function StoreTariffs({
                 padding: '8px 16px',
                 background: 'transparent',
                 border: 'none',
-                color: '#64748B',
+                color: 'var(--ink-3)',
                 fontWeight: 700,
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -922,9 +922,9 @@ export default function StoreTariffs({
             style={{
               width: '100%',
               maxWidth: 400,
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 20,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
               padding: '28px 22px',
               textAlign: 'center',
@@ -934,7 +934,7 @@ export default function StoreTariffs({
               width: 56,
               height: 56,
               borderRadius: '50%',
-              background: '#DCFCE7',
+              background: 'var(--tint-green)',
               color: '#16A34A',
               display: 'flex',
               alignItems: 'center',
@@ -944,10 +944,10 @@ export default function StoreTariffs({
               <CheckCircle2 size={32} strokeWidth={2.5} />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 8px 0' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 8px 0' }}>
               Muvaffaqiyatli!
             </h3>
-            <p style={{ fontSize: '14px', color: '#475569', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '14px', color: 'var(--ink-2)', margin: '0 0 20px 0', lineHeight: 1.5 }}>
               {successModal.message}
             </p>
 

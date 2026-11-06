@@ -3,6 +3,7 @@ import { Bell, Home } from 'lucide-react';
 import ProfileChip from '../common/ProfileChip.jsx';
 import { useTranslation } from '../../i18n.jsx';
 import { BrandLockup } from '../../brand.jsx';
+import ThemeToggle from '../common/ThemeToggle.jsx';
 
 export default function TabletHeader({
   currentView = 'cases',
@@ -42,10 +43,13 @@ export default function TabletHeader({
         <BrandLockup />
       </button>
 
-      <button id="btn-open-notifications" className="ui-icon-btn" onClick={onOpenNotifications} aria-label="Notifications">
-        <Bell size={22} strokeWidth={2.6} />
-        {unreadCount > 0 && <span className="tm-header-unread" />}
-      </button>
+      <div className="tm-header-actions">
+        <ThemeToggle id="btn-header-theme" size={22} />
+        <button id="btn-open-notifications" className="ui-icon-btn" onClick={onOpenNotifications} aria-label="Notifications">
+          <Bell size={22} strokeWidth={2.6} />
+          {unreadCount > 0 && <span className="tm-header-unread" />}
+        </button>
+      </div>
     </header>
   );
 }

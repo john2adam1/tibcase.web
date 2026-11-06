@@ -59,7 +59,7 @@ export default function Leaderboard({ onBack }) {
     fontSize: '13px',
     fontWeight: 700,
     background: active ? '#16A34A' : 'transparent',
-    color: active ? '#FFFFFF' : '#64748B',
+    color: active ? '#FFFFFF' : 'var(--ink-3)',
     boxShadow: active ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none',
     transition: 'all 0.15s ease',
     border: 'none',
@@ -89,9 +89,9 @@ export default function Leaderboard({ onBack }) {
                 gap: 6,
                 padding: '8px 14px',
                 borderRadius: 14,
-                background: '#FFFFFF',
-                border: '1px solid #E2E8F0',
-                color: '#475569',
+                background: 'var(--surface)',
+                border: '1px solid var(--line)',
+                color: 'var(--ink-2)',
                 fontSize: '13px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -99,12 +99,12 @@ export default function Leaderboard({ onBack }) {
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#F1F5F9';
-                e.currentTarget.style.color = '#0F172A';
+                e.currentTarget.style.background = 'var(--surface-3)';
+                e.currentTarget.style.color = 'var(--ink)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.color = '#475569';
+                e.currentTarget.style.background = 'var(--surface)';
+                e.currentTarget.style.color = 'var(--ink-2)';
               }}
             >
               <ArrowLeft size={16} />
@@ -116,8 +116,8 @@ export default function Leaderboard({ onBack }) {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            background: '#FEF3C7',
-            border: '1px solid #FDE68A',
+            background: 'var(--tint-amber)',
+            border: '1px solid var(--tint-amber-border)',
             color: '#D97706',
             fontSize: '12px',
             fontWeight: 700,
@@ -130,10 +130,10 @@ export default function Leaderboard({ onBack }) {
             <Trophy size={14} />
             <span>{t('lead.badge')}</span>
           </div>
-          <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#0F172A', margin: '4px 0 6px 0' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 700, color: 'var(--ink)', margin: '4px 0 6px 0' }}>
             {t('lead.title')}
           </h1>
-          <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>
+          <p style={{ color: 'var(--ink-3)', fontSize: '14px', margin: 0 }}>
             {t('lead.subtitle')}
           </p>
         </div>
@@ -141,8 +141,8 @@ export default function Leaderboard({ onBack }) {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
           <div style={{
             display: 'inline-flex',
-            background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            background: 'var(--surface)',
+            border: '1px solid var(--line)',
             borderRadius: 99,
             padding: 4,
             boxShadow: 'var(--shadow-sm)',
@@ -163,8 +163,8 @@ export default function Leaderboard({ onBack }) {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
           <div style={{
             display: 'inline-flex',
-            background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            background: 'var(--surface)',
+            border: '1px solid var(--line)',
             borderRadius: 99,
             padding: 4,
             boxShadow: 'var(--shadow-sm)',
@@ -187,17 +187,17 @@ export default function Leaderboard({ onBack }) {
         }}>
           {items[1] && (
             <div style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 18,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
               padding: '20px 14px',
               textAlign: 'center',
               order: 1,
             }}>
               <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥈</div>
-              <UserAvatar name={items[1].name} src={imgOf(items[1])} size={48} style={{ margin: '0 auto 10px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }} />
-              <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[1].name}</div>
+              <UserAvatar name={items[1].name} src={imgOf(items[1])} size={48} style={{ margin: '0 auto 10px', border: '1px solid var(--line-2)', boxSizing: 'border-box' }} />
+              <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--ink)', marginBottom: 2 }}>{items[1].name}</div>
               <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A' }}>
                 {sort === 'stars' && <Star size={14} color="#D97706" fill="#D97706" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
                 {metrics(items[1], sort, t).primary} {metrics(items[1], sort, t).primaryLabel}
@@ -207,9 +207,9 @@ export default function Leaderboard({ onBack }) {
 
           {items[0] && (
             <div style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 18,
-              border: '1px solid #FDE68A',
+              border: '1px solid var(--tint-amber-border)',
               boxShadow: 'var(--shadow-sm)',
               padding: '26px 16px',
               textAlign: 'center',
@@ -218,7 +218,7 @@ export default function Leaderboard({ onBack }) {
             }}>
               <div style={{ fontSize: '2.2rem', marginBottom: 4 }}>👑</div>
               <UserAvatar name={items[0].name} src={imgOf(items[0])} size={58} style={{ margin: '0 auto 10px', border: '2.5px solid #FACC15', boxSizing: 'border-box' }} />
-              <div style={{ fontWeight: 700, fontSize: '15px', color: '#0F172A', marginBottom: 2 }}>{items[0].name}</div>
+              <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--ink)', marginBottom: 2 }}>{items[0].name}</div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: '#D97706' }}>
                 {sort === 'stars' && <Star size={16} color="#D97706" fill="#D97706" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
                 {metrics(items[0], sort, t).primary} {metrics(items[0], sort, t).primaryLabel}
@@ -228,17 +228,17 @@ export default function Leaderboard({ onBack }) {
 
           {items[2] && (
             <div style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 18,
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
               padding: '20px 14px',
               textAlign: 'center',
               order: 3,
             }}>
               <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>🥉</div>
-              <UserAvatar name={items[2].name} src={imgOf(items[2])} size={48} style={{ margin: '0 auto 10px', border: '1px solid #FDBA74', boxSizing: 'border-box' }} />
-              <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A', marginBottom: 2 }}>{items[2].name}</div>
+              <UserAvatar name={items[2].name} src={imgOf(items[2])} size={48} style={{ margin: '0 auto 10px', border: '1px solid var(--tint-orange-border)', boxSizing: 'border-box' }} />
+              <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--ink)', marginBottom: 2 }}>{items[2].name}</div>
               <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A' }}>
                 {sort === 'stars' && <Star size={14} color="#D97706" fill="#D97706" style={{ marginRight: 4, verticalAlign: 'middle' }} />}
                 {metrics(items[2], sort, t).primary} {metrics(items[2], sort, t).primaryLabel}
@@ -249,8 +249,8 @@ export default function Leaderboard({ onBack }) {
 
         {me && (
         <div style={{
-          background: '#DCFCE7',
-          border: '1px solid #86EFAC',
+          background: 'var(--tint-green)',
+          border: '1px solid var(--tint-green-border)',
           borderRadius: 16,
           padding: '14px 20px',
           marginBottom: 20,
@@ -275,26 +275,26 @@ export default function Leaderboard({ onBack }) {
               #{me.rank}
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#166534' }}>
+              <div style={{ fontWeight: 700, fontSize: '14.5px', color: 'var(--on-green)' }}>
                 {me.name} {t('lead.you')}
               </div>
-              <div style={{ fontSize: '12px', color: '#15803D' }}>
+              <div style={{ fontSize: '12px', color: 'var(--on-green)' }}>
                 {metrics(me, sort, t).primary} {metrics(me, sort, t).primaryLabel}
                 {' · '}
                 {metrics(me, sort, t).secondary}
               </div>
             </div>
           </div>
-          <div style={{ fontSize: '16px', fontWeight: 700, color: '#166534' }}>
+          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--on-green)' }}>
             #{me.rank}
           </div>
         </div>
         )}
 
         <div style={{
-          background: '#FFFFFF',
+          background: 'var(--surface)',
           borderRadius: 18,
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--line)',
           boxShadow: 'var(--shadow-sm)',
           overflow: 'hidden',
         }}>
@@ -308,14 +308,14 @@ export default function Leaderboard({ onBack }) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '14px 20px',
-                  borderBottom: idx < items.length - 1 ? '1px solid #F1F5F9' : 'none',
+                  borderBottom: idx < items.length - 1 ? '1px solid var(--line)' : 'none',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <span style={{
                     fontSize: '14px',
                     fontWeight: 700,
-                    color: item.rank <= 3 ? '#D97706' : '#94A3B8',
+                    color: item.rank <= 3 ? '#D97706' : 'var(--ink-4)',
                     minWidth: 24,
                   }}>
                     #{item.rank}
@@ -323,10 +323,10 @@ export default function Leaderboard({ onBack }) {
 
                   <UserAvatar name={item.name} src={imgOf(item)} size={36} />
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#0F172A' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--ink)' }}>
                       {item.name}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748B' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--ink-3)' }}>
                       {m.secondary}
                     </div>
                   </div>
@@ -335,7 +335,7 @@ export default function Leaderboard({ onBack }) {
                 <div style={{
                   fontSize: '14px',
                   fontWeight: 700,
-                  color: item.is_me ? '#166534' : '#16A34A',
+                  color: item.is_me ? 'var(--on-green)' : '#16A34A',
                 }}>
                   {m.primary}
                 </div>

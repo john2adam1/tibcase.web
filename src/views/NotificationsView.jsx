@@ -107,13 +107,13 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
             width: 40,
             height: 40,
             borderRadius: 12,
-            background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            background: 'var(--surface)',
+            border: '1px solid var(--line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            color: '#0F172A',
+            color: 'var(--ink)',
             boxShadow: 'var(--shadow-sm)',
             flexShrink: 0,
           }}
@@ -125,7 +125,7 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
           flex: 1,
           fontSize: '20px',
           fontWeight: 700,
-          color: '#0F172A',
+          color: 'var(--ink)',
           margin: 0,
           textAlign: 'center',
         }}>
@@ -156,8 +156,8 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
               width: 40,
               height: 40,
               borderRadius: 12,
-              background: '#F0FDF4',
-              border: '1px solid #86EFAC',
+              background: 'var(--tint-green-soft)',
+              border: '1px solid var(--tint-green-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -179,9 +179,9 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
 
       {/* Content */}
       {loadError ? (
-        <div style={{ textAlign: 'center', marginTop: 60, padding: '0 20px', color: '#B91C1C' }}>
+        <div style={{ textAlign: 'center', marginTop: 60, padding: '0 20px', color: 'var(--on-red)' }}>
           <p style={{ fontWeight: 700, margin: '0 0 8px' }}>{t('common.error', 'Xatolik yuz berdi')}</p>
-          <p style={{ fontSize: 13, margin: '0 0 16px', color: '#64748B' }}>{loadError}</p>
+          <p style={{ fontSize: 13, margin: '0 0 16px', color: 'var(--ink-3)' }}>{loadError}</p>
           <button type="button" className="ui-btn" onClick={fetchNotifications}>{t('common.retry', 'Qayta urinish')}</button>
         </div>
       ) : !loading && notifications.length === 0 ? (
@@ -198,19 +198,19 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
             width: 80,
             height: 80,
             borderRadius: 18,
-            background: '#F1F5F9',
+            background: 'var(--surface-3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 20,
             boxShadow: 'var(--shadow-sm)',
           }}>
-            <BellOff size={36} color="#94A3B8" strokeWidth={1.8} />
+            <BellOff size={36} color="var(--ink-4)" strokeWidth={1.8} />
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 8px 0' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 8px 0' }}>
             {t('notifications.emptyTitle', 'Hozircha bildirishnomalar yo\'q')}
           </h3>
-          <p style={{ fontSize: '14px', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: '14px', color: 'var(--ink-3)', margin: 0, lineHeight: 1.5 }}>
             {t('notifications.emptyDesc', "O'quv rejasi eslatmalari va tizim xabarlari shu yerda paydo bo'ladi")}
           </p>
         </div>
@@ -221,15 +221,15 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
               key={n.id}
               onClick={() => !n.is_read && handleMarkAsRead(n.id)}
               style={{
-                background: n.is_read ? '#FFFFFF' : '#F0FDF4',
+                background: n.is_read ? 'var(--surface)' : 'var(--tint-green-soft)',
                 borderRadius: 16,
                 border: '2px solid',
-                borderColor: n.is_read ? '#E2E8F0' : '#86EFAC',
+                borderColor: n.is_read ? 'var(--line)' : 'var(--tint-green-border)',
                 padding: '16px',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 14,
-                boxShadow: n.is_read ? '0 4px 0 #E2E8F0' : '0 4px 0 #86EFAC',
+                boxShadow: n.is_read ? '0 4px 0 var(--line)' : '0 4px 0 var(--tint-green-border)',
                 transition: 'all 0.2s ease',
                 cursor: n.is_read ? 'default' : 'pointer',
               }}
@@ -238,14 +238,14 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
                 width: 44,
                 height: 44,
                 borderRadius: 14,
-                background: n.is_read ? '#F1F5F9' : '#DCFCE7',
+                background: n.is_read ? 'var(--surface-3)' : 'var(--tint-green)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
                 {n.is_read ? (
-                  <CheckCircle2 size={20} color="#94A3B8" strokeWidth={2} />
+                  <CheckCircle2 size={20} color="var(--ink-4)" strokeWidth={2} />
                 ) : (
                   <Bell size={20} color="#16A34A" strokeWidth={2} />
                 )}
@@ -255,7 +255,7 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
                 <h4 style={{
                   fontSize: '15px',
                   fontWeight: 700,
-                  color: n.is_read ? '#475569' : '#0F172A',
+                  color: n.is_read ? 'var(--ink-2)' : 'var(--ink)',
                   margin: '0 0 4px 0',
                   lineHeight: 1.3,
                 }}>
@@ -264,7 +264,7 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
                 {n.message && (
                   <p style={{
                     fontSize: '13px',
-                    color: '#475569',
+                    color: 'var(--ink-2)',
                     margin: '0 0 8px 0',
                     lineHeight: 1.45,
                     wordBreak: 'break-word',
@@ -277,13 +277,13 @@ export default function NotificationsView({ onBack, onRefreshNotifications }) {
                   alignItems: 'center',
                   gap: 8,
                   fontSize: '11px',
-                  color: '#94A3B8',
+                  color: 'var(--ink-4)',
                   fontWeight: 600,
                 }}>
                   <span>{formatDate(n.created_at || n.updated_at)}</span>
                   {!n.is_read && (
                     <span style={{
-                      background: '#DCFCE7',
+                      background: 'var(--tint-green)',
                       color: '#16A34A',
                       padding: '2px 8px',
                       borderRadius: 6,

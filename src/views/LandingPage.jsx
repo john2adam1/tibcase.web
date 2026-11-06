@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles, Brain, ListChecks, Layers, Map, ChevronLeft, Chev
 import { useTranslation } from '../i18n.jsx';
 import { BrandLockup, SiteCredit } from '../brand.jsx';
 import ClinicalFlashcard from '../components/flashcards/ClinicalFlashcard.jsx';
+import ThemeToggle from '../components/common/ThemeToggle.jsx';
 
 const LANGUAGES = [
   { code: 'uz', short: 'UZ' },
@@ -277,6 +278,8 @@ export default function LandingPage({
                 </button>
               ))}
             </div>
+
+            <ThemeToggle />
 
             <button type="button" className="landing-primary-btn landing-header-cta" onClick={onOpenLogin}>
               {isAuthenticated

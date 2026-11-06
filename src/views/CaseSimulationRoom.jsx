@@ -632,9 +632,9 @@ export default function CaseSimulationRoom({
     width: 40,
     height: 40,
     borderRadius: '50%',
-    border: '1px solid #E2E8F0',
-    background: '#FFFFFF',
-    color: '#0F172A',
+    border: '1px solid var(--line)',
+    background: 'var(--surface)',
+    color: 'var(--ink)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -661,12 +661,12 @@ export default function CaseSimulationRoom({
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{
-              fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0,
+              fontSize: 15, fontWeight: 700, color: 'var(--ink)', margin: 0,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>
               {caseItem?.title || t('sim.headerCase')}
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 2, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', marginTop: 2, flexWrap: 'wrap' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <Clock size={12} /> {formatTimer(timeLimit > 0 ? Math.max(0, timeLimit - secondsElapsed) : secondsElapsed)}
               </span>
@@ -682,8 +682,8 @@ export default function CaseSimulationRoom({
               aria-label={patientVoiceOn ? t('sim.voiceOff', "Ovozni o'chirish") : t('sim.voiceOn', 'Ovozni yoqish')}
               title={patientVoiceOn ? t('sim.voiceOff', "Ovozni o'chirish") : t('sim.voiceOn', 'Ovozni yoqish')}
               style={iconButton(patientVoiceOn
-                ? { background: '#DCFCE7', border: '1px solid #86EFAC', color: '#16A34A' }
-                : { background: '#F1F5F9', color: '#94A3B8' })}
+                ? { background: 'var(--tint-green)', border: '1px solid var(--tint-green-border)', color: '#16A34A' }
+                : { background: 'var(--surface-3)', color: 'var(--ink-4)' })}
             >
               {patientVoiceOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </button>
@@ -699,9 +699,9 @@ export default function CaseSimulationRoom({
               height: 40,
               padding: '0 12px',
               borderRadius: 99,
-              background: '#FEE2E2',
-              border: '1px solid #FECACA',
-              color: '#DC2626',
+              background: 'var(--tint-red)',
+              border: '1px solid var(--tint-red-border)',
+              color: 'var(--on-red)',
               fontSize: 12,
               fontWeight: 700,
               cursor: sessionEnded ? 'not-allowed' : 'pointer',
@@ -727,7 +727,7 @@ export default function CaseSimulationRoom({
 
         {errorBanner && (
           <div role="alert" style={{
-            background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C',
+            background: 'var(--tint-red-soft)', border: '1px solid var(--tint-red-border)', color: 'var(--on-red)',
             borderRadius: 14, padding: '10px 14px', fontSize: 13, fontWeight: 600,
           }}>
             {errorBanner}
@@ -737,7 +737,7 @@ export default function CaseSimulationRoom({
         {/* Conversation */}
         <div className="sim-chat" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 2px' }}>
           {messages.length === 0 && (
-            <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 13, fontWeight: 600, margin: '24px 0' }}>
+            <p style={{ textAlign: 'center', color: 'var(--ink-4)', fontSize: 13, fontWeight: 600, margin: '24px 0' }}>
               {t('sim.emptyHint', "Bemor shikoyatini o'qing va to'liq tashxis javobini yozing")}
             </p>
           )}
@@ -746,7 +746,7 @@ export default function CaseSimulationRoom({
             if (msg.sender === 'user') {
               return (
                 <div key={msg.id} style={{ alignSelf: 'flex-end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, maxWidth: '86%' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-3)' }}>
                     {t('sim.youLabel', 'Siz')}
                   </span>
                   <div style={{
@@ -772,20 +772,20 @@ export default function CaseSimulationRoom({
                 {msg.evaluation && !msg.loading && (
                   <span style={{
                     alignSelf: 'flex-start',
-                    background: msg.evaluation.type === 'wrong' ? '#FEE2E2' : '#DCFCE7',
-                    color: msg.evaluation.type === 'wrong' ? '#DC2626' : '#16A34A',
+                    background: msg.evaluation.type === 'wrong' ? 'var(--tint-red)' : 'var(--tint-green)',
+                    color: msg.evaluation.type === 'wrong' ? 'var(--on-red)' : '#16A34A',
                     fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99,
-                    border: msg.evaluation.type === 'wrong' ? '1px solid #FECACA' : '1px solid #86EFAC',
+                    border: msg.evaluation.type === 'wrong' ? '1px solid var(--tint-red-border)' : '1px solid var(--tint-green-border)',
                   }}>
                     {msg.evaluation.badge}
                   </span>
                 )}
                 <div style={{
-                  background: msg.loading ? '#EEF2FF' : '#FFFFFF',
+                  background: msg.loading ? 'var(--tint-blue-soft)' : 'var(--surface)',
                   borderRadius: '4px 18px 18px 18px',
-                  border: msg.loading ? '1px solid #C7D2FE' : '1px solid #E2E8F0',
+                  border: msg.loading ? '1px solid var(--tint-blue-border)' : '1px solid var(--line)',
                   padding: '10px 14px',
-                  color: msg.loading ? '#4338CA' : '#1E293B',
+                  color: msg.loading ? 'var(--on-violet)' : 'var(--ink)',
                   fontSize: 14,
                   fontWeight: msg.loading ? 600 : 500,
                   lineHeight: 1.5,
@@ -812,7 +812,7 @@ export default function CaseSimulationRoom({
 
           {sending && !sessionEnded && (
             <div aria-live="polite" style={{
-              alignSelf: 'flex-start', background: '#FFFFFF', border: '1px solid #E2E8F0',
+              alignSelf: 'flex-start', background: 'var(--surface)', border: '1px solid var(--line)',
               borderRadius: '4px 18px 18px 18px', padding: '12px 16px', display: 'flex', gap: 5,
             }}>
               {[0, 1, 2].map((i) => (
@@ -859,7 +859,7 @@ export default function CaseSimulationRoom({
           </button>
         ) : (<>
         {/* Input: full diagnosis answer (counts as one attempt) */}
-        <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', padding: '0 4px' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-3)', padding: '0 4px' }}>
           {t('sim.taskHint', 'To‘liq tashxis va davolash rejangizni yozing. Har bir yuborish 1 urinish.')}
         </div>
         <form
@@ -879,9 +879,9 @@ export default function CaseSimulationRoom({
               width: 48,
               height: 48,
               borderRadius: '50%',
-              background: recording ? '#DC2626' : '#FFFFFF',
-              border: recording ? 'none' : '1px solid #CBD5E1',
-              color: recording ? '#FFFFFF' : '#0F172A',
+              background: recording ? '#DC2626' : 'var(--surface)',
+              border: recording ? 'none' : '1px solid var(--line-2)',
+              color: recording ? '#FFFFFF' : 'var(--ink)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -917,11 +917,11 @@ export default function CaseSimulationRoom({
               maxHeight: 160,
               padding: '12px 16px',
               borderRadius: 18,
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
+              background: 'var(--surface)',
+              border: '1px solid var(--line-2)',
               fontSize: 14,
               fontWeight: 500,
-              color: '#0F172A',
+              color: 'var(--ink)',
               outline: 'none',
               boxSizing: 'border-box',
               resize: 'none',

@@ -77,8 +77,8 @@ export default function KeysConfigModal({
 
   const modeBtn = (id) => ({
     flex: 1,
-    background: mode === id ? 'var(--accent)' : '#F1F5F9',
-    color: mode === id ? '#fff' : '#334155',
+    background: mode === id ? 'var(--accent)' : 'var(--surface-3)',
+    color: mode === id ? '#fff' : 'var(--ink-2)',
     border: 'none',
   });
 

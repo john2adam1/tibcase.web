@@ -153,16 +153,16 @@ export default function RoadmapView({ category, onStartPractice, onBack }) {
 
         {!loading && error && (
           <div style={{
-            background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 18, padding: '28px 20px',
+            background: 'var(--tint-red-soft)', border: '1px solid var(--tint-red-border)', borderRadius: 18, padding: '28px 20px',
             textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#B91C1C' }}>{error}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--on-red)' }}>{error}</div>
             <button
               type="button"
               onClick={() => setReloadKey((k) => k + 1)}
               style={{
-                padding: '9px 20px', borderRadius: 10, border: '1px solid #FCA5A5', background: '#FFFFFF',
-                color: '#B91C1C', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                padding: '9px 20px', borderRadius: 10, border: '1px solid var(--tint-red-border)', background: 'var(--surface)',
+                color: 'var(--on-red)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
               }}
             >
               {t('common.retry', 'Qayta urinish')}
@@ -172,11 +172,11 @@ export default function RoadmapView({ category, onStartPractice, onBack }) {
 
         {!loading && !error && topicNodes.length === 0 && (
           <div style={{
-            background: '#FFFFFF', borderRadius: 18, border: '1px solid #E2E8F0', boxShadow: 'var(--shadow-sm)',
+            background: 'var(--surface)', borderRadius: 18, border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)',
             padding: '36px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           }}>
-            <Inbox size={44} color="#94A3B8" />
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>
+            <Inbox size={44} color="var(--ink-4)" />
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>
               {t('roadmap.emptyTitle', "Ushbu bo'limda hozircha mavzular mavjud emas")}
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function RoadmapView({ category, onStartPractice, onBack }) {
                 }}>
                   <DeptIcon name={categoryName} size={30} color="#FFF" fill={isHeart ? '#FFF' : 'none'} />
                 </span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', lineHeight: 1.25, textAlign: 'center' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25, textAlign: 'center' }}>
                   {topic.title}
                 </span>
               </button>

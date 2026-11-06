@@ -10,30 +10,30 @@ import Skeleton from '../components/common/Skeleton.jsx';
 export const getCategoryMeta = (cat) => {
   const name = String(cat?.name || '').toLowerCase();
   if (name.includes('kardio') || name.includes('cardio') || name.includes('yurak')) {
-    return { emoji: '❤️', iconBg: '#FEE2E2', iconBorder: '#FCA5A5', color: '#EF4444' };
+    return { emoji: '❤️', iconBg: 'var(--tint-red)', iconBorder: 'var(--tint-red-border)', color: '#EF4444' };
   }
   if (name.includes('shoshilinch') || name.includes('emerg') || name.includes('tez yordam')) {
-    return { emoji: '🚑', iconBg: '#FFEDD5', iconBorder: '#FDBA74', color: '#F97316' };
+    return { emoji: '🚑', iconBg: 'var(--tint-orange)', iconBorder: 'var(--tint-orange-border)', color: '#F97316' };
   }
   if (name.includes('ichki') || name.includes('internal') || name.includes('terapiya')) {
-    return { emoji: '🩺', iconBg: '#E0F2FE', iconBorder: '#7DD3FC', color: '#0EA5E9' };
+    return { emoji: '🩺', iconBg: 'var(--tint-blue)', iconBorder: 'var(--tint-blue-border)', color: '#0EA5E9' };
   }
   if (name.includes('neyro') || name.includes('neuro') || name.includes('asab')) {
-    return { emoji: '🧠', iconBg: '#FCE7F3', iconBorder: '#F472B6', color: '#EC4899' };
+    return { emoji: '🧠', iconBg: 'var(--tint-pink)', iconBorder: '#F472B6', color: '#EC4899' };
   }
   if (name.includes('jarroh') || name.includes('surg') || name.includes('operatsiya')) {
-    return { emoji: '🔬', iconBg: '#CCFBF1', iconBorder: '#5EEAD4', color: '#14B8A6' };
+    return { emoji: '🔬', iconBg: 'var(--tint-teal)', iconBorder: '#5EEAD4', color: '#14B8A6' };
   }
   if (name.includes('pediatr') || name.includes('bola')) {
-    return { emoji: '👨‍👩‍👧', iconBg: '#FEF9C3', iconBorder: '#FDE047', color: '#EAB308' };
+    return { emoji: '👨‍👩‍👧', iconBg: 'var(--tint-amber)', iconBorder: 'var(--tint-amber-border)', color: '#EAB308' };
   }
   if (name.includes('ortoped') || name.includes('travma')) {
-    return { emoji: '🦴', iconBg: '#FFEDD5', iconBorder: '#FDBA74', color: '#F59E0B' };
+    return { emoji: '🦴', iconBg: 'var(--tint-orange)', iconBorder: 'var(--tint-orange-border)', color: '#F59E0B' };
   }
   if (name.includes('derma') || name.includes('teri')) {
-    return { emoji: '🩹', iconBg: '#EDE9FE', iconBorder: '#C4B5FD', color: '#8B5CF6' };
+    return { emoji: '🩹', iconBg: 'var(--tint-violet)', iconBorder: '#C4B5FD', color: '#8B5CF6' };
   }
-  return { emoji: '🩺', iconBg: '#DCFCE7', iconBorder: '#86EFAC', color: '#16A34A' };
+  return { emoji: '🩺', iconBg: 'var(--tint-green)', iconBorder: 'var(--tint-green-border)', color: '#16A34A' };
 };
 
 export const formatTitle = (name) => {
@@ -51,7 +51,7 @@ export function CategoryCover({ src, alt, emoji, iconBg, height = 120 }) {
     <div
       style={{
         height,
-        background: showImg ? '#F1F5F9' : iconBg,
+        background: showImg ? 'var(--surface-3)' : iconBg,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -107,21 +107,21 @@ export default function CategoriesView({
       style={{
         textAlign: 'center',
         padding: '32px 20px',
-        background: '#FEF2F2',
-        border: '1px solid #FECACA',
+        background: 'var(--tint-red-soft)',
+        border: '1px solid var(--tint-red-border)',
         borderRadius: 18,
         marginBottom: 16,
       }}
     >
-      <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#B91C1C' }}>{message}</p>
+      <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: 'var(--on-red)' }}>{message}</p>
       <button
         onClick={() => setReloadKey((k) => k + 1)}
         style={{
           padding: '8px 18px',
           borderRadius: 10,
-          border: '1px solid #FCA5A5',
-          background: '#FFFFFF',
-          color: '#B91C1C',
+          border: '1px solid var(--tint-red-border)',
+          background: 'var(--surface)',
+          color: 'var(--on-red)',
           fontWeight: 700,
           fontSize: 13,
           cursor: 'pointer',
@@ -166,8 +166,8 @@ export default function CategoriesView({
                 overflow: 'hidden',
                 minHeight: 180,
                 borderRadius: 18,
-                border: '1px solid #E2E8F0',
-                background: '#FFFFFF',
+                border: '1px solid var(--line)',
+                background: 'var(--surface)',
               }}
             >
               <Skeleton height={120} radius={0} />
@@ -187,13 +187,13 @@ export default function CategoriesView({
           style={{
             textAlign: 'center',
             padding: '48px 20px',
-            background: '#FFFFFF',
+            background: 'var(--surface)',
             borderRadius: 18,
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--line)',
           }}
         >
           <div style={{ fontSize: 36, marginBottom: 8 }}>📁</div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: '#0F172A' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: 'var(--ink)' }}>
             {t('cat.empty', "Bo'limlar topilmadi")}
           </h3>
         </div>
@@ -217,8 +217,8 @@ export default function CategoriesView({
                   overflow: 'hidden',
                   minHeight: 180,
                   borderRadius: 18,
-                  border: '1px solid #E2E8F0',
-                  background: '#FFFFFF',
+                  border: '1px solid var(--line)',
+                  background: 'var(--surface)',
                   boxShadow: 'var(--shadow-sm)',
                   cursor: 'pointer',
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
@@ -233,7 +233,7 @@ export default function CategoriesView({
 
                 <div style={{ padding: '14px 16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0, lineHeight: 1.25 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)', margin: 0, lineHeight: 1.25 }}>
                       {title}
                     </h3>
                   </div>
@@ -242,11 +242,11 @@ export default function CategoriesView({
                       width: 28,
                       height: 28,
                       borderRadius: 8,
-                      background: '#F1F5F9',
+                      background: 'var(--surface-3)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#64748B',
+                      color: 'var(--ink-3)',
                       flexShrink: 0,
                     }}
                   >

@@ -41,7 +41,7 @@ export default function PushBanner() {
       style={{
         display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
         margin: '16px 16px 0', padding: '14px 20px',
-        background: 'var(--accent-soft, #F0FDF4)', border: '1px solid #BBF7D0',
+        background: 'var(--accent-soft, var(--tint-green-soft))', border: '1px solid var(--tint-green-border)',
         borderRadius: 24, animation: 'pageIn 0.4s ease both',
       }}
     >
@@ -52,8 +52,8 @@ export default function PushBanner() {
         <Bell size={22} strokeWidth={2.4} />
       </div>
       <div style={{ flex: 1, minWidth: 200 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>{t('push.title', 'Bildirishnomalarni yoqing')}</div>
-        <div style={{ fontSize: 13, fontWeight: 500, color: '#475569', marginTop: 2 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)' }}>{t('push.title', 'Bildirishnomalarni yoqing')}</div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-2)', marginTop: 2 }}>
           {error || t('push.desc', "Yangi keyslar, kunlik vazifalar va muhim eslatmalarni o'tkazib yubormang.")}
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function PushBanner() {
         type="button"
         onClick={handleDismiss}
         aria-label={t('common.close', 'Yopish')}
-        style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, display: 'flex' }}
+        style={{ background: 'transparent', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', padding: 4, display: 'flex' }}
       >
         <X size={18} />
       </button>

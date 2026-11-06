@@ -5,6 +5,10 @@ import App from './App.jsx'
 import { LanguageProvider } from './i18n.jsx'
 import { BrandProvider } from './brand.jsx'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { applyTheme } from './theme.js'
+
+// Re-apply after the Telegram SDK is available (index.html applies it earlier from the OS setting).
+applyTheme()
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '439240484061-ujut1a9arhm8q83d3dsga7ruhfrjpcmf.apps.googleusercontent.com';
 

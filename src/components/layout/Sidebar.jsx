@@ -8,7 +8,11 @@ import {
   Brain,
   Layers,
   Map,
+  MessageSquare,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { useTheme } from '../../theme.js';
 import { useTranslation } from '../../i18n.jsx';
 import { BrandLockup } from '../../brand.jsx';
 import UserAvatar from '../common/UserAvatar.jsx';
@@ -19,10 +23,12 @@ export default function Sidebar({
   user,
   onOpenProfile,
   onLogout,
+  onOpenFeedback,
   isOpen = false,
   onClose = () => {},
 }) {
   const { t } = useTranslation();
+  const { isDark, toggle: toggleTheme } = useTheme();
 
   const navItems = [
     { id: 'cases', label: t('nav.home', 'Asosiy'), icon: Home },
@@ -115,7 +121,7 @@ export default function Sidebar({
                     <span>{item.label}</span>
                   </>
                 )}
-                {isActive && <span style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#FFFFFF' }} />}
+                {isActive && <span style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: 'var(--surface)' }} />}
               </button>
             );
           })}
@@ -123,6 +129,32 @@ export default function Sidebar({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <button
+        id="btn-sidebar-theme"
+        onClick={toggleTheme}
+        style={{
+          width: '100%', minHeight: 60, display: 'flex', alignItems: 'center', gap: 16, padding: '0 24px',
+          borderRadius: 24, background: 'transparent', color: 'var(--text-secondary)',
+          fontWeight: 800, fontSize: 17, border: 'none', cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        {isDark ? <Sun size={24} strokeWidth={2.2} /> : <Moon size={24} strokeWidth={2.2} />}
+        <span>{isDark ? t('theme.toLight', "Yorug' mavzu") : t('theme.toDark', "Qorong'i mavzu")}</span>
+      </button>
+      {onOpenFeedback && (
+        <button
+          id="btn-sidebar-feedback"
+          onClick={() => { onOpenFeedback(); onClose(); }}
+          style={{
+            width: '100%', minHeight: 60, display: 'flex', alignItems: 'center', gap: 16, padding: '0 24px',
+            borderRadius: 24, background: 'transparent', color: 'var(--text-secondary)',
+            fontWeight: 800, fontSize: 17, border: 'none', cursor: 'pointer', textAlign: 'left',
+          }}
+        >
+          <MessageSquare size={24} strokeWidth={2.2} />
+          <span>{t('feedback.open', 'Fikr bildirish')}</span>
+        </button>
+      )}
       <button
         id="btn-sidebar-logout"
         onClick={() => { if (onLogout) onLogout(); onClose(); }}

@@ -43,11 +43,11 @@ function SourceBlock({ sources, note, t }) {
   };
   if (!list.length) {
     if (!note) return null;
-    return <p style={{ margin: '10px 0 0', fontSize: 13, color: '#64748B' }}>{note}</p>;
+    return <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--ink-3)' }}>{note}</p>;
   }
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: '#475569', marginBottom: 6 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-2)', marginBottom: 6 }}>
         {t('practice.sources', 'Foydalanilgan manbalar')} ({list.length})
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -64,7 +64,7 @@ function SourceBlock({ sources, note, t }) {
             );
           }
           return (
-            <div key={src.source_id || i} style={{ fontSize: 13, color: '#334155', fontWeight: 600 }}>
+            <div key={src.source_id || i} style={{ fontSize: 13, color: 'var(--ink-2)', fontWeight: 600 }}>
               {label}
             </div>
           );
@@ -75,9 +75,9 @@ function SourceBlock({ sources, note, t }) {
 }
 
 function verdictMeta(verdict, t) {
-  if (verdict === 'correct') return { color: '#16A34A', bg: '#DCFCE7', Icon: CheckCircle2, label: t('practice.verdictCorrect', "To'g'ri") };
-  if (verdict === 'partial') return { color: '#D97706', bg: '#FEF3C7', Icon: MinusCircle, label: t('practice.verdictPartial', 'Qisman') };
-  return { color: '#DC2626', bg: '#FEE2E2', Icon: XCircle, label: t('practice.verdictWrong', "Noto'g'ri") };
+  if (verdict === 'correct') return { color: '#16A34A', bg: 'var(--tint-green)', Icon: CheckCircle2, label: t('practice.verdictCorrect', "To'g'ri") };
+  if (verdict === 'partial') return { color: '#D97706', bg: 'var(--tint-amber)', Icon: MinusCircle, label: t('practice.verdictPartial', 'Qisman') };
+  return { color: 'var(--on-red)', bg: 'var(--tint-red)', Icon: XCircle, label: t('practice.verdictWrong', "Noto'g'ri") };
 }
 
 function shouldAutoStart(cfg) {
@@ -308,7 +308,7 @@ export default function PracticeView({
             {mode === 'test' ? t('practice.startTest', 'Test yechish') : t('practice.startCase', 'Keys yechish')}
           </h2>
           {session && (
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)' }}>
               {session.mode === 'test' ? t('practice.modeTest', 'Test') : t('practice.modeCase', 'Keys')} · {progressLabel}
             </div>
           )}
@@ -316,7 +316,7 @@ export default function PracticeView({
       </div>
 
       {error && (
-        <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 600 }}>
+        <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 12, background: 'var(--tint-red-soft)', color: 'var(--on-red)', fontSize: 13, fontWeight: 600 }}>
           {error}
         </div>
       )}
@@ -324,10 +324,10 @@ export default function PracticeView({
       {phase === 'setup' && (
         <section className="ui-card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" className="ui-btn" onClick={() => setSource('catalog')} style={{ flex: 1, background: source === 'catalog' ? '#0F172A' : '#F1F5F9', color: source === 'catalog' ? '#fff' : '#334155', border: 'none' }}>
+            <button type="button" className="ui-btn" onClick={() => setSource('catalog')} style={{ flex: 1, background: source === 'catalog' ? '#0F172A' : 'var(--surface-3)', color: source === 'catalog' ? '#fff' : 'var(--ink-2)', border: 'none' }}>
               {t('practice.catalogTopic', "Bo'lim / mavzu")}
             </button>
-            <button type="button" className="ui-btn" onClick={() => setSource('free')} style={{ flex: 1, background: source === 'free' ? '#0F172A' : '#F1F5F9', color: source === 'free' ? '#fff' : '#334155', border: 'none' }}>
+            <button type="button" className="ui-btn" onClick={() => setSource('free')} style={{ flex: 1, background: source === 'free' ? '#0F172A' : 'var(--surface-3)', color: source === 'free' ? '#fff' : 'var(--ink-2)', border: 'none' }}>
               {t('practice.freeTopic', 'Erkin mavzu')}
             </button>
           </div>
@@ -421,7 +421,7 @@ export default function PracticeView({
                   const selected = answer === key;
                   const revealed = Boolean(result);
                   const isCorrect = result?.correct_key === key;
-                  const bg = revealed && isCorrect ? '#DCFCE7' : revealed && selected ? '#FEE2E2' : selected ? '#E0F2FE' : '#F8FAFC';
+                  const bg = revealed && isCorrect ? 'var(--tint-green)' : revealed && selected ? 'var(--tint-red)' : selected ? 'var(--tint-blue)' : 'var(--surface-2)';
                   return (
                     <button
                       key={key}
@@ -432,7 +432,7 @@ export default function PracticeView({
                         textAlign: 'left',
                         padding: '12px 14px',
                         borderRadius: 14,
-                        border: `1px solid ${selected ? '#38BDF8' : '#E2E8F0'}`,
+                        border: `1px solid ${selected ? '#38BDF8' : 'var(--line)'}`,
                         background: bg,
                         fontWeight: 700,
                         cursor: revealed ? 'default' : 'pointer',
@@ -452,7 +452,7 @@ export default function PracticeView({
               {patientEntries(item.patient).map(([key, value]) => (
                 <div key={key}>
                   <div className="ui-label" style={{ textTransform: 'uppercase' }}>{key}</div>
-                  <div style={{ fontSize: 14, color: '#334155', whiteSpace: 'pre-wrap' }}>{String(value)}</div>
+                  <div style={{ fontSize: 14, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>{String(value)}</div>
                 </div>
               ))}
               {item.image_url && (
@@ -462,7 +462,7 @@ export default function PracticeView({
                     alt={item.image_type || 'practice'}
                     style={{ width: '100%', borderRadius: 14, display: 'block' }}
                   />
-                  <figcaption style={{ fontSize: 12, color: '#64748B', marginTop: 6 }}>
+                  <figcaption style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 6 }}>
                     {item.image_note || t('practice.imageNote', 'AI yaratgan illyustrativ tasvir (ta’lim maqsadida), haqiqiy bemor tasviri emas.')}
                   </figcaption>
                 </figure>
@@ -498,7 +498,7 @@ export default function PracticeView({
                 </p>
               )}
               {result.correct_answer && (
-                <p style={{ margin: '8px 0 0', fontSize: 13, color: '#166534' }}>
+                <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--on-green)' }}>
                   {t('practice.correctAnswer', "To'g'ri javob")}: {result.correct_answer}
                 </p>
               )}
@@ -518,12 +518,12 @@ export default function PracticeView({
                 {t('practice.next', 'Keyingisi')}
               </button>
             )}
-            <button className="ui-icon-btn" onClick={() => setReportOpen((v) => !v)} title={t('practice.report', 'Shikoyat')} style={{ border: '1px solid #E2E8F0' }}>
+            <button className="ui-icon-btn" onClick={() => setReportOpen((v) => !v)} title={t('practice.report', 'Shikoyat')} style={{ border: '1px solid var(--line)' }}>
               <Flag size={16} />
             </button>
           </div>
           {session?.mode === 'case' && (
-            <button type="button" onClick={() => finishNow(session.id)} style={{ background: 'none', border: 'none', color: '#64748B', fontWeight: 700, cursor: 'pointer' }}>
+            <button type="button" onClick={() => finishNow(session.id)} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', fontWeight: 700, cursor: 'pointer' }}>
               {t('practice.finish', 'Sessiyani yakunlash')}
             </button>
           )}
@@ -545,7 +545,7 @@ export default function PracticeView({
             <ResultStat icon={Layers} label={t('practice.tokens', 'Token')} value={session.tokens_used || 0} />
             <ResultStat icon={Coins} label={t('practice.coinsSpent', 'Sarflangan tanga')} value={session.coins_spent || 0} />
           </div>
-          <p style={{ margin: 0, fontSize: 14, color: '#334155' }}>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--ink-2)' }}>
             {session.flashcards_status === 'pending'
               ? t('practice.flashcardsPending', 'Fleshkartalar yaratilmoqda…')
               : t('practice.flashcardsCreated', '{n} ta yangi fleshkarta yaratildi').replace('{n}', String(session.flashcards_created || 0))}
@@ -564,8 +564,8 @@ export default function PracticeView({
 
 function ResultStat({ icon: Icon, label, value }) {
   return (
-    <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 14, padding: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748B', fontSize: 12, fontWeight: 700 }}>
+    <div style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 14, padding: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)', fontSize: 12, fontWeight: 700 }}>
         <Icon size={14} /> {label}
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{value}</div>

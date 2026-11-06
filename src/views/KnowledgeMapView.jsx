@@ -4,11 +4,11 @@ import { api, formatApiError, isInsufficientCoinsError, localizeText } from '../
 import { useTranslation } from '../i18n.jsx';
 
 const LEVEL_STYLE = {
-  strong: { bg: '#DCFCE7', color: '#166534' },
-  medium: { bg: '#FEF3C7', color: '#92400E' },
-  weak: { bg: '#FEE2E2', color: '#991B1B' },
-  learning: { bg: '#DBEAFE', color: '#1D4ED8' },
-  unexplored: { bg: '#F1F5F9', color: '#475569' },
+  strong: { bg: 'var(--tint-green)', color: 'var(--on-green)' },
+  medium: { bg: 'var(--tint-amber)', color: 'var(--on-amber)' },
+  weak: { bg: 'var(--tint-red)', color: 'var(--on-red)' },
+  learning: { bg: 'var(--tint-blue)', color: 'var(--on-blue)' },
+  unexplored: { bg: 'var(--surface-3)', color: 'var(--ink-2)' },
 };
 
 function actionLabel(step, t) {
@@ -106,7 +106,7 @@ export default function KnowledgeMapView({
         <div style={{ flex: 1 }}>
           <h2 style={{ margin: 0, fontSize: 20 }}>{t('map.title', 'Bilim xaritasi')}</h2>
           {data && (
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)' }}>
               {t('map.strong', 'Kuchli')} {data.strong_count || 0} · {t('map.weak', 'Zaif')} {data.weak_count || 0} · {t('map.unexplored', 'O‘rganilmagan')} {data.unexplored_count || 0}
             </div>
           )}
@@ -118,7 +118,7 @@ export default function KnowledgeMapView({
       </div>
 
       {error && (
-        <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 600 }}>
+        <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 12, background: 'var(--tint-red-soft)', color: 'var(--on-red)', fontSize: 13, fontWeight: 600 }}>
           {error}
         </div>
       )}
@@ -131,14 +131,14 @@ export default function KnowledgeMapView({
         <>
           {data?.summary && (
             <section className="ui-card" style={{ padding: 16, marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B', marginBottom: 6 }}>{t('map.summary', 'Xulosa')}</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-3)', marginBottom: 6 }}>{t('map.summary', 'Xulosa')}</div>
               <p style={{ margin: 0, lineHeight: 1.5 }}>{data.summary}</p>
             </section>
           )}
 
           <h3 style={{ fontSize: 16, margin: '0 0 10px' }}>{t('map.path', 'O‘qish yo‘li')}</h3>
           {path.length === 0 && (
-            <p style={{ color: '#64748B', fontWeight: 600 }}>{t('map.empty', 'Avval keys yoki test yeching')}</p>
+            <p style={{ color: 'var(--ink-3)', fontWeight: 600 }}>{t('map.empty', 'Avval keys yoki test yeching')}</p>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
             {path.map((step) => (
@@ -146,7 +146,7 @@ export default function KnowledgeMapView({
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
                   <div>
                     <div style={{ fontWeight: 800 }}>{step.order}. {actionLabel(step, t)} {localizeText(step.topic_name) || step.topic_name || ''}</div>
-                    {step.reason && <p style={{ margin: '6px 0 0', fontSize: 13, color: '#475569' }}>{step.reason}</p>}
+                    {step.reason && <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-2)' }}>{step.reason}</p>}
                   </div>
                   <button className="ui-btn ui-btn-primary" onClick={() => runStep(step)}>
                     {t('map.startStep', 'Boshlash')}

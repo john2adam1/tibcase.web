@@ -37,7 +37,7 @@ export default function ClinicalHintModal({
         style={{
           width: '100%',
           maxWidth: 480,
-          background: '#FFFFFF',
+          background: 'var(--surface)',
           borderRadius: '32px 32px 0 0',
           padding: '24px 20px 36px 20px',
           boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.15)',
@@ -53,7 +53,7 @@ export default function ClinicalHintModal({
           width: 44,
           height: 5,
           borderRadius: 99,
-          background: '#CBD5E1',
+          background: 'var(--line-2)',
           alignSelf: 'center',
           marginBottom: 4,
         }} />
@@ -75,16 +75,16 @@ export default function ClinicalHintModal({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#B45309',
+              color: 'var(--on-amber)',
             }}>
-              <Lightbulb size={28} fill="#B45309" strokeWidth={2} />
+              <Lightbulb size={28} fill="var(--on-amber)" strokeWidth={2} />
             </div>
 
             <div>
               <h3 style={{
                 fontSize: '20px',
                 fontWeight: 700,
-                color: '#0F172A',
+                color: 'var(--ink)',
                 margin: '0 0 2px 0',
               }}>
                 {t('sim.hintTitle', 'Klinik Maslahat')}
@@ -92,7 +92,7 @@ export default function ClinicalHintModal({
               <p style={{
                 fontSize: '13px',
                 fontWeight: 600,
-                color: '#64748B',
+                color: 'var(--ink-3)',
                 margin: 0,
               }}>
                 {t('sim.hintSubtitle', "Tashxisga yaqinlashishga yordam beruvchi yo'llanma")}
@@ -107,12 +107,12 @@ export default function ClinicalHintModal({
               width: 36,
               height: 36,
               borderRadius: '50%',
-              background: '#F1F5F9',
+              background: 'var(--surface-3)',
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#64748B',
+              color: 'var(--ink-3)',
               cursor: 'pointer',
             }}
           >
@@ -123,9 +123,9 @@ export default function ClinicalHintModal({
         {/* AI Powered Badge */}
         <div style={{ alignSelf: 'flex-start' }}>
           <span style={{
-            background: '#FEF9C3',
-            border: '1px solid #FDE047',
-            color: '#B45309',
+            background: 'var(--tint-amber)',
+            border: '1px solid var(--tint-amber-border)',
+            color: 'var(--on-amber)',
             fontSize: '12px',
             fontWeight: 700,
             padding: '4px 10px',
@@ -141,11 +141,11 @@ export default function ClinicalHintModal({
 
         {/* Amber Hint Card */}
         <div style={{
-          background: '#FEF9C3',
-          border: '1px solid #FDE047',
+          background: 'var(--tint-amber)',
+          border: '1px solid var(--tint-amber-border)',
           borderRadius: 18,
           padding: '20px 18px',
-          color: '#1E293B',
+          color: 'var(--ink)',
           fontSize: '15px',
           fontWeight: 600,
           lineHeight: 1.55,
@@ -160,7 +160,7 @@ export default function ClinicalHintModal({
           alignItems: 'flex-start',
           gap: 6,
           fontSize: '12px',
-          color: '#94A3B8',
+          color: 'var(--ink-4)',
           lineHeight: 1.45,
           fontStyle: 'italic',
         }}>

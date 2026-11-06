@@ -484,21 +484,21 @@ export default function AuthModal({
     overflowY: 'auto',
     boxSizing: 'border-box',
     position: 'relative',
-    background: '#FFFFFF',
+    background: 'var(--surface)',
     borderRadius: 18,
-    border: '1px solid #E2E8F0',
-    boxShadow: '0 4px 0 #E2E8F0, 0 20px 50px rgba(15, 23, 42, 0.08)',
+    border: '1px solid var(--line)',
+    boxShadow: '0 4px 0 var(--line), 0 20px 50px rgba(15, 23, 42, 0.08)',
   };
 
   const inputStyle = {
     width: '100%',
     padding: '13px 16px',
     borderRadius: 16,
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
+    background: 'var(--surface-2)',
+    border: '1px solid var(--line)',
     fontSize: '0.95rem',
     fontWeight: 600,
-    color: '#0F172A',
+    color: 'var(--ink)',
     fontFamily: "'Plus Jakarta Sans', sans-serif",
     boxSizing: 'border-box',
     outline: 'none',
@@ -559,23 +559,23 @@ export default function AuthModal({
             width: 38,
             height: 38,
             borderRadius: 12,
-            background: '#F1F5F9',
-            border: '1px solid #E2E8F0',
+            background: 'var(--surface-3)',
+            border: '1px solid var(--line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#64748B',
+            color: 'var(--ink-3)',
             cursor: 'pointer',
             zIndex: 10,
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#E2E8F0';
-            e.currentTarget.style.color = '#0F172A';
+            e.currentTarget.style.background = 'var(--line)';
+            e.currentTarget.style.color = 'var(--ink)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#F1F5F9';
-            e.currentTarget.style.color = '#64748B';
+            e.currentTarget.style.background = 'var(--surface-3)';
+            e.currentTarget.style.color = 'var(--ink-3)';
           }}
         >
           <X size={18} style={{ pointerEvents: 'none' }} />
@@ -588,14 +588,14 @@ export default function AuthModal({
           <h3 style={{
             fontSize: '1.35rem',
             fontWeight: 700,
-            color: '#0F172A',
+            color: 'var(--ink)',
             marginBottom: 4,
             fontFamily: "'Plus Jakarta Sans', sans-serif",
           }}>
             {t('auth.title')}
           </h3>
           <p style={{
-            color: '#64748B',
+            color: 'var(--ink-3)',
             fontSize: '0.85rem',
             fontWeight: 500,
             margin: 0,
@@ -609,9 +609,9 @@ export default function AuthModal({
           <div style={{
             padding: '10px 14px',
             borderRadius: 14,
-            background: '#FEF2F2',
-            border: '1px solid #FCA5A5',
-            color: '#DC2626',
+            background: 'var(--tint-red-soft)',
+            border: '1px solid var(--tint-red-border)',
+            color: 'var(--on-red)',
             fontSize: '0.85rem',
             fontWeight: 600,
             marginBottom: 16,
@@ -622,7 +622,7 @@ export default function AuthModal({
 
         {step === 'tg_wait' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'center' }}>
-            <p style={{ margin: 0, fontWeight: 700, color: '#0F172A' }}>
+            <p style={{ margin: 0, fontWeight: 700, color: 'var(--ink)' }}>
               {t('auth.tgBotWaiting', 'Telegram botida tasdiqlang. Shu yerga avtomatik qaytamiz.')}
             </p>
             <button
@@ -640,7 +640,7 @@ export default function AuthModal({
             <button
               type="button"
               onClick={() => { setStep('input'); setTgLogin(null); }}
-              style={{ background: 'none', border: 'none', color: '#64748B', fontWeight: 700, cursor: 'pointer' }}
+              style={{ background: 'none', border: 'none', color: 'var(--ink-3)', fontWeight: 700, cursor: 'pointer' }}
             >
               {t('auth.changeNumber')}
             </button>
@@ -680,11 +680,11 @@ export default function AuthModal({
               gap: 12,
               margin: '2px 0',
             }}>
-              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--ink-4)', textTransform: 'uppercase' }}>
                 {t('auth.orDivider')}
               </span>
-              <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
             </div>
 
             <form onSubmit={handleSendCode} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -692,14 +692,14 @@ export default function AuthModal({
                 <label style={{
                   display: 'block',
                   fontSize: '0.8rem',
-                  color: '#64748B',
+                  color: 'var(--ink-3)',
                   marginBottom: 6,
                   fontWeight: 700,
                 }}>
                   {t('auth.emailLabel')}
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Mail size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                  <Mail size={18} color="var(--ink-4)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
                   <input
                     type="email"
                     placeholder={t('auth.emailPlaceholder')}
@@ -707,7 +707,7 @@ export default function AuthModal({
                     onChange={(e) => setIdentifier(e.target.value)}
                     style={{ ...inputStyle, paddingLeft: 42 }}
                     onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
-                    onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
+                    onBlur={(e) => { e.target.style.borderColor = 'var(--line)'; }}
                   />
                 </div>
               </div>
@@ -760,8 +760,8 @@ export default function AuthModal({
               <div style={{
                 padding: '10px 14px',
                 borderRadius: 14,
-                background: '#ECFDF5',
-                border: '1px solid #A7F3D0',
+                background: 'var(--tint-green-soft)',
+                border: '1px solid var(--tint-green-border)',
                 color: '#059669',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -780,7 +780,7 @@ export default function AuthModal({
               }}>
                 <label style={{
                   fontSize: '0.8rem',
-                  color: '#64748B',
+                  color: 'var(--ink-3)',
                   fontWeight: 700,
                 }}>
                   {t('auth.otpLabel')}
@@ -826,16 +826,16 @@ export default function AuthModal({
                   fontWeight: 700,
                 }}
                 onFocus={(e) => { e.target.style.borderColor = '#22C55E'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#E2E8F0'; }}
+                onBlur={(e) => { e.target.style.borderColor = 'var(--line)'; }}
               />
               <p style={{
                 fontSize: '0.78rem',
-                color: '#94A3B8',
+                color: 'var(--ink-4)',
                 marginTop: 8,
                 fontWeight: 500,
                 textAlign: 'center',
               }}>
-                {t('auth.otpSentTo')} <strong style={{ color: '#0F172A' }}>{identifier}</strong>
+                {t('auth.otpSentTo')} <strong style={{ color: 'var(--ink)' }}>{identifier}</strong>
               </p>
             </div>
 
@@ -857,7 +857,7 @@ export default function AuthModal({
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: resendTimer > 0 ? '#94A3B8' : '#0284C7',
+                  color: resendTimer > 0 ? 'var(--ink-4)' : '#0284C7',
                   fontSize: '0.82rem',
                   fontWeight: 600,
                   cursor: (resending || loading || resendTimer > 0) ? 'not-allowed' : 'pointer',
@@ -882,7 +882,7 @@ export default function AuthModal({
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#64748B',
+                  color: 'var(--ink-3)',
                   fontSize: '0.82rem',
                   fontWeight: 600,
                   cursor: 'pointer',

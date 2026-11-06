@@ -8,6 +8,27 @@
     <meta name="apple-mobile-web-app-title" content="TibStation" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="theme-color" content="#16A34A" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Apply saved/system theme before first paint (keep in sync with src/theme.js)
+      (function () {
+        try {
+          var pref = localStorage.getItem('tibcase_theme') || 'system';
+          var dark = pref === 'dark';
+          if (pref === 'system') {
+            var tg = window.Telegram && window.Telegram.WebApp;
+            dark = tg && tg.initData && tg.colorScheme
+              ? tg.colorScheme === 'dark'
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          if (dark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', '#0C1210');
+          }
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- SEO Primary Meta Tags -->
     <title>TibStation AI — AI mashq, fleshkartalar va bilim xaritasi | tibstation.uz</title>

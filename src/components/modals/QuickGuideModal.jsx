@@ -21,7 +21,7 @@ export default function QuickGuideModal({
       flexDirection: 'column',
       zIndex: 100,
       fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-      color: '#0F172A',
+      color: 'var(--ink)',
       overflowY: 'auto',
     }}>
       <div style={{
@@ -29,14 +29,14 @@ export default function QuickGuideModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#FFFFFF',
-        borderBottom: '1px solid #E2E8F0',
+        background: 'var(--surface)',
+        borderBottom: '1px solid var(--line)',
         boxShadow: 'var(--shadow-sm)',
       }}>
         <h2 style={{
           fontSize: '18px',
           fontWeight: 700,
-          color: '#0F172A',
+          color: 'var(--ink)',
           margin: 0,
           letterSpacing: '-0.02em',
           textAlign: 'center',
@@ -93,9 +93,9 @@ export default function QuickGuideModal({
         {/* Chat mock: attempts + time + one user answer + AI reply + input */}
         <div style={{
           width: '100%',
-          background: '#FFFFFF',
+          background: 'var(--surface)',
           borderRadius: 18,
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--line)',
           boxShadow: 'var(--shadow-sm)',
           padding: '14px 14px 12px',
           display: 'flex',
@@ -109,14 +109,14 @@ export default function QuickGuideModal({
             justifyContent: 'space-between',
             fontSize: 12,
             fontWeight: 700,
-            color: '#64748B',
+            color: 'var(--ink-3)',
           }}>
             <span style={{
               display: 'inline-flex',
               padding: '2px 8px',
               borderRadius: 99,
-              background: '#EEF2FF',
-              color: '#3730A3',
+              background: 'var(--tint-blue-soft)',
+              color: 'var(--on-violet)',
               fontSize: 12,
               fontWeight: 800,
               fontVariantNumeric: 'tabular-nums',
@@ -129,7 +129,7 @@ export default function QuickGuideModal({
           </div>
 
           <div style={{ alignSelf: 'flex-end', maxWidth: '88%' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'right', marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-3)', textAlign: 'right', marginBottom: 4 }}>
               {t('guide.youLabel', 'Siz')}
             </div>
             <div style={{
@@ -150,13 +150,13 @@ export default function QuickGuideModal({
               {t('guide.aiLabel', 'AI')}
             </div>
             <div style={{
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--line)',
               borderRadius: '4px 18px 18px 18px',
               padding: '10px 14px',
               fontSize: 13,
               fontWeight: 500,
-              color: '#334155',
+              color: 'var(--ink-2)',
               lineHeight: 1.45,
             }}>
               {t('guide.aiSpeech', "To‘g‘ri. Tashxis o‘tkir koronar sindromga mos. Aspirin, EKG va shoshilinch PCI asosli.")}
@@ -168,12 +168,12 @@ export default function QuickGuideModal({
               width: 40,
               height: 40,
               borderRadius: '50%',
-              border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
+              border: '1px solid var(--line-2)',
+              background: 'var(--surface)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#0F172A',
+              color: 'var(--ink)',
               flexShrink: 0,
             }}>
               <Mic size={18} />
@@ -182,14 +182,14 @@ export default function QuickGuideModal({
               flex: 1,
               height: 40,
               borderRadius: 99,
-              border: '1px solid #CBD5E1',
-              background: '#F8FAFC',
+              border: '1px solid var(--line-2)',
+              background: 'var(--surface-2)',
               padding: '0 16px',
               display: 'flex',
               alignItems: 'center',
               fontSize: 13,
               fontWeight: 500,
-              color: '#94A3B8',
+              color: 'var(--ink-4)',
             }}>
               {t('guide.inputPlaceholder', 'Tashxis va davolash rejasini yozing...')}
             </div>
@@ -214,7 +214,7 @@ export default function QuickGuideModal({
           margin: 0,
           fontSize: 12,
           fontWeight: 600,
-          color: '#64748B',
+          color: 'var(--ink-3)',
           lineHeight: 1.45,
           textAlign: 'center',
         }}>

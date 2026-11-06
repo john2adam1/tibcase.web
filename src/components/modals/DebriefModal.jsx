@@ -69,8 +69,8 @@ export default function DebriefModal({
           maxHeight: '92vh',
           overflowY: 'auto',
           borderRadius: 32,
-          background: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
           padding: '28px 24px',
           position: 'relative',
@@ -92,9 +92,9 @@ export default function DebriefModal({
             width: 36,
             height: 36,
             borderRadius: 12,
-            background: '#F1F5F9',
-            border: '1px solid #E2E8F0',
-            color: '#64748B',
+            background: 'var(--surface-3)',
+            border: '1px solid var(--line)',
+            color: 'var(--ink-3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -114,9 +114,9 @@ export default function DebriefModal({
             gap: 6,
             padding: '6px 14px',
             borderRadius: 99,
-            background: isSuccess ? '#F0FDF4' : '#FEF2F2',
-            border: `1px solid ${isSuccess ? '#BBF7D0' : '#FECACA'}`,
-            color: isSuccess ? '#15803D' : '#DC2626',
+            background: isSuccess ? 'var(--tint-green-soft)' : 'var(--tint-red-soft)',
+            border: `1px solid ${isSuccess ? 'var(--tint-green-border)' : 'var(--tint-red-border)'}`,
+            color: isSuccess ? 'var(--on-green)' : 'var(--on-red)',
             fontSize: '12px',
             fontWeight: 700,
             letterSpacing: '0.04em',
@@ -130,7 +130,7 @@ export default function DebriefModal({
           <h2 style={{
             fontSize: '22px',
             fontWeight: 700,
-            color: '#0F172A',
+            color: 'var(--ink)',
             letterSpacing: '-0.02em',
             margin: '0 0 6px 0',
             lineHeight: 1.3,
@@ -138,7 +138,7 @@ export default function DebriefModal({
             {isSuccess ? t('debrief.successTitle', "Bemor muvaffaqiyatli saqlab qolindi! 🎉") : t('debrief.criticalTitle', "Klinik qiyinchilik kuzatildi ⚠️")}
           </h2>
           <p style={{
-            color: '#64748B',
+            color: 'var(--ink-3)',
             fontSize: '13px',
             fontWeight: 600,
             margin: 0,
@@ -159,9 +159,9 @@ export default function DebriefModal({
         >
           {/* Score Card */}
           <div style={{
-            background: isSuccess ? '#F0FDF4' : '#FEF3C7',
-            border: `1px solid ${isSuccess ? '#BBF7D0' : '#FDE68A'}`,
-            boxShadow: `0 3px 0 ${isSuccess ? '#BBF7D0' : '#FDE68A'}`,
+            background: isSuccess ? 'var(--tint-green-soft)' : 'var(--tint-amber)',
+            border: `1px solid ${isSuccess ? 'var(--tint-green-border)' : 'var(--tint-amber-border)'}`,
+            boxShadow: `0 3px 0 ${isSuccess ? 'var(--tint-green-border)' : 'var(--tint-amber-border)'}`,
             borderRadius: 16,
             padding: '16px 12px',
             textAlign: 'center',
@@ -170,13 +170,13 @@ export default function DebriefModal({
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ink-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
               {t('debrief.accuracy', 'Klinik Aniqlik')}
             </div>
             <div style={{
               fontSize: '28px',
               fontWeight: 700,
-              color: isSuccess ? '#15803D' : '#D97706',
+              color: isSuccess ? 'var(--on-green)' : '#D97706',
               margin: '2px 0',
               lineHeight: 1.1,
             }}>
@@ -185,7 +185,7 @@ export default function DebriefModal({
             <div style={{
               fontSize: '11px',
               fontWeight: 700,
-              color: isSuccess ? '#16A34A' : '#B45309',
+              color: isSuccess ? '#16A34A' : 'var(--on-amber)',
             }}>
               {score >= 90 ? t('debrief.excellent', "A'lo natija") : score >= 75 ? t('debrief.satisfactory', 'Qoniqarli') : t('debrief.hasErrors', 'Xatolar mavjud')}
             </div>
@@ -193,8 +193,8 @@ export default function DebriefModal({
 
           {/* Stars Card */}
           <div style={{
-            background: '#F0F9FF',
-            border: '1px solid #BAE6FD',
+            background: 'var(--tint-blue-soft)',
+            border: '1px solid var(--tint-blue-border)',
             boxShadow: 'var(--shadow-sm)',
             borderRadius: 16,
             padding: '16px 12px',
@@ -204,7 +204,7 @@ export default function DebriefModal({
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ink-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
               {t('debrief.earnedXp', "To'plangan yulduz")}
             </div>
             <div style={{
@@ -221,15 +221,15 @@ export default function DebriefModal({
               <Star size={22} color="#0284C7" fill="#0284C7" />
               <span>+{stars}</span>
             </div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369A1' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--on-blue)' }}>
               {t('debrief.xpDesc', 'Yulduz')}
             </div>
           </div>
 
           {/* Coins Card */}
           <div style={{
-            background: '#FEFCE8',
-            border: '1px solid #FEF08A',
+            background: 'var(--tint-amber-soft)',
+            border: '1px solid var(--tint-amber-border)',
             boxShadow: 'var(--shadow-sm)',
             borderRadius: 16,
             padding: '16px 12px',
@@ -239,7 +239,7 @@ export default function DebriefModal({
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ink-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
               {t('debrief.rewardCoins', 'Mukofot Tangalar')}
             </div>
             <div style={{
@@ -256,7 +256,7 @@ export default function DebriefModal({
               <span>🪙</span>
               <span>+{coins}</span>
             </div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#B45309' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--on-amber)' }}>
               {t('debrief.addedToWallet', "Hamyonga qo'shildi")}
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function DebriefModal({
             flexWrap: 'wrap',
             fontSize: 13,
             fontWeight: 700,
-            color: '#475569',
+            color: 'var(--ink-2)',
           }}>
             {tokensUsed > 0 && (
               <span>{t('debrief.tokensUsed', 'Token')}: {tokensUsed}</span>
@@ -320,10 +320,10 @@ export default function DebriefModal({
                 flex: '1 1 140px',
                 padding: '14px',
                 borderRadius: 16,
-                background: '#FFFFFF',
+                background: 'var(--surface)',
                 border: '1px solid #16A34A',
                 boxShadow: 'var(--shadow-sm)',
-                color: '#15803D',
+                color: 'var(--on-green)',
                 fontWeight: 700,
                 fontSize: '14px',
                 cursor: 'pointer',
@@ -344,10 +344,10 @@ export default function DebriefModal({
               flex: '1 1 120px',
               padding: '14px',
               borderRadius: 16,
-              background: '#FFFFFF',
-              border: '1px solid #E2E8F0',
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
-              color: '#0F172A',
+              color: 'var(--ink)',
               fontWeight: 700,
               fontSize: '14px',
               cursor: 'pointer',
@@ -367,9 +367,9 @@ export default function DebriefModal({
               width: 48,
               height: 48,
               borderRadius: 16,
-              background: '#F1F5F9',
-              border: '1px solid #E2E8F0',
-              color: '#0F172A',
+              background: 'var(--surface-3)',
+              border: '1px solid var(--line)',
+              color: 'var(--ink)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
