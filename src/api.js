@@ -288,7 +288,7 @@ async function refreshTokens() {
     try {
       const res = await fetch('/auth/token/refresh', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...clientHeaders() },
         body: JSON.stringify({ refresh_token: refresh }),
       });
 
@@ -319,6 +319,17 @@ async function refreshTokens() {
   return refreshPromise;
 }
 
+// Backend statistikasi uchun: har bir so'rovga platforma va ilova versiyasi (CHANGES_FRONTEND_STATS.md).
+// Platforma qiymatlari: ios | android | web. Bu ilova (brauzer va Telegram mini app) doim `web`.
+const CLIENT_PLATFORM = 'web';
+const CLIENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? String(__APP_VERSION__) : '';
+
+export const clientHeaders = () => {
+  const h = { 'X-Platform': CLIENT_PLATFORM };
+  if (CLIENT_VERSION) h['X-App-Version'] = CLIENT_VERSION;
+  return h;
+};
+
 // ============================================================
 // Base request helper with proxy support & auto token refresh
 // ============================================================
@@ -338,6 +349,7 @@ async function request(path, options = {}) {
   const headers = {
     Accept: 'application/json',
     'Accept-Language': lang,
+    ...clientHeaders(),
     ...(extraHeaders || {}),
   };
 
